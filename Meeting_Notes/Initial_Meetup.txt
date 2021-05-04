@@ -1,0 +1,39 @@
+------------------------------------------------------------
+PREPERATION
+------------------------------------------------------------
+FIRST: Do you have any questions/concerns? 
+
+- keen on taking MLPR
+- check existing filters + papers
+- ML Pipeline is part of the project: How important? 
+- Software Engineering part: build a way to extract, analyse and modify sounds of streaming video that integrates into a platform like Jitsi
+    -> Building a solid framework for this would allow ML Pipeline to be improved in the future
+
+- Constraints for ML algorithm
+    -> FAST - almost immediate reaction
+    -> LOW COMPUTATIONAL COST - run on low-power-machines
+
+    
+------------------------------------------------------------
+MEETING NOTES 
+------------------------------------------------------------
+OPEN SOURCE CONFERENCE PLATFORM
+https://clowdr.org/
+
+
+ADVICE FROM ANDRE
+- for speech 10h of training data is needed 
+- Possible Training data: Audio-set(from Google and MIT) - labled data
+- Testset: Rather not getting one from clowdr but testing it with them LIVE
+    -> For livetesting: Fallback mode: only show corresponding emote (instead of unmuting)
+
+- Possible ML-Frameworks: 
+    -> for speech processing: Caldi
+    -> more general: Tensor flow / Pytorch
+- development approach:
+    -> Simple baseline - easy to implement like Naive Bayes
+    -> then compare more advanced methods to that 
+    
+- Possibly interesting courses: 
+    -> Speech Processing
+    -> ASR: Automated Speech Processing

@@ -1,0 +1,6 @@
+# Raw Audio data
+Research/towardsdatascience_series/data
+
+# Python environment and python cache
+Research/towardsdatascience_series/env
+**/__pycache__
