@@ -4,3 +4,6 @@ Research/towardsdatascience_series/data
 # Python environment and python cache
 Research/towardsdatascience_series/env
 **/__pycache__
+
+# Vim configs
+**/.vim
