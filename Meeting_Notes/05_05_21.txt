@@ -1,0 +1,17 @@
+Date: 05.05.21
+
+Goal: Short discussion of next steps/work over the summer.
+
+
+Link to clowdr github: https://github.com/clowdr-app/clowdr
+
+The key is to recognise when you are stuck and ask for help, instead of banging your head against the wall.
+
+Important: Have the practical side in mind
+    -> it's a difficult project and you might not succeed at all
+    -> very simple prototype at first (asap) and improve from there
+            -> "Do the worst possible job first and then improve on that"
+    -> improving your project later on makes a great story for the report
+        -> "I started like this and look how much I managed to improve it"
+
+
