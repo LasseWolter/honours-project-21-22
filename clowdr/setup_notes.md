@@ -34,10 +34,14 @@ _Things I realised during the local setup of clowdr_
   - should they be `XXXX` as well? 
 - Do I need to run `Actions service - GraphQL Codegen` for quick setup as well? 
 
-- **CURRENT**
+- **Error I ran into:**
   - it seems like some files depend on generated code, namely "generated/graphql"
   - these files seem to be called during the `Actions service - GraphQL Codegen` task
     - since the code hasn't been generated an error is thrown
+  - **FIX**: Restart whole setup and run task again 
+    - docker-compose down
+    - then run `Hasura Console -- Local Development task` (which also runs docker-compose)
+    - then run `Actions service - GraphQL Codegen`
 
 **Clowdr: Playout Service**
 - example.env: 
