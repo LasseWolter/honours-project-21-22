@@ -9,19 +9,21 @@ _Things I realised during the local setup of clowdr_
   - maybe there is a way to make it clearer that the pre-requisite links are
     only supposed to link the top section of each subpage
 
-###Steps
 
+## Steps
+#### General Setup (main README)
 **Step 3**
 - building the slate-transcript-editor creates the dist folder but also creates a .diff file
   - should this .diff file (slate-transcript-editor.diff) be added to the .gitignore or should it just be ignored?
 - there are also some changes in the package-lock.json after building 
   - can this just be ignored? 
 
-
+---
+#### Specific Setups (sub README pages)
 **Hasura Setup**
 - change docker command to docker-compose
 
-- if you are connected to a vpn you need to disconnect to connect to local services
+- if you are connected to a **VPN** you need to disconnect to connect to local services
   - or reroute LAN traffic to local gateway
 
 **Clowdr: Actions Service**
@@ -47,4 +49,38 @@ _Things I realised during the local setup of clowdr_
 - example.env: 
   - EVENT_SECRET would be better as `XXXXX` instead of `XXXXY`
 
+**Expose local services at a public URL**
+- _"Copy the auth URL (http://<hasura-domain>/v1/graphql) into the HASURA_URL Auth0 Rule Configuration as shown in step 5."_
+  - which step 5? 
+    - **STEP 5 of the Auth0 setup**
 
+**PKTRIOT**
+- If you only have the FREE pktriot plan `pktriot start` won't work because you only have one port per tunnel and the setup (`pktriot.json`) defines 3 ports
+
+
+- If you try to start pktriot with only prior steps completed you get the following error:
+  `{"status":false,"errror":"invalid accept value in request"}`
+  - **FIXED** There was a mistake in the `pktriot.json`
+
+
+**Auth0 Setup**
+- For all configured URLs the trailing comma in the last line, needed to be removed for Auth0 to accept the input
+  - e.g.: 
+    > http://localhost:3000/auth0/,  
+    > http://localhost:3000/auth0/logged-in,  
+    > http://localhost:3000/auth0/email-verification/result **,** <- this comma
+
+- `Rule` Tab is now in the sidebar under `Auth Pipeline/Rules`
+- There are two step 1s under `4. Create Rules`
+
+## How to run Local Setup after initialisation
+1) Run `Hasura Console -- Local Development` task
+- _Your browser should have opened a tab to the Hasura console_
+
+2) Open http://localhost:15672 in a web browser and log in with the default username and password, both admin.
+  - Now, create the user that the realtime service will use to access RabbitMQ. Go to the Admin tab and add a new user with username services/realtime and password 1234. Click the username of the newly-created user, and then click the Set Permission button. This gives the user unrestricted read/write access.
+
+
+## TODO
+- On the hasura url that is published via pktriot it says:
+  -> resource does not exist
