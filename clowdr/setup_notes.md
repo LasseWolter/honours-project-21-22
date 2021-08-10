@@ -25,6 +25,8 @@ _Things I realised during the local setup of clowdr_
 
 - if you are connected to a **VPN** you need to disconnect to connect to local services
   - or reroute LAN traffic to local gateway
+- Mostly works on second try if it hasn't run before
+  - this isn't critical but not ideal 
 
 **Clowdr: Actions Service**
 - which video codec format should I use for my Vonage Video API Account? (VP8 or H.264)
@@ -35,6 +37,11 @@ _Things I realised during the local setup of clowdr_
 - Quick Setup: what about the GOOGLE CLOUD and SENDGRID variables? 
   - should they be `XXXX` as well? 
 - Do I need to run `Actions service - GraphQL Codegen` for quick setup as well? 
+- I didn't set the `AUTH0_API_DOMAIN` after completing the setup
+  - is there a step telling you to do that after you configured AUTH0? 
+  - same applies to the `realtime service`
+- Action service QUICK SETUP doesn't work until now
+  - it seems like the AWS configs are necessary for it to work
 
 - **Error I ran into:**
   - it seems like some files depend on generated code, namely "generated/graphql"
@@ -45,12 +52,20 @@ _Things I realised during the local setup of clowdr_
     - then run `Hasura Console -- Local Development task` (which also runs docker-compose)
     - then run `Actions service - GraphQL Codegen`
 
+**Clowdr: Realtime Service**
+- RABBITMQ_USERNAME:PASSWORD as `guest:guest` seem to work while the default one (services/realtime:1234) throws the following error
+  -`"ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile."`
+
+
 **Clowdr: Playout Service**
 - example.env: 
   - EVENT_SECRET would be better as `XXXXX` instead of `XXXXY`
 
+**Clowdr: Frontend**
+- seems like `snowpack` needs to be installed globally for npm start to work
+
 **Expose local services at a public URL**
-- _"Copy the auth URL (http://<hasura-domain>/v1/graphql) into the HASURA_URL Auth0 Rule Configuration as shown in step 5."_
+- `"Copy the auth URL (http://<hasura-domain>/v1/graphql) into the HASURA_URL Auth0 Rule Configuration as shown in step 5."`
   - which step 5? 
     - **STEP 5 of the Auth0 setup**
 
@@ -64,6 +79,9 @@ _Things I realised during the local setup of clowdr_
 
 
 **Auth0 Setup**
+- _! Create own README for this bc it's too long for the main README !_
+  - and it can be confusing when the section ends
+    - I was looking for a VSCode extension because I thought step 6 belonged to the general README again
 - For all configured URLs the trailing comma in the last line, needed to be removed for Auth0 to accept the input
   - e.g.: 
     > http://localhost:3000/auth0/,  
@@ -81,6 +99,13 @@ _Things I realised during the local setup of clowdr_
   - Now, create the user that the realtime service will use to access RabbitMQ. Go to the Admin tab and add a new user with username services/realtime and password 1234. Click the username of the newly-created user, and then click the Set Permission button. This gives the user unrestricted read/write access.
 
 
-## TODO
+## Questions 
 - On the hasura url that is published via pktriot it says:
   -> resource does not exist
+- That's because hasura's graphql endpoint only accepts POST requests
+
+
+## Current TODO
+- the realtime service AUTH seems to work with guest:guest but now there is a different error
+  - don't forget to add the user using the RabbitMQ console - otherwise it won't work
+- the actions service doesn't seems to work without AWS setup. This could be done next time maybe
