@@ -42,6 +42,9 @@ _Things I realised during the local setup of clowdr_
   - same applies to the `realtime service`
 - Action service QUICK SETUP doesn't work until now
   - it seems like the AWS configs are necessary for it to work
+- Problem in `package.json` - **ERROR**: `missing script: build` - most likely because it's not executed with the correct prefix
+
+  - replacing `--prefix=../../ --workspace=shared` with `--prefix=../../shared` solved the problem
 
 - **Error I ran into:**
   - it seems like some files depend on generated code, namely "generated/graphql"
@@ -55,14 +58,33 @@ _Things I realised during the local setup of clowdr_
 **Clowdr: Realtime Service**
 - RABBITMQ_USERNAME:PASSWORD as `guest:guest` seem to work while the default one (services/realtime:1234) throws the following error
   -`"ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile."`
+- Problem in `package.json` - **ERROR**: `missing script: build` - most likely because it's not executed with the correct prefix
+  - replacing `--prefix=../../ --workspace=shared` with `--prefix=../../shared` solved the problem
 
 
 **Clowdr: Playout Service**
 - example.env: 
   - EVENT_SECRET would be better as `XXXXX` instead of `XXXXY`
+- **Error**: `Cannot find module '@nestjs/schedule' or its corresponding type declarations.`
+  - installing it manually solved the problem: `npm i @nestjs/schedule`
+  - why is it not automatically installed?  
 
 **Clowdr: Frontend**
 - seems like `snowpack` needs to be installed globally for npm start to work
+- Problem in `package.json` - **ERROR**: `missing script: build` - most likely because it's not executed with the correct prefix
+  - replacing `--prefix=../../ --workspace=shared` with `--prefix=../shared` solved the problem
+- **Error I ran into**: 
+  - `[snowpack] Package "class-transformer" not found. Have you installed it? `
+  - `Error: Cannot find module memory-fs/lib/join`
+    - Fix: installed memory-fs manually with npm
+  - `Error: Cannot find module ajv-errors` 
+    - `npm i ajv-errors` throws dependency error
+    - Running it with `--force` leads to the following Error:
+      - `TypeError: Cannot read property 'allErrors' of undefined`
+      - Removing the node_modules folder and running `npm i` solved the issue
+  - `System limit for number of file watchers reached, watch '/home/lasse/Programming/Uni/Honours_Project/clowdr/frontend/node_modules/@ahanapediatrics/ahana-fp'`
+    - solved by FIX from https://github.com/gatsbyjs/gatsby/issues/11406
+      - `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
 
 **Expose local services at a public URL**
 - `"Copy the auth URL (http://<hasura-domain>/v1/graphql) into the HASURA_URL Auth0 Rule Configuration as shown in step 5."`
