@@ -12,7 +12,7 @@ _Things I realised during the local setup of clowdr_
 
 ## Steps
 #### General Setup (main README)
-**Step 3**
+#### ***Step 3**
 - building the slate-transcript-editor creates the dist folder but also creates a .diff file
   - should this .diff file (slate-transcript-editor.diff) be added to the .gitignore or should it just be ignored?
 - there are also some changes in the package-lock.json after building 
@@ -20,7 +20,7 @@ _Things I realised during the local setup of clowdr_
 
 ---
 #### Specific Setups (sub README pages)
-**Hasura Setup**
+#### ***Hasura Setup**
 - change docker command to docker-compose
 
 - if you are connected to a **VPN** you need to disconnect to connect to local services
@@ -28,7 +28,7 @@ _Things I realised during the local setup of clowdr_
 - Mostly works on second try if it hasn't run before
   - this isn't critical but not ideal 
 
-**Clowdr: Actions Service**
+#### **Clowdr: Actions Service**
 - which video codec format should I use for my Vonage Video API Account? (VP8 or H.264)
   - from the code I assume H264 (clowdr/services/playout/src/channel-stack/channel-stack/channelStack.ts)
 - GRAPHQL_API_SECURE_PROTOCOLS says default _true_ but it's _false_
@@ -55,21 +55,21 @@ _Things I realised during the local setup of clowdr_
     - then run `Hasura Console -- Local Development task` (which also runs docker-compose)
     - then run `Actions service - GraphQL Codegen`
 
-**Clowdr: Realtime Service**
+#### **Clowdr: Realtime Service**
 - RABBITMQ_USERNAME:PASSWORD as `guest:guest` seem to work while the default one (services/realtime:1234) throws the following error
   -`"ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile."`
 - Problem in `package.json` - **ERROR**: `missing script: build` - most likely because it's not executed with the correct prefix
   - replacing `--prefix=../../ --workspace=shared` with `--prefix=../../shared` solved the problem
 
 
-**Clowdr: Playout Service**
+#### **Clowdr: Playout Service**
 - example.env: 
   - EVENT_SECRET would be better as `XXXXX` instead of `XXXXY`
 - **Error**: `Cannot find module '@nestjs/schedule' or its corresponding type declarations.`
   - installing it manually solved the problem: `npm i @nestjs/schedule`
   - why is it not automatically installed?  
 
-**Clowdr: Frontend**
+#### **Clowdr: Frontend**
 - seems like `snowpack` needs to be installed globally for npm start to work
 - Problem in `package.json` - **ERROR**: `missing script: build` - most likely because it's not executed with the correct prefix
   - replacing `--prefix=../../ --workspace=shared` with `--prefix=../shared` solved the problem
@@ -86,12 +86,12 @@ _Things I realised during the local setup of clowdr_
     - solved by FIX from https://github.com/gatsbyjs/gatsby/issues/11406
       - `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
 
-**Expose local services at a public URL**
+#### **Expose local services at a public URL**
 - `"Copy the auth URL (http://<hasura-domain>/v1/graphql) into the HASURA_URL Auth0 Rule Configuration as shown in step 5."`
   - which step 5? 
     - **STEP 5 of the Auth0 setup**
 
-**PKTRIOT**
+#### **pktriot**
 - If you only have the FREE pktriot plan `pktriot start` won't work because you only have one port per tunnel and the setup (`pktriot.json`) defines 3 ports
 
 
@@ -100,7 +100,7 @@ _Things I realised during the local setup of clowdr_
   - **FIXED** There was a mistake in the `pktriot.json`
 
 
-**Auth0 Setup**
+#### **Auth0 Setup**
 - _! Create own README for this bc it's too long for the main README !_
   - and it can be confusing when the section ends
     - I was looking for a VSCode extension because I thought step 6 belonged to the general README again
@@ -112,6 +112,19 @@ _Things I realised during the local setup of clowdr_
 
 - `Rule` Tab is now in the sidebar under `Auth Pipeline/Rules`
 - There are two step 1s under `4. Create Rules`
+
+#### **AWS Setup**
+- seems like `clowdr/openShotKeyPairName` config-variable needs to be configured after the corresponding EC2 instance was created
+- trailing comma in the last line of `cdk.context.json.example`  
+##### _Section: Deploying the image handler_  
+- Creating the stack from the template throws following error:
+`The following resource types are not supported for resource import: AWS::CDK::Metadata,AWS::IAM::Policy,AWS::S3::BucketPolicy,AWS::IAM::Policy,AWS::IAM::Policy,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,AWS::S3::BucketPolicy,Custom::CustomResource,AWS::ApiGateway::Account,AWS::Lambda::Permission,Custom::CustomResourceLearn more`
+  - **FIX** You need to choose Create stack `With new resources` NOT `with existing resources`
+- what is the `content bucket` supposed to be? 
+  - can I just create a new S3 bucket for this?
+  - **No** it was created by the cdk-deploy -> make that clearer in the instructions
+- **Error** when creating stack: `Requires capabilities : [CAPABILITY_NAMED_IAM]`
+  - just check the tick box at the bottom of the screen :D 
 
 ## How to run Local Setup after initialisation
 1) Run `Hasura Console -- Local Development` task
@@ -131,3 +144,4 @@ _Things I realised during the local setup of clowdr_
 - the realtime service AUTH seems to work with guest:guest but now there is a different error
   - don't forget to add the user using the RabbitMQ console - otherwise it won't work
 - the actions service doesn't seems to work without AWS setup. This could be done next time maybe
+

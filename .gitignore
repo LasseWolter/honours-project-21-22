@@ -7,3 +7,6 @@ Research/towardsdatascience_series/env
 
 # Vim configs
 **/.vim
+
+# aws configs
+**/.aws*
