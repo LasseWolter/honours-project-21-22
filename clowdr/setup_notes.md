@@ -17,10 +17,12 @@ _Things I realised during the local setup of clowdr_
   - should this .diff file (slate-transcript-editor.diff) be added to the .gitignore or should it just be ignored?
 - there are also some changes in the package-lock.json after building 
   - can this just be ignored? 
+- If you run into errors you don't understnd it might be worth to reinstall the node_modules
+  - delete the `node_modules` folder and run `npm i` to reinstall modules
 
 ---
 #### Specific Setups (sub README pages)
-#### ***Hasura Setup**
+#### **Hasura Setup**
 - change docker command to docker-compose
 
 - if you are connected to a **VPN** you need to disconnect to connect to local services
@@ -47,6 +49,8 @@ _Things I realised during the local setup of clowdr_
   - replacing `--prefix=../../ --workspace=shared` with `--prefix=../../shared` solved the problem
 
 - **Error I ran into:**
+  - If there are Errors about missing modules:
+    - delete the `node_modules` folder and run `npm i` to reinstall modules
   - it seems like some files depend on generated code, namely "generated/graphql"
   - these files seem to be called during the `Actions service - GraphQL Codegen` task
     - since the code hasn't been generated an error is thrown
@@ -68,6 +72,8 @@ _Things I realised during the local setup of clowdr_
 - **Error**: `Cannot find module '@nestjs/schedule' or its corresponding type declarations.`
   - installing it manually solved the problem: `npm i @nestjs/schedule`
   - why is it not automatically installed?  
+- If there are Errors about missing modules:
+  - delete the `node_modules` folder and run `npm i` to reinstall modules
 
 #### **Clowdr: Frontend**
 - seems like `snowpack` needs to be installed globally for npm start to work
@@ -139,9 +145,40 @@ _Things I realised during the local setup of clowdr_
   -> resource does not exist
 - That's because hasura's graphql endpoint only accepts POST requests
 
+## Comment on Quick Setup
+- I got the quick setup working up to the following state
+  - all services are running except for the `Actions-Service`
+    - it throws the following error:
+>     > npx foreman start --procfile ./Procfile -p 3001  
+>   
+> 15:16:39 web.1   |  node:assert:402  
+> 15:16:39 web.1   |      throw err;  
+> 15:16:39 web.1   |      ^  
+> 15:16:39 web.1   |  AssertionError [ERR_ASSERTION]: CORS_ORIGIN env var not provided.  
+> 15:16:39 web.1   |      at Object.<anonymous> (/home/lasse/Programming/Uni/Honours_Project/clowdr/services/actions/build/router/companion.js:19:17)  
+> 15:16:39 web.1   |      at Module._compile (node:internal/modules/cjs/loader:1092:14)  
+> 15:16:39 web.1   |      at Object.Module._extensions..js (node:internal/modules/cjs/loader:1121:10)  
+> 15:16:39 web.1   |      at Module.load (node:internal/modules/cjs/loader:972:32)  
+> 15:16:39 web.1   |      at Function.Module._load (node:internal/modules/cjs/loader:813:14)  
+> 15:16:39 web.1   |      at Module.require (node:internal/modules/cjs/loader:996:19)  
+> 15:16:39 web.1   |      at require (node:internal/modules/cjs/helpers:92:18)  
+> 15:16:39 web.1   |      at Object.<anonymous> (/home/lasse/Programming/Uni/Honours_Project/clowdr/services/actions/build/server.js:57:19)  
+> 15:16:39 web.1   |      at Module._compile (node:internal/modules/cjs/loader:1092:14)  
+> 15:16:39 web.1   |      at Object.Module._extensions..js (node:internal/modules/cjs/loader:1121:10) {  
+> 15:16:39 web.1   |    generatedMessage: false,  
+> 15:16:39 web.1   |    code: 'ERR_ASSERTION',  
+> 15:16:39 web.1   |    actual: undefined,  
+> 15:16:39 web.1   |    expected: true,  
+> 15:16:39 web.1   |    operator: '=='  
+> 15:16:39 web.1   |  }  
+> [DONE] Killing all processes with signal  SIGINT  
+> 15:16:39 web.1   Exited with exit code null  
+
+  - the frontend works but shows the following error:   
+  ![Frontend Erorr](./imgs/Frontend_error.png)
+
 
 ## Current TODO
 - the realtime service AUTH seems to work with guest:guest but now there is a different error
   - don't forget to add the user using the RabbitMQ console - otherwise it won't work
 - the actions service doesn't seems to work without AWS setup. This could be done next time maybe
-
