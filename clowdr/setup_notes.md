@@ -122,6 +122,28 @@ _Things I realised during the local setup of clowdr_
 #### **AWS Setup**
 - seems like `clowdr/openShotKeyPairName` config-variable needs to be configured after the corresponding EC2 instance was created
 - trailing comma in the last line of `cdk.context.json.example`  
+- **Error** Running: `cdk deploy --all`:
+> node:internal/modules/cjs/loader:927  
+>   throw err;  
+>   ^  
+>   
+> Error: Cannot find module 'source-map-support/register'  
+
+  - **Fix:**
+    - 1) I didn't have a node version > 16.00 installed as required by the main README
+    - 2) Then there was a conflict with node versions on my computer
+    - 3) after resolving that and reinstalling the node_modules the error was gone 
+
+---
+- **Error** when running `cdk deploy --all`:
+> 12:54:06 | CREATE_FAILED        | AWS::IAM::Policy                    | ActionsUserDefaultPolicy3D391E22  
+> Maximum policy size of 2048 bytes exceeded for user midspace-dev-main-ActionsUser91FDA86E-1PC0IVK9QJVWZ (Service: AmazonIdentityManagement; Status Code: 409; Error Code: LimitExceeded; Request ID:  
+> 30d927af-3c36-4e57-892b-27a36be23f09; Proxy: null)  
+
+- **Fix:** 
+  - The relatively long stack-prefix midspace-dev pushed the policy over the limit. Quick fix for now: use a shorter prefix like mids .
+  - A refactor of the code is currently worked on and will eliminate this problem in the future.
+
 ##### _Section: Deploying the image handler_  
 - Creating the stack from the template throws following error:
 `The following resource types are not supported for resource import: AWS::CDK::Metadata,AWS::IAM::Policy,AWS::S3::BucketPolicy,AWS::IAM::Policy,AWS::IAM::Policy,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,Custom::CustomResource,AWS::S3::BucketPolicy,Custom::CustomResource,AWS::ApiGateway::Account,AWS::Lambda::Permission,Custom::CustomResourceLearn more`
