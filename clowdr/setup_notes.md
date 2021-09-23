@@ -59,11 +59,17 @@ _Things I realised during the local setup of clowdr_
     - then run `Hasura Console -- Local Development task` (which also runs docker-compose)
     - then run `Actions service - GraphQL Codegen`
 
+- `CORS_ORIGIN` env variable is missing
+- NOTE: I didn't fill out the HOST_DOMAIN variable in the env-file
+- What about the `OPENSHOT` env variables?
+
 #### **Clowdr: Realtime Service**
 - RABBITMQ_USERNAME:PASSWORD as `guest:guest` seem to work while the default one (services/realtime:1234) throws the following error
   -`"ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile."`
 - Problem in `package.json` - **ERROR**: `missing script: build` - most likely because it's not executed with the correct prefix
+- **SOLVED**: Fixed by uncommenting the corresponding variables in the `.env` file in the `realtime` folder
   - replacing `--prefix=../../ --workspace=shared` with `--prefix=../../shared` solved the problem
+- README should state that when the RABBITMQ_USERNAME and PASSWORD are changed, that these changes need to be adjusted in the `playout`-env as well
 
 
 #### **Clowdr: Playout Service**
@@ -74,6 +80,14 @@ _Things I realised during the local setup of clowdr_
   - why is it not automatically installed?  
 - If there are Errors about missing modules:
   - delete the `node_modules` folder and run `npm i` to reinstall modules
+- Is there a mistake in the RABBITMQ_PORT?
+  - should it be `15672` instead of `5672`
+  - NOTE: Doesn't seem to make a difference...
+- the `AWS_CLOUDFORMATION_NOTIFICATIONS_TOPIC_ARN` seems to be missing in the example env-file
+  - this causes an error because this variable is assumed to be there
+  > assert(cloudFormationNotificationsTopicArn, "Missing AWS_CLOUDFORMATION_NOTIFICATIONS_TOPIC_ARN");  
+- I didn't fill out the `HOST_DOMAIN` env-varibale
+  - this seems to be the domain of the action-serivce on packetriot
 
 #### **Clowdr: Frontend**
 - seems like `snowpack` needs to be installed globally for npm start to work
@@ -91,6 +105,7 @@ _Things I realised during the local setup of clowdr_
   - `System limit for number of file watchers reached, watch '/home/lasse/Programming/Uni/Honours_Project/clowdr/frontend/node_modules/@ahanapediatrics/ahana-fp'`
     - solved by FIX from https://github.com/gatsbyjs/gatsby/issues/11406
       - `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
+- README (env configuration) states that default value for `SNOWPACK_PUBLIC_GRAPHQL_API_SECURE_PROTOCOLS` is TRUE when it's actually FALSE
 
 #### **Expose local services at a public URL**
 - `"Copy the auth URL (http://<hasura-domain>/v1/graphql) into the HASURA_URL Auth0 Rule Configuration as shown in step 5."`
@@ -99,6 +114,10 @@ _Things I realised during the local setup of clowdr_
 
 #### **pktriot**
 - If you only have the FREE pktriot plan `pktriot start` won't work because you only have one port per tunnel and the setup (`pktriot.json`) defines 3 ports
+- running `pktriot check` gives following result for DOH lookpus
+  - `dial tcp 1.1.1.1:443: connect: connection refused`
+    - is that a problem?
+
 
 
 - If you try to start pktriot with only prior steps completed you get the following error:
@@ -118,6 +137,8 @@ _Things I realised during the local setup of clowdr_
 
 - `Rule` Tab is now in the sidebar under `Auth Pipeline/Rules`
 - There are two step 1s under `4. Create Rules`
+- using HTTP**S** instead of HTTP for the HASURA_URL results in an undefined response which yields following error
+  - `Unexpected token u in JSON at position 0`
 
 #### **AWS Setup**
 - seems like `clowdr/openShotKeyPairName` config-variable needs to be configured after the corresponding EC2 instance was created
@@ -153,6 +174,8 @@ _Things I realised during the local setup of clowdr_
   - **No** it was created by the cdk-deploy -> make that clearer in the instructions
 - **Error** when creating stack: `Requires capabilities : [CAPABILITY_NAMED_IAM]`
   - just check the tick box at the bottom of the screen :D 
+
+- the config value for `AWS_IMAGES_CLOUDFRONT_DISTRIBUTION_NAME` can be found in the `Resources`-tab of the image-handler-stack in CloudFormation
 
 ## How to run Local Setup after initialisation
 1) Run `Hasura Console -- Local Development` task
@@ -203,4 +226,3 @@ _Things I realised during the local setup of clowdr_
 ## Current TODO
 - the realtime service AUTH seems to work with guest:guest but now there is a different error
   - don't forget to add the user using the RabbitMQ console - otherwise it won't work
-- the actions service doesn't seems to work without AWS setup. This could be done next time maybe
