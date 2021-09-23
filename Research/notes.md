@@ -98,7 +98,14 @@ _source_: [2c]
 _source_: [2d]
 
 
+# Definitions
+- **Ontology**: "An ontology can be defined as a set of explicit narrative of knowledge models, encompassing common concepts, their principles, and the relation between those concepts."
+    - source: https://www.innoplexus.com/blog/understanding-ontology-for-better-insight-into-the-life-sciences-data-ocean/
 
+- **AED** = Audio Event Detection
+MFCCs and classifiers based on GMMs, HMMs, NMF, or SVMs
+[8, 9, 10, 11]. More recent approaches use some form of DNN,
+including CNNs [12] and RNNs [13].
 # Sources 
 ### Audio Processing Theory   
 [1]: https://opensource.com/article/19/9/audio-processing-machine-learning-python#comments 
