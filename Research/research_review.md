@@ -1,7 +1,9 @@
 # Reserach Review
 
-### Cnn Architectures For Large-Scale Audio Classification - 01/2017
+### CNN ARCHITECTURES FOR LARGE-SCALE AUDIO CLASSIFICATION - 01/2017
 _source: https://arxiv.org/pdf/1609.09430.pdf_
+
+**Possibly use CNN Architecture for our classification problem**
 
 Quote from intro:
 AED = Audio Event Detection
@@ -26,6 +28,7 @@ _source: https://arxiv.org/abs/2105.07031_
 - which describes clips of varying length - manually chosen by annotators
 
 ---
+# Applause
 ### Novel approach for detecting applause in continuous meeting speech - 2011
 _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/5941827_
 > The proposed approach is based on the short - time autocorrelation
@@ -41,8 +44,53 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/5941827_
 | conventional    |  67.47% | 96.13% | 79.29% |
 
 ---
+### Heterogeneous mixture models using sparse representation features for applause and laugh detection
+_source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=6064620_
+- first read doesn't convince me
+    - it's already 10 years old and the technique is likely deprecated
+    - dataset used is only described not published?
+        - quality of data unclear
+        > The  database  includes  800  
+        > segments of each sound effect. Each segment is about 3-
+        > 8s  long  and  totally  about  1hour  data  for  each  sound  
+        > effect. All the audio recordings were converted to 
+        > monaural wave format at a sampling frequency of 8kHz 
+        > and  quantized  16bits.  Furthermore,  the  audio  signals  
+        > have  been  normalized,  so  that  they  have  zero  mean  
+        > amplitude  with  unit  variance  in  order  to  remove  any  
+        > factors related to the recording conditions. 
+
+### Applause Sound Detection (2011)
+_source: https://www-aes-org.ezproxy.is.ed.ac.uk/tmpFiles/JAES/20210927/JAES_V59_4_PG213hirez.pdf_ 
+- very small dataset - 1.75h if all snippets were 30s...
+> The data set for training and test comprises 210
+> excerpts of commercial recordings of between 9- and 30-
+> second length each.
+- real-time detection with low latency!
+<span style="color:green">
+    - that's interesting for us!
+</span>
+
+**Confusion Matrix**: binary classification using MFCC and LDD + delta and sigma features
+| | Predicted Applause | Predicted No |
+|---| ---| ---|
+| Applause | 83 |   2| 
+| No Applause | 3  | 12  |
+- best performance using a combination of MFCC and LLD(low-level descriptors)
+    - using MLP (Multilayer Perceptron) and SVM with radial basis functions
+- recognises 95% of applause correctly
+# Laughter
 ### Robust Laughter Detection in Noisy Environments - 09/21 
 _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_interspeech.pdf_
+- Update on the original paper:
+    - **Capturing, Representing, and Interacting with Laughter (2018)**
+        - https://dl.acm.org/doi/pdf/10.1145/3173574.3173932
+    - trained on Switchboard dataset
+    - more general, exploring interaction with laughter - qualitative
+    > This work contributes a qualitative evaluation of our prototype
+    > system for capturing, representing, and interacting with laughter. 
+- Augmentation of AudioSet:
+    - https://github.com/jrgillick/laughter-detection/tree/master/data/audioset
 - uses new dataset on top of AudioSet corpus
     - with precise segmentations for the start and end points of each laugh
 - prior work performs badly in noisy environment
@@ -52,6 +100,7 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
         - poor mic quality
         - background noise in the home office
 </span>
+
 - AudioSet only specifies _"laughter occurred in this 10sec snippet"_ but not where
 - Results suggest that finely-segmented and in-domain data annotations are important 
     - without the new finely-segmented annotation of the AudioSet data the results aren't as good
@@ -63,14 +112,54 @@ _source: https://utd-ir.tdl.org/bitstream/handle/10735.1/5058/JECS-3626-4639.10.
 - proposes a simpler approach with features that are a combination of spectral features and pitch information
     - a CNN runs on top for classification
 ---
+### Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)
+_source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=7403873_
+> The best performances—from 70% to 90% correct
+> classification rate—have been obtained using Mel-frequency
+> cepstral coefficients and perceptual linear prediction over stan-
+> dard audio spectrum features, and combining classifiers that
+> use both spectral features and prosodic information. This is not
+> very surprising as laughter is tailored on the human hearing
+> apparatus.
+
+- more general reflection on the state of research back then
+- suggests the use of multimodal works combining studies on acoustic analysis, with the ones on respiratory and physiological changes as well as the ones on facial expression
+- talks quite a bit about applications and less technical facts
+---
+
 ### Other possible Papers
 - Getting the last laugh: Automatic laughter segmentation in meetings
     - https://scholar.google.com/citations?view_op=view_citation&hl=en&user=2FtK1gUAAAAJ&citation_for_view=2FtK1gUAAAAJ:UebtZRa9Y70C
-- Capturing, Representing, and Interacting with Laughter
-    - https://dl.acm.org/doi/10.1145/3173574.3173932
+
+
+### Observation
+There are quite a few papers using **audio-visual** detectors, meaning they combine the results of a separate audio and video classifier
+- Not desirable for our project
+    - complexity
+    - privacy implications
+
+**Examples:**
+- Berker Turker, Bekir et al. “Audio-Facial Laughter Detection in Naturalistic Dyadic Conversations.” IEEE transactions on affective computing 8.4 (2017): 534–545. Web.
+- Studies from Koc University Provide New Data on Affective Computing (Audio-Facial Laughter Detection in Naturalistic Dyadic Conversations). NewsRX LLC, 2018. Print.
+- Petridis, Stavros, Brais Martinez, and Maja Pantic. “The MAHNOB Laughter Database.” Image and vision computing 31.2 (2013): 186–202. Web.
+    - _corresponding corpus_
+
 ### Questions
 - Which paper first used CNNs instead of other techniques for audio classification?
 - How much should I talk about the history of audio processing in general? 
+- If applause snippets are group actions, might that be a problem for our usecase?
+- what are delta and sigma features?
 
+# Projects
+### IDEO Laughter Project (2018)
+_source: https://www.ideo.com/blog/why-your-office-needs-a-laugh-detector_
+- used AudioSet
+- 87% accuracy with LSTM model
+> applying batch normalization to the LSTM input was very 
+> important for getting the model to converge  
+-> got this insight from https://github.com/ganesh-srinivas/laughter/ (2017)
+
+- chose LSTM over logistic regression model because LSTM was able to handle variable length input
+    - logistic regression needed same input length as training data, namely 10s snippets
 
 

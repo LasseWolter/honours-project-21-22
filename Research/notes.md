@@ -5,10 +5,10 @@
 - Uses librosa for audio analysis (https://librosa.org/doc/latest/index.html)
 
 # Possible Challenges
-### Reaction time might be a problem:
+### Reaction time/Latency might be a problem:
 _source_: https://www.ideo.com/blog/why-your-office-needs-a-laugh-detector  
 This article contains a video showing a demo of the laugh-detector-light-bulb. And it can be seen that there is a delay in reacting to laughter. 
-This might be a problem in a video conference because the laughter should be transmitted as soon as possible - to avoid reactions that aren't in sync with the actual presentation.
+This might be a problem in a video conference because the laughter should be transmitted as soon as possible - to avoid reactions that aren't in sync with the actual presentation.  
 **About the author**: IDEA is a global design company with over 698 employees.
 (https://www.ideo.com/about)
 
@@ -103,6 +103,7 @@ _source_: [2d]
     - source: https://www.innoplexus.com/blog/understanding-ontology-for-better-insight-into-the-life-sciences-data-ocean/
 
 - **AED** = Audio Event Detection
+- **prosodic** = relating to the rhythm and intonation (= the way a speaker's voice rises and falls) 
 MFCCs and classifiers based on GMMs, HMMs, NMF, or SVMs
 [8, 9, 10, 11]. More recent approaches use some form of DNN,
 including CNNs [12] and RNNs [13].
@@ -125,8 +126,3 @@ including CNNs [12] and RNNs [13].
 - Paper(2009) about applause filtering - proposed model computationally efficient
     - https://www.researchgate.net/publication/220226738_Characteristics-based_effective_applause_detection_for_meeting_speech 
     - https://www-sciencedirect-com.ezproxy.is.ed.ac.uk/science/article/pii/S0165168409000759
-- Paper (2011) about applause and laugh detection
-    - https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/6064620
-- Applause detection (2011) 
-    - https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/5941827
-    - "Also, using the same features, a similar framework can be developed for other applications like laughter detection, whistle-sound detection, etc."
