@@ -38,7 +38,22 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
     - Hierarchical structure - to aid annotators in most specific annotation 
 
 ### Other corpora
-- ICSI meetings database 
+- ICSI meetings database (2004)
+    - http://www1.icsi.berkeley.edu/Speech/mr/icsimc_doc/overview.txt
     - recorded in a conference room with a microphone for each speaker
-- Switchboard (telephone conversations)
-- SSPNet (telephone conversations)
+    - ~72 hours of transcribed meeting speech 
+        - includes laughter 
+        - does NOT include applause
+- Switchboard (telephone conversations) (1997)
+    - https://catalog.ldc.upenn.edu/LDC97S62
+    - ~260 hours of transcribed speech 
+        - release: August 1997
+        - last transcription update: 01/29/03
+        - includes laughter 
+        - does NOT include applause
+- SSPNet-Mobile Corpus(telephone conversations)
+    - University of Glasgow usage only? 
+    - ~12h of annotated phone conversations
+        - contains laughter but no applause
+- There are more of this type
+    - usually the annotation contain laughter but not applause

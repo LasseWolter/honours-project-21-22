@@ -1,6 +1,6 @@
 # Reserach Review
 
-### CNN ARCHITECTURES FOR LARGE-SCALE AUDIO CLASSIFICATION - 01/2017
+### CNN Architectures For Large-Scale Audio Classification - 01/2017
 _source: https://arxiv.org/pdf/1609.09430.pdf_
 
 **Possibly use CNN Architecture for our classification problem**
@@ -26,6 +26,15 @@ _source: https://arxiv.org/abs/2105.07031_
 
 -uses https://research.google.com/audioset/download_strong.html dataset
 - which describes clips of varying length - manually chosen by annotators
+- whole eval set and 5% of the training set - chosen at random
+- conclusion states that a classifier trained on the large 'weakly-labelled' dataset can be improved via-fine-tuning
+- evaluations were on fixed-size frames 
+    - but strong labelling suggests directly predicting the segment boundaries  
+        <span style="color:green">
+        -> that's interesting for us!
+        </span> 
+
+
 
 ---
 # Applause
@@ -37,6 +46,8 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/5941827_
 - 4 features with thresholds
 - compared conventional method using mel frequency cepstral coefficients (MFCC) feature vectors and GMM as classifier
     - 36 feature vector 12 of the 13 MFCC and their first and second derivative
+- dataset: 4 hours 37minutes of meeting speech
+    -**unpublished**
 
 | method | precision rate | recall rate | F1 score |
 | -------| ---------------| ------------| ---------|
@@ -48,8 +59,10 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/5941827_
 _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=6064620_
 - first read doesn't convince me
     - it's already 10 years old and the technique is likely deprecated
-    - dataset used is only described not published?
+    - **dataset unpublished**
         - quality of data unclear
+        - 20 hours of video (from Youku) in total
+        - but only ~1.77h in DB if all segments are 8s long:
         > The  database  includes  800  
         > segments of each sound effect. Each segment is about 3-
         > 8s  long  and  totally  about  1hour  data  for  each  sound  
@@ -59,10 +72,11 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arn
         > have  been  normalized,  so  that  they  have  zero  mean  
         > amplitude  with  unit  variance  in  order  to  remove  any  
         > factors related to the recording conditions. 
-
-### Applause Sound Detection (2011)
+---
+### Applause Sound Detection - 2011
 _source: https://www-aes-org.ezproxy.is.ed.ac.uk/tmpFiles/JAES/20210927/JAES_V59_4_PG213hirez.pdf_ 
 - very small dataset - 1.75h if all snippets were 30s...
+    - **unpublished**
 > The data set for training and test comprises 210
 > excerpts of commercial recordings of between 9- and 30-
 > second length each.
@@ -79,6 +93,31 @@ _source: https://www-aes-org.ezproxy.is.ed.ac.uk/tmpFiles/JAES/20210927/JAES_V59
 - best performance using a combination of MFCC and LLD(low-level descriptors)
     - using MLP (Multilayer Perceptron) and SVM with radial basis functions
 - recognises 95% of applause correctly
+---
+### Characteristics-based effective applause detection for meeting speech - 2009
+_source: https://www-sciencedirect-com.ezproxy.is.ed.ac.uk/science/article/pii/S0165168409000759/pdfft?md5=b6f3199e457436e57db04012f64a90a3&pid=1-s2.0-S0165168409000759-main.pdf_
+
+- uses decision tree instead of complex statistical model
+    - faster decisions possible 
+    - interesting for our problem
+
+- Data: 50h of meeting speech (multi-participant)
+    - **not published**
+
+| Parameters | proposed algor. | traditional algor. |
+| --- | --- | ---|
+| Precision | 94.34 | 91 |
+| Recall   | 98.04  | 94.12 |
+|F1 - measure | 96.15 | 92.53 | 
+| Computational Time (min)| 59.4 | 92.5 |
+---
+### Discriminative Feature Selection for Applause Sounds Detection 
+_source: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4279120_
+
+- doesn't convince me
+    - the improvements don't seem that relevant to me
+![Performance](./imgs/Performance_of_various_feature_sets.png)
+
 # Laughter
 ### Robust Laughter Detection in Noisy Environments - 09/21 
 _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_interspeech.pdf_
@@ -130,6 +169,9 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arn
 ### Other possible Papers
 - Getting the last laugh: Automatic laughter segmentation in meetings
     - https://scholar.google.com/citations?view_op=view_citation&hl=en&user=2FtK1gUAAAAJ&citation_for_view=2FtK1gUAAAAJ:UebtZRa9Y70C
+    - uses  ICSI Meeting Recorder Corpus
+    - 78.5% precision rate and 85.3% recall rate 
+        - not better than other papers listed
 
 
 ### Observation
