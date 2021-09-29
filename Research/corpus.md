@@ -7,6 +7,7 @@ source: https://research.google.com/audioset/
 - 2.1 million annotated videos
 - 5.8 thousand hours of audio
 - 527 classes
+- labeled 10s snippets
 
 **Applause**
 - Path: Human sounds > Human group actions
@@ -36,6 +37,21 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
     - individual categories should be distinguishable by a 'typical' listener
     - ideally sound classification based on sound alone (no visual or contextual cues)
     - Hierarchical structure - to aid annotators in most specific annotation 
+
+**Strong labeled version
+- https://research.google.com/audioset/download_strong.html dataset
+- which describes clips of varying length - manually chosen by annotators
+- whole eval set and 5% of the training set - chosen at random
+    - 290h training data
+    - laughter: ~0.79h / ~48min 
+    - applause: ~0.31h / ~20min
+
+- conclusion states that a classifier trained on the large 'weakly-labelled' dataset can be improved via-fine-tuning
+- evaluations were on fixed-size frames 
+    - but strong labelling suggests directly predicting the segment boundaries  
+        <span style="color:green">
+        -> that's interesting for us!
+        </span> 
 
 ### Other corpora
 - ICSI meetings database (2004)

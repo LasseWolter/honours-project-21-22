@@ -27,14 +27,14 @@ _source: https://arxiv.org/abs/2105.07031_
 -uses https://research.google.com/audioset/download_strong.html dataset
 - which describes clips of varying length - manually chosen by annotators
 - whole eval set and 5% of the training set - chosen at random
-- conclusion states that a classifier trained on the large 'weakly-labelled' dataset can be improved via-fine-tuning
+- conclusion states that a classifier trained on the large 'weakly-labeled' dataset can be improved via-fine-tuning
 - evaluations were on fixed-size frames 
     - but strong labelling suggests directly predicting the segment boundaries  
         <span style="color:green">
         -> that's interesting for us!
         </span> 
 
-
+![Evaluation](imgs/strong_labels_eval.png)
 
 ---
 # Applause
@@ -55,7 +55,7 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/document/5941827_
 | conventional    |  67.47% | 96.13% | 79.29% |
 
 ---
-### Heterogeneous mixture models using sparse representation features for applause and laugh detection
+### Heterogeneous mixture models using sparse representation features for applause and laugh detection - 2011
 _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=6064620_
 - first read doesn't convince me
     - it's already 10 years old and the technique is likely deprecated
@@ -130,19 +130,27 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
     > system for capturing, representing, and interacting with laughter. 
 - Augmentation of AudioSet:
     - https://github.com/jrgillick/laughter-detection/tree/master/data/audioset
+    - 148 minutes of audio
+        - 58min of laughter -> 1492 distinct laughter events
+- evaluated on both Switchboard and augmented AudioSet
 - uses new dataset on top of AudioSet corpus
     - with precise segmentations for the start and end points of each laugh
-- prior work performs badly in noisy environment
+- prior work performs badly in noisy environment  
+
 <span style="color:green">
-    - How noisy do we expect the input of our domain to be?
-        + Each input is separate
-        - poor mic quality
-        - background noise in the home office
+
+- How noisy do we expect the input of our domain to be?
+    + Each input is separate
+    - poor mic quality
+    - background noise in the home office
+
 </span>
 
+![Results](imgs/Robust_Laughter_detection_res.png)
 - AudioSet only specifies _"laughter occurred in this 10sec snippet"_ but not where
 - Results suggest that finely-segmented and in-domain data annotations are important 
     - without the new finely-segmented annotation of the AudioSet data the results aren't as good
+
 
 ---
 
