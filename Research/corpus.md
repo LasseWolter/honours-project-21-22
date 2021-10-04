@@ -23,6 +23,13 @@ source: https://research.google.com/audioset/
 - est. accuracy: 100% (10/10)
 - Details: https://research.google.com/audioset/dataset/laughter.html
 
+<span style="color:darkred"> 
+
+- Question from supervisor-meeting
+    - how many snippets do we have for JUST LAUGH - the parent category? 
+
+</span>
+
 **Background**
 _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45857.pdf_
 - **Motivation**: Create a comprehensive dataset for AES like ImageNet is for tasks like object detection 
@@ -38,7 +45,7 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
     - ideally sound classification based on sound alone (no visual or contextual cues)
     - Hierarchical structure - to aid annotators in most specific annotation 
 
-**Strong labeled version
+**Strong labeled version**
 - https://research.google.com/audioset/download_strong.html dataset
 - which describes clips of varying length - manually chosen by annotators
 - whole eval set and 5% of the training set - chosen at random
@@ -52,6 +59,23 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
         <span style="color:green">
         -> that's interesting for us!
         </span> 
+
+<span style="color:darkred">
+
+### The MAHNOB Laughter database - 2012
+- can be found at: https://mahnob-db.eu/laughter/
+- corresponding paper: https://www.sciencedirect.com/science/article/pii/S0262885612001461
+- 3 hand 49 min
+- 563 laughter episodes
+- 849 speech utterances
+- 51 acted laughs
+- 67 speech–laughs
+### Comment after meeting on Wednesday, 29.09.21
+
+- Ondrey suggested against the AudioSet because it's recorded in a domain different to ours
+    - he suggests using a corpus that contains meeting speech (like ICSI)
+
+</span>
 
 ### Other corpora
 - ICSI meetings database (2004)

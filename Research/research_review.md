@@ -118,6 +118,8 @@ _source: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4279120_
     - the improvements don't seem that relevant to me
 ![Performance](./imgs/Performance_of_various_feature_sets.png)
 
+
+
 # Laughter
 ### Robust Laughter Detection in Noisy Environments - 09/21 
 _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_interspeech.pdf_
@@ -161,6 +163,21 @@ _source: https://utd-ir.tdl.org/bitstream/handle/10735.1/5058/JECS-3626-4639.10.
 ---
 ### Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)
 _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=7403873_
+- _[GS-Ranked 6th "laughter detection"]_
+
+> laughter as a multimodal social and emotion expression behaviour   
+_(taken from conclusion)_
+
+> but unfortunately, a comprehensive theory of laughter has
+> not yet been developed.
+_(taken from conclusion)_
+
+> The purpose of this survey is to bring together the different
+> results obtained in different fields, to both present all the possible
+> methods to quantify laughter and try to draw a comprehensive
+> physiological model of this complex human behavior.
+> _(taken from introduction)_
+
 > The best performances—from 70% to 90% correct
 > classification rate—have been obtained using Mel-frequency
 > cepstral coefficients and perceptual linear prediction over stan-
@@ -175,13 +192,36 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arn
 ---
 
 ### Other possible Papers
-- Getting the last laugh: Automatic laughter segmentation in meetings
+- Getting the last laugh: Automatic laughter segmentation in meetings - 2008
     - https://scholar.google.com/citations?view_op=view_citation&hl=en&user=2FtK1gUAAAAJ&citation_for_view=2FtK1gUAAAAJ:UebtZRa9Y70C
     - uses  ICSI Meeting Recorder Corpus
     - 78.5% precision rate and 85.3% recall rate 
         - not better than other papers listed
+- L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
+    - _[GS-Ranked 1st "laughter detection"]_
+- K. P. Truong and D. A. Van Leeuwen, “Automatic detection of laughter,” in Proc. 9th Eur. Conf. Speech Commun. Technol., 2005, pp. 485–488.
+- M. Knox, “Automatic laughter detection Using Neural Networks” Univ. California, Berkeley, CA, USA, Final Proj. EECS 294, 2006.
+    - _[GS-Ranked 2nd "laughter detection"]_
+    - seems to be the same as: 
+        - M. Knox, “Improving frame based automatic laughter detection,” Univ. California, Berkeley, CA, USA, EE225D Class Project, 2007
+        - M. Knox, “Automatic laughter detection,” Univ. California, Berkeley, CA, USA, Final Proj. EECS 294, 2006 
+        - _both also cited in survey paper "Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)"_
+    - uses ICSI Meeting database
+    > we hope that our work serves as a baseline for future work on
+    > frame-by-frame laughter recognition on the Meetings database,
+    > which provides an excellent testbed for laughter research
+        - states that ICSI db is a good testbed for laughter research
+- Truong, K. P., & Van Leeuwen, D. A. (2007). Automatic discrimination between laughter and speech. Speech Communication, 49(2), 144-158.
+    - https://www.sciencedirect.com/science/article/pii/S0167639307000027
+- Improved Audio-Visual Laughter Detection Via Multi-Scale Multi-Resolution Image Texture Features and Classifier Fusion
+    - https://ieeexplore.ieee.org/abstract/document/8461611
+    - _Can we use the audio analysis separately from the video?_
+    - uses MAHNOB db
 
-
+### Other possible resources
+- "Optimized time series filters for detecting laughter and filler events"
+    - link: http://publicatio.bibl.u-szeged.hu/14571/7/3311351_cimlap_tartj.pdf 
+    - **Can I get access to this talk?**
 ### Observation
 There are quite a few papers using **audio-visual** detectors, meaning they combine the results of a separate audio and video classifier
 - Not desirable for our project
@@ -193,6 +233,8 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 - Studies from Koc University Provide New Data on Affective Computing (Audio-Facial Laughter Detection in Naturalistic Dyadic Conversations). NewsRX LLC, 2018. Print.
 - Petridis, Stavros, Brais Martinez, and Maja Pantic. “The MAHNOB Laughter Database.” Image and vision computing 31.2 (2013): 186–202. Web.
     - _corresponding corpus_
+- S. Petridis and M. Pantic, “Audiovisual laughter detection based on temporal features,” in Proc. 10th Int. Conf. Multimodal Interfaces, 2008, pp. 37–44.
+    - _[GS-Ranked 5th "laughter detection"]_
 
 ### Questions
 - Which paper first used CNNs instead of other techniques for audio classification?
