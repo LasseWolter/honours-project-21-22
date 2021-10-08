@@ -191,7 +191,7 @@ _(taken from conclusion)_
 - talks quite a bit about applications and less technical facts
 ---
 
-###K. P. Truong and D. A. Van Leeuwen, “Automatic detection of laughter,” in Proc. 9th Eur. Conf. Speech Commun. Technol., 2005, pp. 485–488.
+### K. P. Truong and D. A. Van Leeuwen, “Automatic detection of laughter,” in Proc. 9th Eur. Conf. Speech Commun. Technol., 2005, pp. 485–488.
 - _source: http://lands.let.ru.nl/literature/leeuwen.2005.3.pdf_
 
 - uses ICSI Meeting Cor-pus and the Dutch CGN corpus
@@ -204,11 +204,30 @@ _(taken from conclusion)_
         - **Promising** because pretty good performance with only 6 features per segment
         - suggests further research to possibly combine this with PLP
     - modulation spectrum features
-- discrimination via GMM (Gaussian Mixture Models)
+- Discrimination: GMM (Gaussian Mixture Models)
 
 - works on predifined segments with binary output (contains laughter/does not contain laughter)
     - suggests HMMs for laughter detection with automatic detection of boundaries
 
+---
+
+### Truong, K. P., & Van Leeuwen, D. A. (2007). Automatic discrimination between laughter and speech. Speech Communication, 49(2), 144-158. 
+- _source: https://www.sciencedirect.com/science/article/pii/S0167639307000027_
+- follow-up of the paper above
+- uses ICSI Meeting Cor-pus and the Dutch CGN corpus
+    - segments average duration: ~2s
+
+- long-term goal: Emotion classification 
+    - laugh detector is one step towards that
+- Features tried: spectral(=relating to the amount of vibration at each individual frequency) and prosodic(=relating to the rhythm and intonation)
+- Discriminators: GMM, SVM and MLP
+
+- mentions possibility of gender and cultural discrimination 
+- used segments of ONLY laughter or ONLY speech
+
+- performs well (EER < 10%) on CGN (desktop recordings in Dutch) even though it's trained on ICSI (close-talk mic per speaker in English)
+ 
+---
 ### L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
 - _source: https://academiccommons.columbia.edu/doi/10.7916/D8JD565R_
 - _[GS-Ranked 1st "laughter detection"]_
@@ -216,39 +235,68 @@ _(taken from conclusion)_
 - trained on ICSI Bmr-subset -> using just two table-top microphones
 - laughter-event defined when multiple people laugh at once
     - different to ours
-- only using first 6 of MFCCs gives same performance to all 13 coefficients
-    -> and SVM for discrimination
+- data split into 1sec windows
+- Features tried:
+    - MFCCs
+    - delta MFCCs
+    - modulation spectrum
+    - spatial cues
+- Discrimination: SVM 
+- **Best Performance:** MFFCs
+    - only using first 6 of MFCCs gives same performance to all 13 coefficients
+    - Recall: 87%
+    - False Alarm Rate: 13%
 - percentage of people laughing is highly correlated to distance from SVM decision boundary
     - possibility to use 'certainty' of classification as predictor of the intensity of the laughter event
 - good performance on CMU and NIST recordings
 - bad performance on LDC recordings - WHY COULD THAT BE? 
 
+---
+### M. Knox, “Improving frame based automatic laughter detection,” Univ. California, Berkeley, CA, USA, EE225D Class Project, 2007V
+- _source: https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.910.1294&rep=rep1&type=pdf_
+- _[GS-Ranked 2nd "laughter detection"]_
+- uses ICSI database
+> we hope that our work serves as a baseline for future work on
+> frame-by-frame laughter recognition on the Meetings database,
+> which provides an excellent testbed for laughter research  
+    - states that ICSI db is a good testbed for laughter research
+
+- good introduction mentioning both Kennedy and Truong
+- goal: examine the many usees of laughter in the future
+- Features tried: 
+    - MFCCs
+    - fundamental frequency
+    - rms frequency
+    - ac peak
+- Discrimination: NN with 1 hidden layer 
+
+- **Best Performance:** MFCCs + ac peaks (combined)
+
+
+---
 ### Other possible Papers
 - Getting the last laugh: Automatic laughter segmentation in meetings - 2008
     - https://scholar.google.com/citations?view_op=view_citation&hl=en&user=2FtK1gUAAAAJ&citation_for_view=2FtK1gUAAAAJ:UebtZRa9Y70C
     - uses  ICSI Meeting Recorder Corpus
     - 78.5% precision rate and 85.3% recall rate 
         - not better than other papers listed
-- L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
-    - _[GS-Ranked 1st "laughter detection"]_
-- K. P. Truong and D. A. Van Leeuwen, “Automatic detection of laughter,” in Proc. 9th Eur. Conf. Speech Commun. Technol., 2005, pp. 485–488.
-- M. Knox, “Automatic laughter detection Using Neural Networks” Univ. California, Berkeley, CA, USA, Final Proj. EECS 294, 2006.
-    - _[GS-Ranked 2nd "laughter detection"]_
-    - seems to be the same as: 
-        - M. Knox, “Improving frame based automatic laughter detection,” Univ. California, Berkeley, CA, USA, EE225D Class Project, 2007
-        - M. Knox, “Automatic laughter detection,” Univ. California, Berkeley, CA, USA, Final Proj. EECS 294, 2006 
-        - _both also cited in survey paper "Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)"_
-    - uses ICSI Meeting database
-    > we hope that our work serves as a baseline for future work on
-    > frame-by-frame laughter recognition on the Meetings database,
-    > which provides an excellent testbed for laughter research
-        - states that ICSI db is a good testbed for laughter research
-- Truong, K. P., & Van Leeuwen, D. A. (2007). Automatic discrimination between laughter and speech. Speech Communication, 49(2), 144-158.
-    - https://www.sciencedirect.com/science/article/pii/S0167639307000027
 - Improved Audio-Visual Laughter Detection Via Multi-Scale Multi-Resolution Image Texture Features and Classifier Fusion
     - https://ieeexplore.ieee.org/abstract/document/8461611
     - _Can we use the audio analysis separately from the video?_
     - uses MAHNOB db
+
+- Highlight sound effects detection in audio stream
+    - https://ieeexplore.ieee.org/abstract/document/1221242
+    - _Could mention that in background chapter as another use of laughter detection in the past_
+    - used HMM
+
+- Bachorowski, J. A., Smoski, M. J., & Owren, M. J. (2001). The acoustic features of human laughter. The Journal of the Acoustical Society of America, 110(3), 1581-1597.
+    - https://asa.scitation.org/doi/abs/10.1121/1.1391244
+    - apparently also mentions gender issue
+
+- Ohara, R., 2004. Analysis of a laughing voice and the method of laughter in dialogue speech. Unpublished Masters Thesis, Nara Institute of Science and Technology.
+    - distinguishes different types of laugh in Japanese
+    - COULD BE A STRETCH GOAL FOR THE PROJECT -> FOLLOW UP ON THE PROJECT 
 
 ### Other possible resources
 - "Optimized time series filters for detecting laughter and filler events"
@@ -273,6 +321,7 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 - How much should I talk about the history of audio processing in general? 
 - If applause snippets are group actions, might that be a problem for our usecase?
 - what are delta and sigma features?
+- How do we address gender differences?
 
 # Projects
 ### IDEO Laughter Project (2018)
