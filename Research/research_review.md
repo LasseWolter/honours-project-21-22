@@ -191,6 +191,38 @@ _(taken from conclusion)_
 - talks quite a bit about applications and less technical facts
 ---
 
+###K. P. Truong and D. A. Van Leeuwen, “Automatic detection of laughter,” in Proc. 9th Eur. Conf. Speech Commun. Technol., 2005, pp. 485–488.
+- _source: http://lands.let.ru.nl/literature/leeuwen.2005.3.pdf_
+
+- uses ICSI Meeting Cor-pus and the Dutch CGN corpus
+- looks at 'paralinguistic events' for classification of speaker's emotinoal state
+    - laughter was annoted most often -> thus, focus on laugher detection
+- features tried:
+    - PLP (Perceptual Linear Prediction) -> **Best Performance**
+    - per frame - pitch & energy 
+    - global - pitch & voicing 
+        - **Promising** because pretty good performance with only 6 features per segment
+        - suggests further research to possibly combine this with PLP
+    - modulation spectrum features
+- discrimination via GMM (Gaussian Mixture Models)
+
+- works on predifined segments with binary output (contains laughter/does not contain laughter)
+    - suggests HMMs for laughter detection with automatic detection of boundaries
+
+### L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
+- _source: https://academiccommons.columbia.edu/doi/10.7916/D8JD565R_
+- _[GS-Ranked 1st "laughter detection"]_
+
+- trained on ICSI Bmr-subset -> using just two table-top microphones
+- laughter-event defined when multiple people laugh at once
+    - different to ours
+- only using first 6 of MFCCs gives same performance to all 13 coefficients
+    -> and SVM for discrimination
+- percentage of people laughing is highly correlated to distance from SVM decision boundary
+    - possibility to use 'certainty' of classification as predictor of the intensity of the laughter event
+- good performance on CMU and NIST recordings
+- bad performance on LDC recordings - WHY COULD THAT BE? 
+
 ### Other possible Papers
 - Getting the last laugh: Automatic laughter segmentation in meetings - 2008
     - https://scholar.google.com/citations?view_op=view_citation&hl=en&user=2FtK1gUAAAAJ&citation_for_view=2FtK1gUAAAAJ:UebtZRa9Y70C
