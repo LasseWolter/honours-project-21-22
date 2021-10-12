@@ -33,7 +33,7 @@ def laughs_to_list(filename, meeting_id):
 def laughs_to_df():
     tot_laugh_segs = []
     for filename in os.listdir('data'):
-        if filename.endswith('Bed015.mrt'):
+        if filename.endswith('.mrt'):
             # First split for cutting of .mrt
             # second split for discarding parent dirs
             meeting_id=filename.split('.')[0].split('/')[-1]
@@ -43,7 +43,10 @@ def laughs_to_df():
     cols = ['Meeting', 'ID', 'Start', 'End', 'Length', 'Type']
     df = pd.DataFrame(tot_laugh_segs, columns=cols)
     print(df[df["ID"]=="mn015"])
-    print('avg-snippet-length: {} '.format(df['Length'].mean()))
+    print('avg-snippet-length: {:.2f} '.format(df['Length'].mean()))
+    print('Number of laughter only snippets: {}'.format(df.shape[0]))
+    print('Total laughter duration in hours: {:.2f}'.format(df['Length'].sum() / 3600 ))
+
 
 
 def textgrid_to_list(filename, meeting_id):
