@@ -70,6 +70,8 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
 - 849 speech utterances
 - 51 acted laughs
 - 67 speech–laughs
+- **PROBLEM WITH COMMERCIAL USE**
+    - Ondrey and Phlip agreed that it's not ideal and thus, not further investigated 
 ### Comment after meeting on Wednesday, 29.09.21
 
 - Ondrey suggested against the AudioSet because it's recorded in a domain different to ours

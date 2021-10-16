@@ -153,42 +153,30 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - Results suggest that finely-segmented and in-domain data annotations are important 
     - without the new finely-segmented annotation of the AudioSet data the results aren't as good
 
-
 ---
+### L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
+- _source: https://academiccommons.columbia.edu/doi/10.7916/D8JD565R_
+- _[GS-Ranked 1st "laughter detection"]_
 
-### Laughter and Filler Detection in Naturalistic Audio - 2015
-_source: https://utd-ir.tdl.org/bitstream/handle/10735.1/5058/JECS-3626-4639.10.pdf?sequence=1&isAllowed=y_
-- proposes a simpler approach with features that are a combination of spectral features and pitch information
-    - a CNN runs on top for classification
----
-### Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)
-_source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=7403873_
-- _[GS-Ranked 6th "laughter detection"]_
-
-> laughter as a multimodal social and emotion expression behaviour   
-_(taken from conclusion)_
-
-> but unfortunately, a comprehensive theory of laughter has
-> not yet been developed.
-_(taken from conclusion)_
-
-> The purpose of this survey is to bring together the different
-> results obtained in different fields, to both present all the possible
-> methods to quantify laughter and try to draw a comprehensive
-> physiological model of this complex human behavior.
-> _(taken from introduction)_
-
-> The best performances—from 70% to 90% correct
-> classification rate—have been obtained using Mel-frequency
-> cepstral coefficients and perceptual linear prediction over stan-
-> dard audio spectrum features, and combining classifiers that
-> use both spectral features and prosodic information. This is not
-> very surprising as laughter is tailored on the human hearing
-> apparatus.
-
-- more general reflection on the state of research back then
-- suggests the use of multimodal works combining studies on acoustic analysis, with the ones on respiratory and physiological changes as well as the ones on facial expression
-- talks quite a bit about applications and less technical facts
+- trained on ICSI Bmr-subset -> using just two table-top microphones
+- split data into 1s non-overlapping snippets
+- laughter-event defined when multiple people laugh at once
+    - different to ours
+- data split into 1sec windows
+- Features tried:
+    - MFCCs
+    - delta MFCCs
+    - modulation spectrum
+    - spatial cues
+- Discrimination: SVM 
+- **Best Performance:** MFFCs
+    - only using first 6 of MFCCs gives same performance to all 13 coefficients
+    - Recall: 87%
+    - False Alarm Rate: 13%
+- percentage of people laughing is highly correlated to distance from SVM decision boundary
+    - possibility to use 'certainty' of classification as predictor of the intensity of the laughter event
+- good performance on CMU and NIST recordings
+- bad performance on LDC recordings - WHY COULD THAT BE? 
 ---
 
 ### K. P. Truong and D. A. Van Leeuwen, “Automatic detection of laughter,” in Proc. 9th Eur. Conf. Speech Commun. Technol., 2005, pp. 485–488.
@@ -228,32 +216,8 @@ _(taken from conclusion)_
 - performs well (EER < 10%) on CGN (desktop recordings in Dutch) even though it's trained on ICSI (close-talk mic per speaker in English)
  
 ---
-### L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
-- _source: https://academiccommons.columbia.edu/doi/10.7916/D8JD565R_
-- _[GS-Ranked 1st "laughter detection"]_
-
-- trained on ICSI Bmr-subset -> using just two table-top microphones
-- laughter-event defined when multiple people laugh at once
-    - different to ours
-- data split into 1sec windows
-- Features tried:
-    - MFCCs
-    - delta MFCCs
-    - modulation spectrum
-    - spatial cues
-- Discrimination: SVM 
-- **Best Performance:** MFFCs
-    - only using first 6 of MFCCs gives same performance to all 13 coefficients
-    - Recall: 87%
-    - False Alarm Rate: 13%
-- percentage of people laughing is highly correlated to distance from SVM decision boundary
-    - possibility to use 'certainty' of classification as predictor of the intensity of the laughter event
-- good performance on CMU and NIST recordings
-- bad performance on LDC recordings - WHY COULD THAT BE? 
-
----
-### M. Knox, “Improving frame based automatic laughter detection,” Univ. California, Berkeley, CA, USA, EE225D Class Project, 2007V
-- _source: https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.910.1294&rep=rep1&type=pdf_
+### M. Knox, “Automatic laughter detection Using Neural Networks” Univ. California, Berkeley, CA, USA, Final Proj. EECS 294, 2006. 
+- _source: http://www.icsi.berkeley.edu/pubs/speech/laughter_v10.pdf_
 - _[GS-Ranked 2nd "laughter detection"]_
 - uses ICSI database
 > we hope that our work serves as a baseline for future work on
@@ -272,8 +236,57 @@ _(taken from conclusion)_
 
 - **Best Performance:** MFCCs + ac peaks (combined)
 
+- **Questions:**
+    - what are deltas and delta-deltas?
+        - first and second derivative, respectively
+
+![Frame Window](./imgs/Knox_frame_window.png)
+
 
 ---
+
+### Laughter and Filler Detection in Naturalistic Audio - 2015
+_source: https://utd-ir.tdl.org/bitstream/handle/10735.1/5058/JECS-3626-4639.10.pdf?sequence=1&isAllowed=y_
+- proposes a simpler approach with features that are a combination of spectral features and pitch information
+    - a CNN runs on top for classification
+---
+### Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)
+_source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arnumber=7403873_
+- _[GS-Ranked 6th "laughter detection"]_
+
+> laughter as a multimodal social and emotion expression behaviour   
+_(taken from conclusion)_
+
+> but unfortunately, a comprehensive theory of laughter has
+> not yet been developed.
+_(taken from conclusion)_
+
+> The purpose of this survey is to bring together the different
+> results obtained in different fields, to both present all the possible
+> methods to quantify laughter and try to draw a comprehensive
+> physiological model of this complex human behavior.
+> _(taken from introduction)_
+
+> The best performances—from 70% to 90% correct
+> classification rate—have been obtained using Mel-frequency
+> cepstral coefficients and perceptual linear prediction over stan-
+> dard audio spectrum features, and combining classifiers that
+> use both spectral features and prosodic information. This is not
+> very surprising as laughter is tailored on the human hearing
+> apparatus.
+
+- more general reflection on the state of research back then
+- suggests the use of multimodal works combining studies on acoustic analysis, with the ones on respiratory and physiological changes as well as the ones on facial expression
+- talks quite a bit about applications and less technical facts
+
+
+---
+
+### Need to read
+_Papers cited but not yet read in detail:_
+- Corine A Bickley and Sheri Hunnicutt.  Acoustic analysis of laughter.  InICSLP,volume 51, pages 52–55, 1992.
+    - https://www.ee.columbia.edu/~dpwe/papers/BickH92-laugh.pdf
+
 ### Other possible Papers
 - Getting the last laugh: Automatic laughter segmentation in meetings - 2008
     - https://scholar.google.com/citations?view_op=view_citation&hl=en&user=2FtK1gUAAAAJ&citation_for_view=2FtK1gUAAAAJ:UebtZRa9Y70C
@@ -322,6 +335,7 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 - If applause snippets are group actions, might that be a problem for our usecase?
 - what are delta and sigma features?
 - How do we address gender differences?
+- Should we also remove 'bad-laughter' segments from ICSI like Truong and Van Leeuwen?
 
 # Projects
 ### IDEO Laughter Project (2018)
