@@ -298,10 +298,15 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arn
 > not yet been developed.
 > _(taken from conclusion)_
 
+> The possibility to detect, analyze, and classify
+> laughter can lead to progress in a variety of fields, from medicine
+> [12]–[20], [23] and psychology [7]–[10] to robotics [45], [46].
+> _(taken from introduction)_
+
 > The purpose of this survey is to bring together the different
 > results obtained in different fields, to both present all the possible
 > methods to quantify laughter and try to draw a comprehensive
-> physiological model of this complex human behavior.
+> physiological model of this complex human behaviour.
 > _(taken from introduction)_
 
 > The best performances—from 70% to 90% correct
@@ -311,6 +316,17 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arn
 > use both spectral features and prosodic information. This is not
 > very surprising as laughter is tailored on the human hearing
 > apparatus.
+
+> In addition, even if audio and video data based systems are
+> generally the most ecological, as they allow to monitor subjects
+> moving and interacting freely, these systems can raise privacy
+> concerns, especially in the case of applications for laughter
+> aware intelligent machines and interfaces. Individual wearable
+> systems using body movement data, relying on well-established
+> body movement-emotional state models, can help addressing
+> these concerns.
+
+- I understand this argument but disagree because wearable sensors are quite inconvenient and intrusive
 
 - more general reflection on the state of research back then
 - suggests the use of multimodal works combining studies on acoustic analysis, with the ones on respiratory and physiological changes as well as the ones on facial expression
