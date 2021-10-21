@@ -1,5 +1,7 @@
 # Reserach Review
 
+# General Papers
+
 ### CNN Architectures For Large-Scale Audio Classification - 01/2017
 
 _source: https://arxiv.org/pdf/1609.09430.pdf_
@@ -334,6 +336,8 @@ _source: https://ieeexplore-ieee-org.ezproxy.is.ed.ac.uk/stamp/stamp.jsp?tp=&arn
 
 ---
 
+# Other possible resources
+
 ### Need to read
 
 _Papers cited but not yet read in detail:_
@@ -369,7 +373,7 @@ _Papers cited but not yet read in detail:_
   - distinguishes different types of laugh in Japanese
   - COULD BE A STRETCH GOAL FOR THE PROJECT -> FOLLOW UP ON THE PROJECT
 
-### Other possible resources
+### Talks
 
 - "Optimized time series filters for detecting laughter and filler events"
   - link: http://publicatio.bibl.u-szeged.hu/14571/7/3311351_cimlap_tartj.pdf
