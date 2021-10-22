@@ -43,6 +43,8 @@ This might be a problem in a video conference because the laughter should be tra
   ![Time and frequency domain](imgs/time_and_frequency_domain.png)
   ![Sound signal and spectrogram](imgs/sound_signal_and_spectrogram.png)  
   _source_: [2a]
+- _F0_: fundamental frequency
+- _AC PEAK_: highest normalised cross correlation value found to determine F0
 
 ##### <a name="human-perception"></a>How do humans perceive sound?
 

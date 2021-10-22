@@ -345,6 +345,11 @@ _Papers cited but not yet read in detail:_
 - Corine A Bickley and Sheri Hunnicutt. Acoustic analysis of laughter. InICSLP,volume 51, pages 52–55, 1992.
   - https://www.ee.columbia.edu/~dpwe/papers/BickH92-laugh.pdf
 
+### Videos
+
+- Youtube video series on Audio Signal Processing for ML
+- https://www.youtube.com/watch?v=iCwMQJnKk2c&list=PL-wATfeyAMNqIee7cH3q1bh4QJFAaeNv0
+
 ### Other possible Papers
 
 - Getting the last laugh: Automatic laughter segmentation in meetings - 2008
