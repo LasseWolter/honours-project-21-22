@@ -66,54 +66,56 @@ def print_stats(df):
     print('avg-snippet-length: {:.2f}s'.format(df['Length'].mean()))
     print('Number of laughter only snippets: {}'.format(df.shape[0]))
     tot_dur = df['Length'].sum()
-    print('Total laughter duration in three formats: \n- {:.2f}h \n- {:.2f}min \n- {:.2f}s'.format( (tot_dur / 3600), (tot_dur / 60), tot_dur))
+    print('Total laughter duration in three formats: \n- {:.2f}h \n- {:.2f}min \n- {:.2f}s'.format(
+        (tot_dur / 3600), (tot_dur / 60), tot_dur))
+
 
 def parse_preambles():
-    tree=etree.parse('data/preambles.mrt')
-    meetings=tree.xpath('//Meeting')
+    tree = etree.parse('data/preambles.mrt')
+    meetings = tree.xpath('//Meeting')
     for meeting in meetings:
-        id=meeting.get('Session')
-        part_map={}
+        id = meeting.get('Session')
+        part_map = {}
         for part in meeting.xpath('./Preamble/Participants/Participant'):
-            part_map[part.get('Channel')]=part.get('Name')
+            part_map[part.get('Channel')] = part.get('Name')
 
-        CHAN_TO_PART[id]=part_map
+        CHAN_TO_PART[id] = part_map
 
 
 def textgrid_to_list(full_path, meeting_id, chan_id):
-    interval_list=[]
-    grid=textgrids.TextGrid(full_path)
+    interval_list = []
+    grid = textgrids.TextGrid(full_path)
     for interval in grid['laughter']:
         # TODO: Change for belly laugh?!
         if str(interval.text) == 'laugh':
-            part_id=CHAN_TO_PART[meeting_id][chan_id]
-            interval_list.append([meeting_id, part_id, interval.xmin,
+            part_id = CHAN_TO_PART[meeting_id][chan_id]
+            interval_list.append([meeting_id, part_id, chan_id, interval.xmin,
                                   interval.xmax, interval.xmax-interval.xmin, str(interval.text)])
     return interval_list
 
 
 def textgrid_to_df(file_path):
-    tot_list=[]
+    tot_list = []
     for filename in os.listdir(file_path):
         if filename.endswith('.TextGrid'):
-            full_path=os.path.join(file_path, filename)
+            full_path = os.path.join(file_path, filename)
             # First split for cutting of .TextGrid
             # second split for discarding parent dirs
-            path_list=full_path.split('.')[0].split('/')
+            path_list = full_path.split('.')[0].split('/')
 
             # ASSUMES that directory has a meeting ID as name -> B**NNN
-            meeting_id=path_list[-2]
+            meeting_id = path_list[-2]
 
             # ASSUMES that channel files are stored using name convention -> 'chanN.TextGrid'
-            chan_id=path_list[-1]
+            chan_id = path_list[-1]
             if not chan_id.startswith('chan'):
                 raise NameError(
                     "Did you follow the naming convention for channel .TextGrid-files -> 'chanN.TextGrid'")
 
             tot_list += textgrid_to_list(full_path, meeting_id, chan_id)
 
-    cols=['Meeting', 'ID', 'Start', 'End', 'Length', 'Type']
-    df=pd.DataFrame(tot_list, columns = cols)
+    cols = ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
+    df = pd.DataFrame(tot_list, columns=cols)
     print(df)
 
 
@@ -122,15 +124,14 @@ def main():
         print("Usage: parse.py <.mrt-file or .mrt dir> <TextGrid-dir>")
         return
 
-
     # Populate channel to participant index with info from preambles files
     parse_preambles()
 
-    transcript_path=sys.argv[1]
-    textgrid_dir=sys.argv[2]
+    transcript_path = sys.argv[1]
+    textgrid_dir = sys.argv[2]
     textgrid_to_df(textgrid_dir)
-    laugh_df=laughs_to_df(transcript_path)
-    print_stats(laugh_df[laugh_df['ID'] == 'mn015'])
+    laugh_df = laughs_to_df(transcript_path)
+    print_stats(laugh_df)
 
 
 if __name__ == "__main__":
