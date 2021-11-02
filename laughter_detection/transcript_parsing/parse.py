@@ -1,6 +1,7 @@
 from lxml import etree
 # Using lxml instead of xml.etree.ElementTree because it has full XPath support
 # xml.etree.ElementTree only supports basic XPath syntax
+import cfg
 import os
 import pandas as pd
 import textgrids
@@ -16,8 +17,6 @@ Explanation of the xPath-expression:
 xpath_exp = "//Segment[VocalSound[contains(@Description,'laugh')][preceding-sibling::text() \
         [normalize-space()=''] and following-sibling::text()[normalize-space()='']] and count(./*) < 2]"
 
-CHAN_TO_PART = {}  # Global index mapping channel to participant per meeting
-PART_TO_CHAN = {}  # Global index mapping participant to channel per meeting
 
 
 def parse_xml_to_list(xml_seg, meeting_id):
@@ -28,7 +27,10 @@ def parse_xml_to_list(xml_seg, meeting_id):
     # [0] is the first child tag which is guaranteed to be a VocalSound
     # due to the XPath expression used for parsing the XML document
     l_type = xml_seg[0].get('Description')
-    chan_id = PART_TO_CHAN[meeting_id][part_id]
+    # Make sure that this participant actually has a corresponding audio channel
+    if part_id not in cfg.part_to_chan[meeting_id].keys():
+        return []
+    chan_id = cfg.part_to_chan[meeting_id][part_id]
     return [part_id, chan_id, start, end, length, l_type]
 
 
@@ -78,82 +80,13 @@ def print_stats(df):
     print('Total laughter duration in three formats: \n- {:.2f}h \n- {:.2f}min \n- {:.2f}s'.format(
         (tot_dur / 3600), (tot_dur / 60), tot_dur))
 
-
-def parse_preambles():
-    '''
-    Input: filepath of the preambles.mrt
-    Output: Tuple of 2 Dicts 
-        1) Dict: (meeting_id) -> (dict(chan_id -> participant_id)) 
-        2) Dict: (meeting_id) -> (dict(participant_id -> chan_id)) 
-    '''
-    chan_to_part = {}
-    tree = etree.parse('data/preambles.mrt')
-    meetings = tree.xpath('//Meeting')
-    for meeting in meetings:
-        id = meeting.get('Session')
-        part_map = {}
-        for part in meeting.xpath('./Preamble/Participants/Participant'):
-            part_map[part.get('Channel')] = part.get('Name')
-
-        chan_to_part[id] = part_map
-
-    part_to_channel = {}
-    for meeting_id in chan_to_part.keys():
-        part_to_channel[meeting_id] = {part_id: chan_id for (
-            chan_id, part_id) in chan_to_part[meeting_id].items()}
-
-    return (chan_to_part, part_to_channel)
-
-
-def textgrid_to_list(full_path, meeting_id, chan_id):
-    interval_list = []
-    grid = textgrids.TextGrid(full_path)
-    for interval in grid['laughter']:
-        # TODO: Change for breath laugh?!
-        if str(interval.text) == 'laugh':
-            part_id = CHAN_TO_PART[meeting_id][chan_id]
-            interval_list.append([meeting_id, part_id, chan_id, interval.xmin,
-                                  interval.xmax, interval.xmax-interval.xmin, str(interval.text)])
-    return interval_list
-
-
-def textgrid_to_df(file_path):
-    tot_list = []
-    for filename in os.listdir(file_path):
-        if filename.endswith('.TextGrid'):
-            full_path = os.path.join(file_path, filename)
-            # First split for cutting of .TextGrid
-            # second split for discarding parent dirs
-            path_list = full_path.split('.')[0].split('/')
-
-            # ASSUMES that directory has a meeting ID as name -> B**NNN
-            meeting_id = path_list[-2]
-
-            # ASSUMES that channel files are stored using name convention -> 'chanN.TextGrid'
-            chan_id = path_list[-1]
-            if not chan_id.startswith('chan'):
-                raise NameError(
-                    "Did you follow the naming convention for channel .TextGrid-files -> 'chanN.TextGrid'")
-
-            tot_list += textgrid_to_list(full_path, meeting_id, chan_id)
-
-    cols = ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
-    df = pd.DataFrame(tot_list, columns=cols)
-    print(df)
-
-
 def main():
-    global CHAN_TO_PART, PART_TO_CHAN
-
-    if (len(sys.argv) < 3):
-        print("Usage: parse.py <.mrt-file or .mrt dir> <TextGrid-dir>")
+    if (len(sys.argv) < 2):
+        print("Usage: parse.py <.mrt-file or .mrt dir>")
         return
 
     # Populate channel to participant index with info from preambles files
-    CHAN_TO_PART, PART_TO_CHAN = parse_preambles()
     transcript_path = sys.argv[1]
-    textgrid_dir = sys.argv[2]
-    textgrid_to_df(textgrid_dir)
     laugh_df = laughs_to_df(transcript_path)
     print_stats(laugh_df)
 
