@@ -2,20 +2,20 @@ import textgrids
 import os
 import pandas as pd
 
-from transcript_parsing import cfg
+from transcript_parsing import parse
 
 def textgrid_to_list(full_path, meeting_id, chan_id):
     # There are more recorded channels than participants
     # thus, not all channels are mapped to a participant
     # We focus on those that are mapped to a participant
-    if chan_id not in cfg.chan_to_part[meeting_id].keys():
+    if chan_id not in parse.chan_to_part[meeting_id].keys():
         return []
     interval_list = []
     grid = textgrids.TextGrid(full_path)
     for interval in grid['laughter']:
         # TODO: Change for breath laugh?!
         if str(interval.text) == 'laugh':
-            part_id = cfg.chan_to_part[meeting_id][chan_id]
+            part_id = parse.chan_to_part[meeting_id][chan_id]
             interval_list.append([meeting_id, part_id, chan_id, interval.xmin,
                                   interval.xmax, interval.xmax-interval.xmin, str(interval.text)])
     return interval_list
@@ -31,7 +31,7 @@ def textgrid_to_df(file_path):
 
     cols = ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
     df = pd.DataFrame(tot_list, columns=cols)
-    print(df)
+    return df
 
 def get_params_from_path(path):
     '''
@@ -62,12 +62,19 @@ def get_params_from_path(path):
     params['meeting_id'] = meeting_id 
     return params
 
-    
+# Used to generate .csv file of a subset of laughter events
+# e.g. for generation of corresponding .wav-files using 
+# ./output_processing/laughs_to_wav.py
+def breath_laugh_to_csv(df):
+    df = df[df['Type']=='breath-laugh']
+    df.to_csv('breath_laugh.csv')
 
 def main(): 
     path = './output_processing/outputs/Bdb001/t_0.1/l_0.2/'
-    df = textgrid_to_df(path)
-    print(df)
+    pred = textgrid_to_df(path)
+    real = parse.laugh_df
+
+    print(real)
 
 if __name__ == "__main__":
     main()
