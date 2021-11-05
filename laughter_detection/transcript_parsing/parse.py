@@ -7,7 +7,8 @@ import sys
 
 chan_to_part = {}  # index mapping channel to participant per meeting
 part_to_chan = {}  # index mapping participant to channel per meeting
-laugh_df = pd.DataFrame()  # dataframe containing transcribed laughs
+laugh_only_df = pd.DataFrame()  # dataframe containing transcribed laugh only events
+mixed_laugh_df = pd.DataFrame() # dataframe containing mixed laugh events
 
 
 def parse_preambles(path):
@@ -48,7 +49,12 @@ def parse_xml_to_list(xml_seg, meeting_id):
     length = end-start
     # [0] is the first child tag which is guaranteed to be a VocalSound
     # due to the XPath expression used for parsing the XML document
-    l_type = xml_seg[0].get('Description')
+
+    # In case there are multiple tags in this segment get the first laugh tag 
+    # for the type description. If there are more than on laugh tags the
+    # description from the first will be taken
+    first_laugh_tag = xml_seg.xpath("./VocalSound[contains(@Description, 'laugh')]")[0]
+    l_type = first_laugh_tag.get('Description')
     # Make sure that this participant actually has a corresponding audio channel
     if part_id not in part_to_chan[meeting_id].keys():
         return []
@@ -58,31 +64,39 @@ def parse_xml_to_list(xml_seg, meeting_id):
 
 def laughs_to_list(filename, meeting_id):
     """
-    Explanation of the xPath-expression:
-        - get all Segment tags which have a VocalSound tag with the following properties as child:
-            - Description attribute contains 'laugh'
-            - preceding-sibling and following-sibling TextElements contain no text after stripping whitespace (-> normalize-space)
-            - The VocalSound Tag is the only child (-> count(./*) < 2)
+    Returns two list: 
+        1) List containing segments laughter only (no text or other sounds surrounding it)
+        2) List containing segments of mixed laughter (laughter surrounding by other sounds)
     """
-    xpath_exp = "//Segment[VocalSound[contains(@Description,'laugh')][preceding-sibling::text() \
-            [normalize-space()=''] and following-sibling::text()[normalize-space()='']] and count(./*) < 2]"
-    seg_list = []
+    laugh_mixed_list = []
+    laugh_only_list = []
+
+    # Get all segments that contain some kind of laughter (e.g. 'laugh', 'breath-laugh')
+    xpath_exp = "//Segment[VocalSound[contains(@Description,'laugh')]]"
     tree = etree.parse(filename)
     laugh_segs = tree.xpath(xpath_exp)
 
+    # For each laughter segment classify it as laugh only or mixed laugh
+    # mixed laugh means that the laugh occurred next to speech or any other sound
     for seg in laugh_segs:
-        new_segment = parse_xml_to_list(seg, meeting_id)
-        seg_list.append(new_segment)
-    return seg_list
+        seg_as_list = parse_xml_to_list(seg, meeting_id)
+        # Check if there is no surrounding text and no other Sound tags
+        if seg.text.strip() == '' and len(seg.getchildren()) == 1:
+            laugh_only_list.append(seg_as_list)
+        else:
+            laugh_mixed_list.append(seg_as_list)
+
+    return laugh_only_list, laugh_mixed_list
 
 
 def parse_transcripts(path):
     '''
     Parse transcripts and store laughs in laugh_df
     '''
-    global laugh_df
+    global laugh_only_df, mixed_laugh_df
 
-    tot_laugh_segs = []
+    tot_laugh_only_segs = []
+    tot_mixed_laugh_segs = []
     files = []
     file_dir = ""
     # If a directory is given take all .mrt files
@@ -106,10 +120,14 @@ def parse_transcripts(path):
         basename = os.path.basename(filename)
         meeting_id = os.path.splitext(basename)[0]
         full_path = os.path.join(file_dir, filename)
-        tot_laugh_segs += laughs_to_list(full_path, meeting_id)
+        laugh_only, mixed_laugh = laughs_to_list(full_path, meeting_id)
+        tot_laugh_only_segs += laugh_only
+        tot_mixed_laugh_segs += mixed_laugh
 
     cols = ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
-    laugh_df = pd.DataFrame(tot_laugh_segs, columns=cols)
+    laugh_only_df = pd.DataFrame(tot_laugh_only_segs, columns=cols)
+    mixed_laugh_df = pd.DataFrame(tot_mixed_laugh_segs, columns=cols)
+
 
 
 def print_stats(df):
@@ -130,7 +148,8 @@ parse_transcripts('./data/')
 
 
 def main():
-    print_stats(laugh_df)
+    print_stats(laugh_only_df)
+    print_stats(mixed_laugh_df)
 
 
 if __name__ == "__main__":

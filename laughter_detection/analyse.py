@@ -269,7 +269,7 @@ def plot_prec_recall_curve(stats):
     plt.show()
 
 def main():
-    transc_laughs = parse.laugh_df
+    transc_laughs = parse.laugh_only_df
     # transc_laughs = remove_breath_laugh(transc_laughs)
     create_laugh_index(transc_laughs)
 
