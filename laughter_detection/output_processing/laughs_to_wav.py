@@ -3,8 +3,10 @@
     1)  a given .TextGrid file and stores them in an output directory.
         The .sph file corresponding to the .TextGrid file needs to be passed as well.
         These are laughter events from one specific channel, NOT the whole meeting
-    2)  a give .csv file and a given meeting (set in the global variable below)
-        no need to pass an .sph file as they are automatically parsed from the audio dir
+    2)  a give .csv file and possibly uncomment and adjust the meeting filter in the '.csv if-case'
+            - this also depends on your input data. If the input data only contains segments from one meeting
+              you obviously don't need to filter
+        no need to pass an .sph file as they are automatically parsed from the audio directory
     Finally it runs a bash script to combine all audio files with a short 'audio-delimiter' for 
     easier manual testing
         
@@ -15,7 +17,6 @@ import subprocess
 import textgrids
 import pandas as pd
 
-MEETING = 'Buw001'
 
 if len(sys.argv) < 3:
     print("Usage laughs_to_wav.py <input-file> <out-dir> <sph_file (for .TextGrid only)>")
@@ -43,7 +44,8 @@ if input_file.endswith('.TextGrid'):
 
 elif input_file.endswith('.csv'):
     df = pd.read_csv(input_file)
-    df = df[df['Meeting'] == MEETING]
+    # Filter for a particular meeting
+    # df = df[df['Meeting'] == 'Bed017']
     df = df[['Channel','Start', 'End']]
     group = df.groupby('Channel')
     for chan, df in group:
