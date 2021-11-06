@@ -1,0 +1,14 @@
+
+Subject: Access to GPU Teaching Compute Cluster + Increasing Disk Quota 
+
+Dear Computing Support,
+
+could you please grant access to the Teaching Compute Cluster to the following student as well as increase his disk quota by 10GB:
+- Lasse Wolter (s1660656)
+
+Reason for that is his Honours Project called "A Zoom filter for applause and laughter" which I am supervising. The project is about developing a machine learning algorithm to automatically classify laughter and applause in real time. 
+Thus, sufficient computing power for training/testing such a model is needed. The increase of disk quota is due to the fact that Pytorch's GPU version alone is around 4-5GB. For some local testing on a single GPU machine Pytorch's GPU version is needed. 
+
+Best wishes, 
+
+Philip Wadler
