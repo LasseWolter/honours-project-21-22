@@ -20,3 +20,10 @@ Research/towardsdatascience_series/env
 
 # cached dir
 **/.cache
+
+# Thesis pdf and zip
+Thesis/*.pdf
+Thesis/*.zip
+
+# vscode settings
+**/.vscode
