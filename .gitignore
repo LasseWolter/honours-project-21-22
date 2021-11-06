@@ -10,3 +10,13 @@ Research/towardsdatascience_series/env
 
 # aws configs
 **/.aws*
+
+# audio and data files
+**/output_processing/audio
+**/output_processing/csvs
+**/output_processing/outputs
+**/output_processing/created_wavs
+
+
+# cached dir
+**/.cache
