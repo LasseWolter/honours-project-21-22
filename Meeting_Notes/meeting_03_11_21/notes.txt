@@ -1,0 +1,20 @@
+- how does the 'min_length' parameter influence user experience
+  - latency? 
+  - possibly use a buffer 
+
+- security concern:
+  - especially if we want high recall, people's audio will be let through a lot
+    - e.g. don't want that to happen when I have a conversation with my wife
+
+- tolerance values at start and end of a frame
+  - check literature for recommended values for this 
+
+- change code to evaluate threshholds more efficiently 
+  - don't run the whole model prediction again
+
+THESIS
+- add more detail 
+  - I (Ondrej) should be able to reproduce the experiments
+- add a section for evaluation metrics
+- explain methods rather than citing specific outcomes like (EER=9.22)
+  - one can add a table with results like this at the end of the paragraph 
