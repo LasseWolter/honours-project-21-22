@@ -8,7 +8,7 @@ import sys
 chan_to_part = {}  # index mapping channel to participant per meeting
 part_to_chan = {}  # index mapping participant to channel per meeting
 laugh_only_df = pd.DataFrame()  # dataframe containing transcribed laugh only events
-mixed_laugh_df = pd.DataFrame() # dataframe containing mixed laugh events
+mixed_laugh_df = pd.DataFrame()  # dataframe containing mixed laugh events
 
 
 def parse_preambles(path):
@@ -50,10 +50,11 @@ def parse_xml_to_list(xml_seg, meeting_id):
     # [0] is the first child tag which is guaranteed to be a VocalSound
     # due to the XPath expression used for parsing the XML document
 
-    # In case there are multiple tags in this segment get the first laugh tag 
+    # In case there are multiple tags in this segment get the first laugh tag
     # for the type description. If there are more than on laugh tags the
     # description from the first will be taken
-    first_laugh_tag = xml_seg.xpath("./VocalSound[contains(@Description, 'laugh')]")[0]
+    first_laugh_tag = xml_seg.xpath(
+        "./VocalSound[contains(@Description, 'laugh')]")[0]
     l_type = first_laugh_tag.get('Description')
     # Make sure that this participant actually has a corresponding audio channel
     if part_id not in part_to_chan[meeting_id].keys():
@@ -127,7 +128,6 @@ def parse_transcripts(path):
     cols = ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
     laugh_only_df = pd.DataFrame(tot_laugh_only_segs, columns=cols)
     mixed_laugh_df = pd.DataFrame(tot_mixed_laugh_segs, columns=cols)
-
 
 
 def print_stats(df):
