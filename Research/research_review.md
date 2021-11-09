@@ -179,6 +179,36 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 
 ---
 
+### Corine A Bickley and Sheri Hunnicutt. Acoustic analysis of laughter. InICSLP,volume 51, pages 52–55, 1992.
+
+- _source: https://www.ee.columbia.edu/~dpwe/papers/BickH92-laugh.pdf_
+
+- motivation: separating speech from non-speech for speech recognition algorithms
+  - especially focusing on sounds acoustically close to speech
+- doesn't consider co-occurrences of laughter and speech
+
+- **Goal**: Examine a small set of laughter vs. speech (2 subjects) thoroughly
+
+- **Measures used**
+
+  - duration
+  - Fundamental frequency
+  - difference in amplitude of lowest harmonics
+  - spectral peaks
+  - waveform periodicity
+  - waveform amplitude
+
+- laugh syllable: unvoiced segment followed by voiced segment
+- laugh: sequence of laugh syllables
+
+- Results:
+  - ration of unvoiced to voiced duration is higher (1.7 and 2.3)
+    - spoken english has 0.5
+  - more low-frequency voicing in periodic portions
+    - laughter is more breathy than speech
+
+---
+
 ### L. S. Kennedy and D. P. Ellis, “Laughter detection in meetings,” in Proc. NIST ICASSP Meeting Recog. Workshop, Montreal, Canada, 2004, pp. 118–121
 
 - _source: https://academiccommons.columbia.edu/doi/10.7916/D8JD565R_
@@ -407,6 +437,7 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 - How much should I talk about the history of audio processing in general?
 - If applause snippets are group actions, might that be a problem for our usecase?
 - what are delta and sigma features?
+  - delta features are the derivates
 - How do we address gender differences?
 - Should we also remove 'bad-laughter' segments from ICSI like Truong and Van Leeuwen?
 
