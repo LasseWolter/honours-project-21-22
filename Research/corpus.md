@@ -1,5 +1,27 @@
 # Corpus to use for Project
 
+### ICSI meetings database (2004)
+
+- http://www1.icsi.berkeley.edu/Speech/mr/icsimc_doc/overview.txt
+- CHECK KNOWN PROBLEMS SECTION FOR FINAL EVALUATION
+- recorded in a conference room with a microphone for each speaker
+- ~72 hours of transcribed meeting speech
+  - includes laughter
+  - does NOT include applause
+- 53 unique speakers
+- 3-10 participants (avg. 6)
+- speaker IDs are of the from [m/f][n/e][NNN] where
+  - [m/f] : [male/female]
+  - [e/n] : [english-native/non-english-native]
+  - [NNN] : [speaker number]
+- 901-908: are the ID's of 'other speakers' which occur very rarely
+- xNN: is the ID of the computer synthesized voice
+- preambles.mrt contains useful information about all 75 meetings
+  - like list of participants and notes on any anomalies that occurred during the meeting
+  - there is also a preamble tag in each of the other .mrt files
+
+---
+
 ### Google audio set
 
 source: https://research.google.com/audioset/
@@ -71,6 +93,8 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
 
 <span style="color:darkred">
 
+---
+
 ### The MAHNOB Laughter database - 2012
 
 - can be found at: https://mahnob-db.eu/laughter/
@@ -90,26 +114,11 @@ _source: https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45
 
 </span>
 
+---
+
 ### Other corpora
 
-- ICSI meetings database (2004)
-  - http://www1.icsi.berkeley.edu/Speech/mr/icsimc_doc/overview.txt
-  - CHECK KNOWN PROBLEMS SECTION FOR FINAL EVALUATION
-  - recorded in a conference room with a microphone for each speaker
-  - ~72 hours of transcribed meeting speech
-    - includes laughter
-    - does NOT include applause
-  - 53 unique speakers
-  - 3-10 participants (avg. 6)
-  - speaker IDs are of the from [m/f][n/e][NNN] where
-    - [m/f] : [male/female]
-    - [e/n] : [english-native/non-english-native]
-    - [NNN] : [speaker number]
-  - 901-908: are the ID's of 'other speakers' which occur very rarely
-  - xNN: is the ID of the computer synthesized voice
-  - preambles.mrt contains useful information about all 75 meetings
-    - like list of participants and notes on any anomalies that occurred during the meeting
-    - there is also a preamble tag in each of the other .mrt files
+-
 - Switchboard (telephone conversations) (1997)
   - https://catalog.ldc.upenn.edu/LDC97S62
   - ~260 hours of transcribed speech

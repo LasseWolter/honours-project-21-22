@@ -126,9 +126,6 @@ _source_: [2d]
 
 - **AED** = Audio Event Detection
 - **prosodic** = relating to the rhythm and intonation (= the way a speaker's voice rises and falls)
-  MFCCs and classifiers based on GMMs, HMMs, NMF, or SVMs
-  [8, 9, 10, 11]. More recent approaches use some form of DNN,
-  including CNNs [12] and RNNs [13].
 
 # Sources
 

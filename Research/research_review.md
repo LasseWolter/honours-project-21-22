@@ -214,7 +214,11 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - _source: https://academiccommons.columbia.edu/doi/10.7916/D8JD565R_
 - _[GS-Ranked 1st "laughter detection"]_
 
-- trained on ICSI Bmr-subset -> using just two table-top microphones
+- uses ICSI, CMU, NIST and LDC corpus
+- Bmr subset of ICSI corpus
+  - using just the two table-top microphones
+  - Training-set: first 26 Bmr-meeting
+  - Test-set: last 3 Bmr-meetings
 - split data into 1s non-overlapping snippets
 - laughter-event defined when multiple people laugh at once
   - different to ours
@@ -241,6 +245,22 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - _source: http://lands.let.ru.nl/literature/leeuwen.2005.3.pdf_
 
 - uses ICSI Meeting Cor-pus and the Dutch CGN corpus
+
+  - Training-set: first 26 Bmr-meeting
+  - Testing-sets:
+
+    1. Last 3 Bmr-Meetings (same speakers as training data)
+    2. 4 Bed Meetings (different speakers compared to training data)
+    3. Dutch CGN corpus
+
+- Preprocessing on ICSI:
+
+  - started with all events transcribed as laughter
+  - manually discarded 'bad laughter'-events (co-occurrence with speech, non-audible)
+    - done by 1 person
+
+  ![Knox Laughter Events](imgs/Knox_laughter_events_table.png)
+
 - looks at 'paralinguistic events' for classification of speaker's emotinoal state
   - laughter was annoted most often -> thus, focus on laugher detection
 - features tried:
@@ -252,7 +272,7 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
   - modulation spectrum features
 - Discrimination: GMM (Gaussian Mixture Models)
 
-- works on predifined segments with binary output (contains laughter/does not contain laughter)
+- works on predefined segments with binary output (contains laughter/does not contain laughter)
   - suggests HMMs for laughter detection with automatic detection of boundaries
 
 ---
@@ -261,9 +281,15 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 
 - _source: https://www.sciencedirect.com/science/article/pii/S0167639307000027_
 - follow-up of the paper above
-- uses ICSI Meeting Cor-pus and the Dutch CGN corpus
 
+- uses ICSI Meeting Cor-pus and the Dutch CGN corpus
   - segments average duration: ~2s
+- Training-set: First 26 Bmr-Meetings from ICSI corpus
+- Testing-sets:
+
+  1. Last 3 Bmr-Meetings (same speakers as training data)
+  2. 4 Bed Meetings (different speakers compared to training data)
+  3. Dutch CGN corpus
 
 - long-term goal: Emotion classification
   - laugh detector is one step towards that
@@ -283,14 +309,62 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - _[GS-Ranked 2nd "laughter detection"]_
 - uses ICSI database
 
+  - Bmr subset of the corpus
+
+    - like "Kennedy and Ellis" and "Truong and van Leeuwen"
+    - Training-set: first 26 Bmr-meeting
+    - Test-set: last 3 Bmr-meetings
+
+  - Preprocessing on ICSI
+
+    - only consider laughter-only segments
+
+      > Laughter-colored speech, that is, cases in which the hand transcribed documen-
+      > tation had both speech and laughter listed under a single start
+      > and end time were disregarded since we would not specifically
+      > know which time interval(s) contained laughter.
+
+    - exclude audio where there was no transcription available for that channel
+
+      > ideally an automatic silence detector would be deployed instead of relying on the transcripts
+
+    - unlike Truong and Van Leeuwen, kept audio that contained non-lexical vocalised sounds other than laughter
+
   > we hope that our work serves as a baseline for future work on
   > frame-by-frame laughter recognition on the Meetings database,
   > which provides an excellent testbed for laughter research
 
-      - states that ICSI db is a good testbed for laughter research
+  - states that ICSI db is a good testbed for laughter research
 
 - good introduction mentioning both Kennedy and Truong
-- goal: examine the many usees of laughter in the future
+- goal: examine the many uses of laughter in the future
+
+- First tried using an SVM similar to Kennedy and Ellis
+
+  - for that one has to store feature statistics (mean and standard deviation) over a fixed segment length
+  - need to decide on offset (segment length)
+    - determines precision of boundaries
+  - First try: offset = 0.5s
+    - calculate stats over 1s segments
+    - 9% EER
+  - Second try: offset = 0.25s
+    - calculate stats over 1s segments
+    - 8% EER
+    - significantly more compute time + storage space needed
+  - Third try: offset = 0.25
+    - calc stats over 0.5s segments
+    - 13 EER => segment over which stats are calculated influences performance
+  - _Downsides of SVM_
+    - parse data into segments
+    - calculate and store statistics of raw features to disk
+      - mean and standard deviation of raw features (MFCCs, delta MFCCs, modulation spectrum, and spatial cues)
+    - poor resolution of start and end times
+
+- _Neural Network_
+
+  - can use raw data (e.g. MFCCs) for each frame as feature (no aggregation needed)
+
+- **Data used**
 - Features tried:
   - MFCCs
   - fundamental frequency
@@ -435,6 +509,8 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 
 - Which paper first used CNNs instead of other techniques for audio classification?
 - How much should I talk about the history of audio processing in general?
+  - include a few more general papers on AED(Audio Event Detection)
+  - however, focus on what's relevant for this project
 - If applause snippets are group actions, might that be a problem for our usecase?
 - what are delta and sigma features?
   - delta features are the derivates
