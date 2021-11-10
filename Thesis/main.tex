@@ -81,7 +81,7 @@ Apart from this and a few other papers most research only covers one of the two 
 
 \section{Laughter Detection}
 The investigation of the acoustic features of laughter reaches back three decades \cite{bickley1992acoustic}.
-In the early 2000s, the first attempts of laughter detection classified presegmented audio data \cite{kennedy2004laughter, truong2005automatic}. These models could only decide whether laughter occurred within in a given segment. The determination of segment boundaries of laughter events - which is key for our project - wasn't considered. 
+In the early 2000s, the first attempts of laughter detection in conversational speech classified presegmented audio data \cite{kennedy2004laughter, truong2005automatic}. These models could only decide whether laughter occurred within in a given segment. The determination of segment boundaries of laughter events wasn't considered. 
 Corpora used in these papers include the CMU, LDC, NIST recordings, Dutch CGN corpus as well as the ICSI Meeting Recorder corpus \cite{morgan2001meeting}. 
 Kennedy and Ellis \cite{kennedy2004laughter} got the best results using Mel Frequency Cepstral Coefficients (MFCCs) as features and a Support Vector Machine (SVM) for decision making. 
 MFCCs are one of the most widely used features in speech recognition and make use of the spectral representation of an audio wave (Section \ref{theory}).
@@ -105,11 +105,13 @@ On the contrary, a neural network trained with features from a context window ca
 To obtain frame-level training labels Knox and Mirghafori first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries couldn't be identified in those segments. 
 The remaining audio data could be accurately separated into laughter and non-laughter segments which were then divided into 10ms frames and labeled accordingly.
 
-Instead of classifying presegmented snippets they classified each 10ms frame using a window of 75 frames around the target frame - 37 before and after the frame (\ref{fig:know_window}).
-That way an accurate prediction of laughter boundaries of up to 10ms was possible. 
-Knox and Mirghafori obtained the best results by combining the output of three NN-systems which used delta MFCCs (derivatives of MFCCs), AC PEAK and F0 as features, respectively. While MFCCs are spectral features, AC PEAK and F0 are prosodic featuers relating to the pitch and energy of the sound.
-The best system achieved an Equal Error Rate (EER) of 7.91\%.
-They observed that of all tested features MFCCs have the most discriminative power which aligns with prior research by Kennedy and Ellis \cite{kennedy2004laughter}.
+The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and after the frame (\ref{fig:know_window}).
+This way an accurate prediction of laughter boundaries of up to 10ms was possible. 
+The features investigated by Knox and Mirghafori are MFCCs, AC PEAK, F0 and RMS as well as their corresponding delta and delta-delta features.
+They first trained four separate neural networks each one taking one of the mentioned features as input.
+Afterwards they combined the different models by using their output as input for another, smaller neural network.
+The best results were obtained by combining the outputs of three NN-systems which used delta MFCCs, AC PEAK and F0 as features, respectively.
+By training and evaluating separate neural networks for each type of feature first, Knox and Mirghafori observed that MFCCs have the most discriminative power which aligns with prior research by Kennedy and Ellis \cite{kennedy2004laughter}.
 
 \begin{figure}[htp]
     \centering

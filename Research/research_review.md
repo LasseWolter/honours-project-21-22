@@ -205,7 +205,7 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
   - ration of unvoiced to voiced duration is higher (1.7 and 2.3)
     - spoken english has 0.5
   - more low-frequency voicing in periodic portions
-    - laughter is more breathy than speech
+    - noise in the region of the third formant
 
 ---
 
@@ -227,7 +227,11 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
   - MFCCs
   - delta MFCCs
   - modulation spectrum
+    - _idea_
+      > trying to catch the coarse repetition of vowel sounds, which is characteristic of most laughter.
   - spatial cues
+    - _idea:_ the signal direction won't be consistent during multi-participant laughter segments,
+      whereas it should be mostly consistent during single-speaker, non-laughter segments
 - Discrimination: SVM
 - **Best Performance:** MFFCs
   - only using first 6 of MFCCs gives same performance to all 13 coefficients
@@ -374,6 +378,8 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 
 - **Best Performance:** MFCCs + ac peaks (combined)
 
+  - The best system achieved an Equal Error Rate (EER) of 7.91\%.
+
 - **Questions:**
   - what are deltas and delta-deltas?
     - first and second derivative, respectively
@@ -516,6 +522,8 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
   - delta features are the derivates
 - How do we address gender differences?
 - Should we also remove 'bad-laughter' segments from ICSI like Truong and Van Leeuwen?
+- How detailed does my understanding of audio processing theory have to be
+  - e.g. as explained in this article: https://blog.paperspace.com/introduction-to-audio-analysis-and-synthesis/
 
 # Projects
 
