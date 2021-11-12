@@ -162,6 +162,10 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
   - with precise segmentations for the start and end points of each laugh
 - prior work performs badly in noisy environment
 
+- predictions are made using a one second sliding window
+  - fps=43.1 => ~23ms frames
+    found this to perform slightly better than fps=100 => 10ms frames
+
 <span style="color:green">
 
 - How noisy do we expect the input of our domain to be?
@@ -488,6 +492,64 @@ _Papers cited but not yet read in detail:_
   - distinguishes different types of laugh in Japanese
   - COULD BE A STRETCH GOAL FOR THE PROJECT -> FOLLOW UP ON THE PROJECT
 
+---
+
+# Evaluation Metrics
+
+### Possible Papers:
+
+- Metrics for Polyphonic Sound Event Detection
+- https://www.mdpi.com/2076-3417/6/6/162
+
+# Realtime and computational factor
+
+### Efficient Convolutional Neural Network For Audio Event Detection - 2017
+
+- _Link:https://arxiv.org/pdf/1709.09888.pdf_
+
+- reduces memory requirement by a factor of more than 500
+- reduces computational effort by a factor of 2.1
+- only classifies every 4 seconds
+
+  - too slow for us -> but one can tweak this
+
+- **TODO**: look at structure in more details, seems promising
+
+---
+
+### Low-Latency Real-Time Meeting Recognition and Understanding Using Distant Microphones and - 2012
+
+- _Link: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5983476_
+
+- they use distant microphones
+- latency for audio processing is less than two seconds
+
+  - 1.2 for dereverberation
+  - 64ms for separation and diarization
+  - 10ms for noise supprssion
+
+# Projects
+
+### Sound Event Classification (incl. ~real time)
+
+_Link: https://github.com/chathuranga95/SoundEventClassification_
+
+### IDEO Laughter Project (2018)
+
+_source: https://www.ideo.com/blog/why-your-office-needs-a-laugh-detector_
+
+- used AudioSet
+- 87% accuracy with LSTM model
+
+  > applying batch normalization to the LSTM input was very
+  > important for getting the model to converge  
+  > -> got this insight from https://github.com/ganesh-srinivas/laughter/ (2017)
+
+- chose LSTM over logistic regression model because LSTM was able to handle variable length input
+  - logistic regression needed same input length as training data, namely 10s snippets
+
+# Misc
+
 ### Talks
 
 - "Optimized time series filters for detecting laughter and filler events"
@@ -524,19 +586,3 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 - Should we also remove 'bad-laughter' segments from ICSI like Truong and Van Leeuwen?
 - How detailed does my understanding of audio processing theory have to be
   - e.g. as explained in this article: https://blog.paperspace.com/introduction-to-audio-analysis-and-synthesis/
-
-# Projects
-
-### IDEO Laughter Project (2018)
-
-_source: https://www.ideo.com/blog/why-your-office-needs-a-laugh-detector_
-
-- used AudioSet
-- 87% accuracy with LSTM model
-
-  > applying batch normalization to the LSTM input was very
-  > important for getting the model to converge  
-  > -> got this insight from https://github.com/ganesh-srinivas/laughter/ (2017)
-
-- chose LSTM over logistic regression model because LSTM was able to handle variable length input
-  - logistic regression needed same input length as training data, namely 10s snippets

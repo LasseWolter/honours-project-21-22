@@ -45,6 +45,7 @@ This might be a problem in a video conference because the laughter should be tra
   _source_: [2a]
 - _F0_: fundamental frequency
 - _AC PEAK_: highest normalised cross correlation value found to determine F0
+- _sampling rate [hz]_: number of samples per second
 
 ##### <a name="human-perception"></a>How do humans perceive sound?
 
@@ -126,6 +127,29 @@ _source_: [2d]
 
 - **AED** = Audio Event Detection
 - **prosodic** = relating to the rhythm and intonation (= the way a speaker's voice rises and falls)
+
+# Real-time factors to consider
+
+- frame size (inlc. context window)
+  - the larger the minimum frame size (incl. context window), the higher the latency
+  - the context window in the past is easy, tricky for the future
+    - the longer the context in the future has to be, the higher the latency
+      - i.e. we need to wait until this context has passed
+- computational power of the device
+  - e.g. assuming the algorithm should run on a clients machine, one can't require the power of a GPU
+- feature extraction and classification
+  - the more complex the model -> the higher the latency
+  - the more complex the features -> the higher the latency
+    - feature extraction here includes preprocessing applied (like transformation to frequency domain)
+
+**practical considerations**
+
+- use a buffer to store audio data until classification is finished
+  - otherwise, one will loose audio data during the processing time
+- the latency applies at the beginning and at the end
+  - assume latency L
+    - start is delayed by L -> missing relevant audio
+    - end is delayed by L -> streaming irrelevant audio
 
 # Sources
 

@@ -1,6 +1,7 @@
 # Gilick et al. model
 
 ### Missing packages in requirements.txt
+
 - pandas
 - tqdm
 - nltk
@@ -13,13 +14,13 @@
       > Since the custom ops are compiled with CUDA support, they do not work on the CPU-only environment. We will consider adding support for that.
 
 # General
+
 ### File Format
 
 - `.TextGrid` files
   - created by Praat: Praat is a free computer software package for speech analysis in phonetics.
 - can be parsed using this python library
   - praat-textgrids: https://pypi.org/project/praat-textgrids/
-
 
 ### Preprocessing ICSI
 
@@ -31,6 +32,12 @@
 ### Evaluation
 
 - check for possible time-shift of transcript and audio
+
   - there is a note about this in the ICSI notes
     - http://www1.icsi.berkeley.edu/Speech/mr/icsimc_doc/overview.txt
 
+- think about difference between creating frames from audio (samples) and timestamps
+  - in our evaluation we get frames from timestamps not from samples
+    - thus, dividing by 100 to get 10ms frames is correct.
+  - if you get frames from samples you need to consider the sample rate
+    - e.g. 41 000hz -> 41 000 samples per second
