@@ -499,7 +499,7 @@ _Papers cited but not yet read in detail:_
 ### Possible Papers:
 
 - Metrics for Polyphonic Sound Event Detection
-- https://www.mdpi.com/2076-3417/6/6/162
+  - https://www.mdpi.com/2076-3417/6/6/162
 
 # Realtime and computational factor
 
@@ -527,6 +527,15 @@ _Papers cited but not yet read in detail:_
   - 1.2 for dereverberation
   - 64ms for separation and diarization
   - 10ms for noise supprssion
+
+### OTHER
+
+- Two-Source Acoustic Event Detection And Localization: Online Implementation In A Smart-Room
+
+  - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7074224
+
+- Teacher-Student Training For Acoustic Event Detection Using Audioset
+  - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8683048
 
 # Projects
 
