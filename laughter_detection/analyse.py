@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 import subprocess
+import numpy as np
 import portion as P
 
 from transcript_parsing import parse
@@ -84,7 +85,7 @@ def get_params_from_path(path):
 ##################################################
 LAUGH_INDEX = {}
 MIXED_LAUGH_INDEX = {}
-MIN_LENGTH = 0.2
+MIN_LENGTH = 0.6
 
 # Factor determines the frame size
 # 100 means 1sec gets split into 100 10ms intervals
@@ -107,7 +108,6 @@ def sec_to_frame(time):
 
 
 def create_laugh_index(df):
-    global LAUGH_INDEX
     """
     Creates a laugh_index with all transcribed laughter events
     per particpant per meeting
@@ -121,6 +121,11 @@ def create_laugh_index(df):
         ...
     }
     """
+    global LAUGH_INDEX, MIXED_LAUGH_INDEX
+
+    if MIXED_LAUGH_INDEX == {}:
+        raise RuntimeError(
+            "MIXED_LAUGH_INDEX needs to be created before LAUGH_INDEX")
     meeting_groups = df.groupby(['Meeting'])
 
     for meeting_id, meeting_df in meeting_groups:
@@ -134,7 +139,19 @@ def create_laugh_index(df):
             LAUGH_INDEX[meeting_id][part_id] = P.empty()
             for _, row in part_df.iterrows():
                 # If the length is shorter than min_length passed to detection, skip
-                if(row['Length'] < MIN_LENGTH):
+                # emprically tested -> this doesn't apply to many segments
+                if(row['Length'] < MIN_LENGTH or row['Type'] == 'breath-laugh'):
+                    # append to invalid segments (assumes that MIXED_LAUGH_INDEX has been created beforehand)
+                    start = sec_to_frame(row['Start'])
+                    end = sec_to_frame(row['End'])
+                    if part_id in MIXED_LAUGH_INDEX[meeting_id].keys():
+                        MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
+                            start, end)
+                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                    else:
+                        MIXED_LAUGH_INDEX[meeting_id][part_id] = P.closed(
+                            start, end)
+                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
                     continue
                 start = sec_to_frame(row['Start'])
                 end = sec_to_frame(row['End'])
@@ -219,6 +236,12 @@ def eval_preds(meeting_df, print_stats=False):
 
     tot_predicted_time, tot_corr_pred_time, tot_incorr_pred_time = 0, 0, 0
     tot_transc_laugh_time = LAUGH_INDEX[meeting_id]['tot_laugh_len']
+    num_of_tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['Meeting']
+                                              == meeting_id].shape[0]
+    num_of_pred_laughs = meeting_df.shape[0]
+
+    # Count by
+    num_of_VALID_pred_laughs = 0
 
     group_by_part = meeting_df.groupby(['ID'])
 
@@ -231,7 +254,13 @@ def eval_preds(meeting_df, print_stats=False):
             pred_end_frame = sec_to_frame(row['End'])
             pred_laugh = P.closed(pred_start_frame, pred_end_frame)
 
-            # Append interval to total predicted frames for this meeting
+            # If the there are no invalid frames for this participant
+            # or if the laugh frame doesn't lie in an invalid section -> increase num of valid predictions
+            if part_id not in MIXED_LAUGH_INDEX[meeting_id].keys() or \
+                    not MIXED_LAUGH_INDEX[meeting_id][part_id].contains(pred_laugh):
+                num_of_VALID_pred_laughs += 1
+
+            # Append interval to total predicted frames for this participant
             part_pred_frames = part_pred_frames | pred_laugh
             # Old Version
             # tot_predicted_time += row['Length']
@@ -247,7 +276,11 @@ def eval_preds(meeting_df, print_stats=False):
         prec = 1
     else:
         prec = tot_corr_pred_time/tot_predicted_time
-    recall = tot_corr_pred_time/tot_transc_laugh_time
+    if tot_transc_laugh_time == 0:
+        # If there is no positive data, recall doesn't mean anything -> thus, NaN
+        recall = float('NaN')
+    else:
+        recall = tot_corr_pred_time/tot_transc_laugh_time
 
     if(print_stats):
         print(f'total transcribed time: {tot_transc_laugh_time:.2f}\n'
@@ -260,7 +293,8 @@ def eval_preds(meeting_df, print_stats=False):
               f'Precision: {prec:.4f}\n'
               f'Recall: {recall:.4f}\n')
 
-    return[meeting_id, threshold, prec, recall]
+    return[meeting_id, threshold, prec, recall, round(tot_corr_pred_time, 2), round(tot_predicted_time, 2),
+           round(tot_transc_laugh_time, 2), num_of_pred_laughs, num_of_VALID_pred_laughs, num_of_tranc_laughs]
 
 ##################################################
 # OTHER
@@ -284,7 +318,7 @@ def create_evaluation_df(path, use_cache=False):
     if not use_cache or not os.path.isfile('.cache/eval_df.csv'):
         all_evals = []
         for meeting in os.listdir(path):
-            print(f'Evaluating meeting {meeting}...')
+            # print(f'Evaluating meeting {meeting}...')
             meeting_path = os.path.join(path, meeting)
             for threshold in os.listdir(meeting_path):
                 threshold_dir = os.path.join(meeting_path, threshold)
@@ -293,14 +327,15 @@ def create_evaluation_df(path, use_cache=False):
                     pred_laughs = textgrid_to_df(textgrid_dir)
                     all_evals.append(eval_preds(pred_laughs))
 
-        cols = ['meeting', 'threshold', 'precision', 'recall']
+        cols = ['meeting', 'threshold', 'precision', 'recall',
+                'corr_pred_time', 'tot_pred_time', 'tot_transc_time', 'num_of_pred_laughs', 'valid_pred_laughs', 'num_of_transc_laughs']
         if len(cols) != len(all_evals[0]):
             raise Exception(
                 f'List returned by eval_preds() has wrong length. Expected length: {len(cols)}. Found: {len(all_evals[0])}.')
         eval_df = pd.DataFrame(all_evals, columns=cols)
         if not os.path.isdir('.cache'):
             subprocess.run(['mkdir', '.cache'])
-        eval_df.to_csv('.cache/eval_df.csv')
+        eval_df.to_csv('.cache/eval_df.csv', index=False)
     else:
         print("-----------------------------------------")
         print("NO NEW EVALUATION - USING CACHED VERSION")
@@ -310,15 +345,92 @@ def create_evaluation_df(path, use_cache=False):
     return eval_df
 
 
-def calc_sum_stats(eval_df):
+def calc_sum_stats(preds_path):
     """
     Calculate summary statistics across all meetings per parameter-set
     """
+
+    # If preprocessing on transcribed data is needed, use if case in create_laugh_index
+    # This adds 'filtered out events' to MIXED_LAUGHTER_INDEX instead such that
+    # they are discounted from the evaluation completely
+    #   -> This is done by subtracting them from the predicted segments in laugh_match()
+
+    # First create laughter segment indices
+    # Mixed laugh index needs to be created first (see implementation of laugh_index)
+    create_mixed_laugh_index(parse.mixed_laugh_df)
+    create_laugh_index(parse.laugh_only_df)
+
+    # Then create or load eval_df -> stats for each meeting
+    eval_df = create_evaluation_df(preds_path)
+
+    # Now aggregate stats across meetings
+    # sum_stats = eval_df.groupby('threshold')[
+    #     ['precision', 'recall']].mean().reset_index()
+
     sum_stats = eval_df.groupby('threshold')[
-        ['precision', 'recall']].agg(['mean']).reset_index()
+        ['precision', 'recall', 'valid_pred_laughs']].mean().reset_index()
     # Filter thresholds
     # sum_stats = sum_stats[sum_stats['threshold'].isin([0.2,0.4,0.6,0.8])]
     return sum_stats
+
+
+def stats_for_different_min_length(preds_path):
+    global MIN_LENGTH
+
+    # Rounding to compensate np.arrange output inaccuracy (e.g.0.600000000001)
+    lengths = list(np.arange(0.2, 2.2, 0.2).round(1))
+
+    # This will contain each df with summary stats for different min_length values
+    df_list = []
+
+    for min_length in lengths:
+        MIN_LENGTH = min_length
+        print(f"Using min_laugh_length: {MIN_LENGTH}")
+
+        print('Calculating summary stats...')
+        min_length_df = calc_sum_stats(preds_path)
+        min_length_df['min_length'] = MIN_LENGTH
+        print(min_length_df)
+        df_list.append(min_length_df)
+
+        # Print out the number of laughter events left for this min_length
+        acc_len = 0
+        acc_ev = 0
+        for meeting in LAUGH_INDEX.keys():
+            acc_len += LAUGH_INDEX[meeting]['tot_laugh_len']
+            acc_ev += LAUGH_INDEX[meeting]['tot_laugh_events']
+        # print(f"tot len: {laugh_index[meeting]['tot_laugh_len']}")
+        # print(f"num of events: {laugh_index[meeting]['tot_laugh_events']}")
+        print(f'tot length: {acc_len}')
+        print(f'tot events: {acc_ev}')
+
+    tot_df = pd.concat(df_list)
+    tot_df.to_csv('sum_stats_for_different_min_lengths.csv')
+
+
+def create_csvs_for_meeting(meeting_id, preds_path):
+    """
+    Writes 2 csv files to disk:
+        1) containing the transcribed laughter events for this meeting
+        2) containing all predicted laughter events (for threshholds: 0.2, 0.4, 0.6, 0.8)
+            - thus, duplicates are possible -> take this into account when analysing
+    """
+    tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['Meeting'] == meeting_id]
+    tranc_laughs.to_csv(f'{meeting_id}_transc.csv')
+
+    meeting_path = os.path.join(preds_path, meeting_id)
+    # Get predictions for different threshholds
+    df1 = textgrid_to_df(
+        f'{meeting_path}/t_0.2/l_0.2')
+    df2 = textgrid_to_df(
+        f'{meeting_path}/t_0.4/l_0.2')
+    df3 = textgrid_to_df(
+        f'{meeting_path}/t_0.6/l_0.2')
+    df4 = textgrid_to_df(
+        f'{meeting_path}/t_0.8/l_0.2')
+    # Concat them and write them to file
+    result = pd.concat([df1, df2, df3, df4])
+    result.to_csv(f'{meeting_id}_preds.csv')
 
 
 def plot_prec_recall_curve(stats):
@@ -337,16 +449,13 @@ def plot_prec_recall_curve(stats):
 
 
 def main():
-    transc_laughs = parse.laugh_only_df
-    # Preprocessing applied before laugh_indices are created
-    #transc_laughs = remove_breath_laugh(transc_laughs)
-    create_laugh_index(transc_laughs)
-    create_mixed_laugh_index(parse.mixed_laugh_df)
-    outputs_path = './output_processing/outputs/'
-    eval_df = create_evaluation_df(outputs_path)
 
-    sum_stats = calc_sum_stats(eval_df)
-    print(sum_stats)
+    # Path that contains all predicted laughs in separate dirs for each parameter
+    preds_path = './output_processing/outputs/'
+
+    stats_for_different_min_length(preds_path)
+    #sum_stats = calc_sum_stats(preds_path)
+    # print(sum_stats)
 
     acc_len = 0
     acc_ev = 0
@@ -361,6 +470,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # pred_laughs = textgrid_to_df('./output_processing/outputs/Bro017/t_0.4/l_0.2')
-    # pred_laughs.to_csv('Bro017_0.4.csv')
+
     main()
