@@ -87,7 +87,7 @@ def get_params_from_path(path):
 ##################################################
 LAUGH_INDEX = {}
 MIXED_LAUGH_INDEX = {}
-MIN_LENGTH = 0.6
+MIN_LENGTH = 0.2
 
 # Factor determines the frame size
 # 100 means 1sec gets split into 100 10ms intervals
@@ -150,10 +150,12 @@ def create_laugh_index(df):
                         MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
                             start, end)
                         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
                     else:
                         MIXED_LAUGH_INDEX[meeting_id][part_id] = P.closed(
                             start, end)
                         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
                     continue
                 start = sec_to_frame(row['Start'])
                 end = sec_to_frame(row['End'])
@@ -182,6 +184,7 @@ def create_mixed_laugh_index(df):
     for meeting_id, meeting_df in meeting_groups:
         MIXED_LAUGH_INDEX[meeting_id] = {}
         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] = 0
+        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] = 0
 
         # Ensure rows are sorted by 'Start'-time in ascending order
         part_groups = meeting_df.sort_values('Start').groupby(['ID'])
@@ -193,6 +196,7 @@ def create_mixed_laugh_index(df):
                 MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
                     start, end)
                 MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
 
 ##################################################
 # ANALYSE
@@ -362,7 +366,8 @@ def plot_aggregated_laughter_length_dist(df, threshold, save_dir=''):
     tot_pred_meetings = df.shape[0]
     tot_meetings = 75
     plt.text(
-        -0.1, 1.01, f'av-pred-time:{pred_median}\nav-transc-time:{transc_median}\nMeetings containing\nlaughter predictions:{tot_pred_meetings}/{tot_meetings}')
+        -0.1, 1.015, f'av-meeting-length:{56}min\nav-pred-time:{pred_median}s\nav-transc-time:{transc_median}s'
+        f'\nMeetings containing\nlaughter predictions:{tot_pred_meetings}/{tot_meetings}')
     plt.title(
         f'Aggregated length of\n laughter per meeting\nthreshold: {threshold}')
 
@@ -449,7 +454,7 @@ def create_evaluation_df(path, use_cache=False):
     if not use_cache or not os.path.isfile('.cache/eval_df.csv'):
         all_evals = []
         for meeting in os.listdir(path):
-            print(f'Evaluating meeting {meeting}...')
+            #print(f'Evaluating meeting {meeting}...')
             meeting_path = os.path.join(path, meeting)
             for threshold in os.listdir(meeting_path):
                 threshold_dir = os.path.join(meeting_path, threshold)
@@ -495,7 +500,7 @@ def stats_for_different_min_length(preds_path):
     global MIN_LENGTH
 
     # Rounding to compensate np.arrange output inaccuracy (e.g.0.600000000001)
-    lengths = list(np.arange(0.2, 2.2, 0.2).round(1))
+    lengths = list(np.arange(5.2, 8.2, 0.2).round(1))
 
     # This will contain each df with summary stats for different min_length values
     df_list = []
@@ -525,10 +530,16 @@ def stats_for_different_min_length(preds_path):
         for meeting in LAUGH_INDEX.keys():
             acc_len += LAUGH_INDEX[meeting]['tot_laugh_len']
             acc_ev += LAUGH_INDEX[meeting]['tot_laugh_events']
-        # print(f"tot len: {laugh_index[meeting]['tot_laugh_len']}")
-        # print(f"num of events: {laugh_index[meeting]['tot_laugh_events']}")
-        print(f'tot length: {acc_len}')
-        print(f'tot events: {acc_ev}')
+        print(f'Agg. laugh length: {acc_len:.2f}')
+        print(f'Total laugh events: {acc_ev}')
+        # Print number of invalid laughter events for this min_length
+        acc_len = 0
+        acc_ev = 0
+        for meeting in MIXED_LAUGH_INDEX.keys():
+            acc_len += MIXED_LAUGH_INDEX[meeting]['tot_laugh_len']
+            acc_ev += MIXED_LAUGH_INDEX[meeting]['tot_laugh_events']
+        print(f'Agg. invalid laugh length: {acc_len:.2f}')
+        print(f'Total invalid laugh events: {acc_ev}')
 
     tot_df = pd.concat(df_list)
     tot_df.to_csv('sum_stats_for_different_min_lengths.csv')
@@ -574,16 +585,16 @@ def main():
     # Path that contains all predicted laughs in separate dirs for each parameter
     preds_path = './output_processing/outputs/'
     # Then create or load eval_df -> stats for each meeting
-    eval_df = create_evaluation_df(preds_path, use_cache=True)
+    eval_df = create_evaluation_df(preds_path)
 
     # stats_for_different_min_length(preds_path)
-    # sum_stats = calc_sum_stats(eval_df)
-    # print(sum_stats)
+    sum_stats = calc_sum_stats(eval_df)
+    print(sum_stats)
 
     # Create plots for different thresholds
     for t in [.2, .4, .6, .8]:
-        # plot_aggregated_laughter_length_dist(eval_df, t, save_dir='./imgs/')
-        plot_agg_pred_time_ratio_dist(eval_df, t, save_dir='./imgs/')
+        plot_aggregated_laughter_length_dist(eval_df, t, save_dir='./imgs/')
+    #     plot_agg_pred_time_ratio_dist(eval_df, t, save_dir='./imgs/')
 
 
 if __name__ == "__main__":
