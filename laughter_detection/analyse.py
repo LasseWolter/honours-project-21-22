@@ -1,7 +1,9 @@
+from matplotlib.ticker import MaxNLocator
 import textgrids
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
+import seaborn as sns
 import subprocess
 import numpy as np
 import portion as P
@@ -296,6 +298,135 @@ def eval_preds(meeting_df, print_stats=False):
     return[meeting_id, threshold, prec, recall, round(tot_corr_pred_time, 2), round(tot_predicted_time, 2),
            round(tot_transc_laugh_time, 2), num_of_pred_laughs, num_of_VALID_pred_laughs, num_of_tranc_laughs]
 
+
+##################################################
+# PLOTS
+##################################################
+def plot_prec_recall_curve(df):
+    """
+    Input: statistics dataframe across all meetings
+    Plots a precision recall curve for the given dataframe
+    """
+    if 'recall' not in df.columns or 'precision' not in df.columns:
+        raise LookupError(
+            f'Missing precision or recall column in passed dataframe. Found columns: {df.columns}')
+    plt.plot(df['recall'], df['precision'], 'b--')
+    plt.plot(df['recall'], df['precision'], 'ro')
+    plt.ylabel('Precision')
+    plt.xlabel('Recall')
+    plt.show()
+
+
+def plot_aggregated_laughter_length_dist(df, threshold, save_dir=''):
+    '''
+    Plots histogram of aggregated laughter lengths for predicted and transcribed events
+    Only predictions with the given threshhold are considered
+        - helps compare how predictions and transcriptions compare in their length 
+    '''
+    fig, axs = plt.subplots(3, 1, figsize=(6, 8))
+
+    df = df[df['threshold'] == threshold]
+
+    print(axs)
+    cols = ['tot_pred_time', 'tot_transc_time']
+
+    for col in cols:
+        sns.distplot(x=df[col], ax=axs[0], label=col,
+                     bins=range(0, 1000, 50), kde=False)
+    axs[0].set_xlim([0, 1000])
+    axs[0].grid()
+
+    for col in cols:
+        sns.distplot(x=df[col], ax=axs[1], label=col,
+                     bins=range(0, 500, 10), kde=False)
+    axs[1].set_xlim([0, 500])
+    axs[1].grid()
+
+    for col in cols:
+        sns.distplot(x=df[col], ax=axs[2], label=col,
+                     bins=range(0, 60, 1), kde=False)
+    axs[2].set_xlim([0, 60])
+    axs[2].set_xlabel('Aggregated Length [s]')
+    axs[2].grid()
+
+    # Add big axis and hide ticks and tick lables on this big axis
+    # only used to create shared y-label
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', which='both', top=False,
+                    bottom=False, left=False, right=False)
+
+    fig.legend(cols, loc='upper right')
+    plt.ylabel('Frequency')
+    pred_median, transc_median = df[cols].median().round(2)
+
+    tot_pred_meetings = df.shape[0]
+    tot_meetings = 75
+    plt.text(
+        -0.1, 1.01, f'av-pred-time:{pred_median}\nav-transc-time:{transc_median}\nMeetings containing\nlaughter predictions:{tot_pred_meetings}/{tot_meetings}')
+    plt.title(
+        f'Aggregated length of\n laughter per meeting\nthreshold: {threshold}')
+
+    if save_dir != '':
+        path = os.path.join(save_dir, f'agg_length_dist_{threshold}.png')
+        plt.savefig(path)
+    plt.show()
+
+
+def plot_agg_pred_time_ratio_dist(df, threshold, save_dir=""):
+    """
+    Plots a distribution of following ratio per meeting:
+        total_predicted_laughter_time / total_transcribed_laughter_time
+    """
+    df = df[df['threshold'] == threshold]
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+
+    cols = ['tot_pred_time', 'tot_transc_time']
+    rate_df = (df[cols[0]] / df[cols[1]]) * 100
+    sns.histplot(rate_df, alpha=0.5, ax=ax)
+    ax.set_xlabel('Ratio (pred_time/tranc_time)[%]')
+    ax.set_ylabel('Frequency')
+
+    # Only display integers on y-axis
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.grid(axis='y')
+
+    tot_pred_meetings = df.shape[0]
+    tot_meetings = 75
+
+    # Calculate and display median in plot
+    median = round(rate_df.median(), 2)
+    mean = round(rate_df.mean(), 2)
+    plt.vlines(median, 0, 3, colors=['r'],
+               linestyles=['dashed'], label='median')
+    plt.vlines(mean, 0, 3, colors=['b'],
+               linestyles=['dashed'], label='mean')
+
+    plt.legend()
+
+    # Calculate recall
+    stats = calc_sum_stats(df)
+    prec_meadian = round(stats['precision'].loc[0]['median'] * 100, 2)
+    prec_mean = round(stats['precision'].loc[0]['mean'] * 100, 2)
+
+    recall_median = round(stats['recall'].loc[0]['median'] * 100, 2)
+    recall_mean = round(stats['recall'].loc[0]['mean'] * 100, 2)
+
+    plt.figtext(
+        0.01, 0.02, f'MEDIAN:\nRatio: {median}%\nRecall: {recall_median}%\nPrecision: {prec_meadian}%')
+    plt.figtext(
+        0.17, 0.02, f'| MEAN:\n| Ratio: {mean}%\n| Recall: {recall_mean}%\n| Precision: {prec_mean}%')
+    plt.figtext(
+        0.1, 0.9, f'Meetings containing\nlaughter predictions: {tot_pred_meetings}/{tot_meetings}')
+    plt.title(
+        f'Ratio of predicted laughter time\n to transcribed laughter time\nthreshold: {threshold}')
+
+    if save_dir != '':
+        path = os.path.join(
+            save_dir, f'pred_to_transc_length_ratio_dist{threshold}.png')
+        plt.savefig(path)
+    plt.show()
+
+
 ##################################################
 # OTHER
 ##################################################
@@ -318,7 +449,7 @@ def create_evaluation_df(path, use_cache=False):
     if not use_cache or not os.path.isfile('.cache/eval_df.csv'):
         all_evals = []
         for meeting in os.listdir(path):
-            # print(f'Evaluating meeting {meeting}...')
+            print(f'Evaluating meeting {meeting}...')
             meeting_path = os.path.join(path, meeting)
             for threshold in os.listdir(meeting_path):
                 threshold_dir = os.path.join(meeting_path, threshold)
@@ -345,30 +476,16 @@ def create_evaluation_df(path, use_cache=False):
     return eval_df
 
 
-def calc_sum_stats(preds_path):
+def calc_sum_stats(eval_df):
     """
     Calculate summary statistics across all meetings per parameter-set
     """
-
-    # If preprocessing on transcribed data is needed, use if case in create_laugh_index
-    # This adds 'filtered out events' to MIXED_LAUGHTER_INDEX instead such that
-    # they are discounted from the evaluation completely
-    #   -> This is done by subtracting them from the predicted segments in laugh_match()
-
-    # First create laughter segment indices
-    # Mixed laugh index needs to be created first (see implementation of laugh_index)
-    create_mixed_laugh_index(parse.mixed_laugh_df)
-    create_laugh_index(parse.laugh_only_df)
-
-    # Then create or load eval_df -> stats for each meeting
-    eval_df = create_evaluation_df(preds_path)
-
     # Now aggregate stats across meetings
     # sum_stats = eval_df.groupby('threshold')[
     #     ['precision', 'recall']].mean().reset_index()
 
     sum_stats = eval_df.groupby('threshold')[
-        ['precision', 'recall', 'valid_pred_laughs']].mean().reset_index()
+        ['precision', 'recall', 'valid_pred_laughs']].agg(['mean', 'median']).reset_index()
     # Filter thresholds
     # sum_stats = sum_stats[sum_stats['threshold'].isin([0.2,0.4,0.6,0.8])]
     return sum_stats
@@ -387,8 +504,17 @@ def stats_for_different_min_length(preds_path):
         MIN_LENGTH = min_length
         print(f"Using min_laugh_length: {MIN_LENGTH}")
 
-        print('Calculating summary stats...')
-        min_length_df = calc_sum_stats(preds_path)
+        # Need to recreate laughter indices and eval_df because min_length was changed
+        # First create laughter segment indices
+        # Mixed laugh index needs to be created first (see implementation of laugh_index)
+        create_mixed_laugh_index(parse.mixed_laugh_df)
+        create_laugh_index(parse.laugh_only_df)
+
+        # Then create or load eval_df -> stats for each meeting
+        eval_df = create_evaluation_df(preds_path)
+
+        # Now calculate summary stats with new eval_df
+        min_length_df = calc_sum_stats(eval_df)
         min_length_df['min_length'] = MIN_LENGTH
         print(min_length_df)
         df_list.append(min_length_df)
@@ -433,42 +559,32 @@ def create_csvs_for_meeting(meeting_id, preds_path):
     result.to_csv(f'{meeting_id}_preds.csv')
 
 
-def plot_prec_recall_curve(stats):
-    """
-    Input: statistics dataframe across all meetings
-    Plots a precision recall curve for the given dataframe
-    """
-    if 'recall' not in stats.columns or 'precision' not in stats.columns:
-        raise LookupError(
-            f'Missing precision or recall column in passed dataframe. Found columns: {stats.columns}')
-    plt.plot(stats['recall'], stats['precision'], 'b--')
-    plt.plot(stats['recall'], stats['precision'], 'ro')
-    plt.ylabel('Precision')
-    plt.xlabel('Recall')
-    plt.show()
-
-
 def main():
+
+    # If preprocessing on transcribed data is needed, use if case in create_laugh_index
+    # This adds 'filtered out events' to MIXED_LAUGHTER_INDEX instead such that
+    # they are discounted from the evaluation completely
+    #   -> This is done by subtracting them from the predicted segments in laugh_match()
+
+    # First create laughter segment indices
+    # Mixed laugh index needs to be created first (see implementation of laugh_index)
+    create_mixed_laugh_index(parse.mixed_laugh_df)
+    create_laugh_index(parse.laugh_only_df)
 
     # Path that contains all predicted laughs in separate dirs for each parameter
     preds_path = './output_processing/outputs/'
+    # Then create or load eval_df -> stats for each meeting
+    eval_df = create_evaluation_df(preds_path, use_cache=True)
 
-    stats_for_different_min_length(preds_path)
-    #sum_stats = calc_sum_stats(preds_path)
+    # stats_for_different_min_length(preds_path)
+    # sum_stats = calc_sum_stats(eval_df)
     # print(sum_stats)
 
-    acc_len = 0
-    acc_ev = 0
-    for meeting in LAUGH_INDEX.keys():
-        acc_len += LAUGH_INDEX[meeting]['tot_laugh_len']
-        acc_ev += LAUGH_INDEX[meeting]['tot_laugh_events']
-        # print(f"tot len: {laugh_index[meeting]['tot_laugh_len']}")
-        # print(f"num of events: {laugh_index[meeting]['tot_laugh_events']}")
-
-    print(f'tot length: {acc_len}')
-    print(f'tot events: {acc_ev}')
+    # Create plots for different thresholds
+    for t in [.2, .4, .6, .8]:
+        # plot_aggregated_laughter_length_dist(eval_df, t, save_dir='./imgs/')
+        plot_agg_pred_time_ratio_dist(eval_df, t, save_dir='./imgs/')
 
 
 if __name__ == "__main__":
-
     main()
