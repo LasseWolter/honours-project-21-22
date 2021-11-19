@@ -559,6 +559,21 @@ _source: https://www.ideo.com/blog/why-your-office-needs-a-laugh-detector_
 
 # Misc
 
+### Articles
+
+#### New mobile neural network architectures - 04/2020
+
+_Link: https://machinethink.net/blog/mobile-architectures/_
+
+**Note**: This article is mainly targeted at ML on mobile ios-devices
+
+> Note: I am regularly approached by clients who ask me to convert the model from a research paper to run on Core ML. I’m happy to oblige, but often these models are not suitable as-is for use in a mobile app. They typically use a large feature extractor such as ResNet. Converting such a model as a proof-of-concept can be worth doing, but once that works my recommendation is to re-train the model from scratch using a smaller feature extractor.
+
+- think about how this applies to our project
+  - what could be a smaller feature extractor for our model?
+
+> Tip: You don’t need to train the model first if you just want to know how fast it will be. It’s pretty quick to whip it up in Keras, do the conversion to Core ML, and try it on the device. An untrained model does the same amount of computation as the trained version of that model and therefore runs at the same speed.
+
 ### Talks
 
 - "Optimized time series filters for detecting laughter and filler events"
