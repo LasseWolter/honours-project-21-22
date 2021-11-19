@@ -1,0 +1,18 @@
+- switchboard dataset has 8khz / ICSI has 16khz
+  - possibly data missmatch -> yields low recall
+
+- Next steps: 
+  - retrain on ICSI
+  - calculate real-time factor
+    - 'time to process data'/'duration of the data'
+
+- use current model as baseline 1 
+  - compare model retrained on ICSI to this baseline
+    - then take that model as baseline 2
+      - when trying to make model more real-time use baseline 2 for comparison
+
+- possibly shift window to not take 50% before and 50% after 
+  - e.g. 75% before and 25% after?
+
+- state the practical-example-table from presentation close to beginning of the thesis
+  - then show how much you improved from there 

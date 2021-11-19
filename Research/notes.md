@@ -141,6 +141,8 @@ _source_: [2d]
   - the more complex the model -> the higher the latency
   - the more complex the features -> the higher the latency
     - feature extraction here includes preprocessing applied (like transformation to frequency domain)
+- min_length parameter of the model (minimum laugh segment length)
+  - if set to 0.2 we have a minimum latency of 0.2
 
 **practical considerations**
 
