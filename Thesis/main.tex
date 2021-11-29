@@ -70,31 +70,34 @@
 \chapter{Introduction}
 
 \chapter{Background}
-Automatic applause and laughter detection isn't a new idea. Nevertheless, the research in these two areas is usually done separately. There are a few papers which cover both, laughter and applause detection, one of the most popular ones being from Cai et. al \cite{cai2003highlight} who used sound effect detection - which included laughter and applause - for video summarisation and highlight extraction.
+Automatic applause and laughter detection isn't a new idea. Nevertheless, the research in these two areas is usually done separately. There are a few papers which cover both, one of the most popular ones being from Cai et. al \cite{cai2003highlight} who used sound effect detection - which included laughter and applause - for video summarisation and highlight extraction.
 Apart from this and a few other papers most research only covers one of the two domains, either applause or laughter. Thus, we split the review of existing research into the following sections:
 \begin{enumerate}
   \item Laughter Detection
   \item Applause Detection
-  \item Brief introduction into audio processing
+  \item Evaluation Metrics 
 \end{enumerate}
 
 
 \section{Laughter Detection}
 The investigation of the acoustic features of laughter reaches back three decades \cite{bickley1992acoustic}.
 In the early 2000s, the first attempts of laughter detection in conversational speech classified presegmented audio data \cite{kennedy2004laughter, truong2005automatic}. These models could only decide whether laughter occurred within in a given segment. The determination of segment boundaries of laughter events wasn't considered. 
-Corpora used in these papers include the CMU, LDC, NIST recordings, Dutch CGN corpus as well as the ICSI Meeting Recorder corpus \cite{morgan2001meeting}. 
-Kennedy and Ellis \cite{kennedy2004laughter} got the best results using Mel Frequency Cepstral Coefficients (MFCCs) as features and a Support Vector Machine (SVM) for decision making. 
-MFCCs are one of the most widely used features in speech recognition and make use of the spectral representation of an audio wave (Section \ref{theory}).
+Corpora used in these papers include the development data from the 2004 Spring NIST Rich Transcription Evaluation \cite{ldcnistcorpus}, the Dutch CGN corpus \cite{oostdijk2000spoken} as well as the ICSI Meeting Recorder corpus \cite{morgan2001meeting}. 
 
-In contrast to Kennedy and Ellis \cite{kennedy2004laughter}, Truong and Van Leeuwen \cite{truong2005automatic} used Perceptual Linear Prediction (PLP) features with Gaussian Mixture Models (GMM) for classification. 
-We further note that not only the features and predictors differ, also the motivation and definition of laughter events differ. 
-While Kennedy and Ellis define laughter events as 'points in the meeting where more than one person laughs', Truong and Van Leeuwen already considered one person laughing as laughter event.
+Two examples of such classification of presegmented audio data were presented by Kenney and Ellis \cite{kennedy2004laughter} and Truong and Van Leeuwen \cite{truong2005automatic}. 
+Even though both models classified presegmented audio there were some significant differences. 
+Firstly, the definition of laughter and the motivation behind the research differed.
+While Kennedy and Ellis define laughter events as 'points in the meeting where more than one person laughs', Truong and Van Leeuwen considered one person laughing as a laughter event.
 Kennedy and Ellis didn't specify a particular motivation whereas Truong and Van Leeuwen's long-term goal was the investigation of 'paralinguistic events' - laughter being one of them - to classify the speaker's emotional state.   
 
-Truong and Leeuwen \cite{truong2007automatic} continued their research and stated that spectral features alone (such as PLP and MFCCs) can be used to discriminate between laughter and speech but a significant improvement can be achieved when using prosodic features - features relating the rhythm and intonation.
+Secondly, there was a difference between the best performing features and predictors.  
+Kennedy and Ellis \cite{kennedy2004laughter} got the best results using Mel Frequency Cepstral Coefficients (MFCCs) as features and a Support Vector Machine (SVM) for decision making. 
+In contrast, Truong and Van Leeuwen \cite{truong2005automatic} used Perceptual Linear Prediction (PLP) features with Gaussian Mixture Models (GMM) for classification. 
+
+Truong and Leeuwen \cite{truong2007automatic} continued their research and stated that spectral features alone (such as PLP and MFCCs) can be used to discriminate between laughter and speech but a significant improvement can be achieved when using prosodic features - features relating rhythm and intonation.
 
 In 2006, Knox and Mirghafori \cite{knox2006automatic} were the first to do laughter recognition without the need for presegmented audio data.  
-They also worked with the Bmr-subset of the ICSI Meeting corpus \cite{morgan2001meeting} to be able to compare their results to previous research done on this dataset \cite{kennedy2004laughter, truong2005automatic, truong2007automatic}.
+They worked with the Bmr-subset of the ICSI Meeting corpus \cite{morgan2001meeting} to be able to compare their results to previous research done on this dataset \cite{kennedy2004laughter, truong2005automatic, truong2007automatic}.
 
 Their goal was to obtain accurate interval boundaries of laughter segments.
 One limiting factor for the precision of these boundaries is the frame size. 
@@ -102,10 +105,10 @@ When Knox and Mirghafori first experimented with SVMs similar to Kennedy and Ell
 This is due to the fact that aggregate statistics need to be calculated and stored for each frame of training data.  
 On the contrary, a neural network trained with features from a context window can directly use the features of each frame without aggregating them.  
 
-To obtain frame-level training labels Knox and Mirghafori first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries couldn't be identified in those segments. 
+To obtain frame-level training labels for the ICSI dataset Knox and Mirghafori first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries couldn't be identified in those segments. 
 The remaining audio data could be accurately separated into laughter and non-laughter segments which were then divided into 10ms frames and labeled accordingly.
 
-The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and after the frame (\ref{fig:know_window}).
+The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and 37 after the frame (\ref{fig:know_window}).
 This way an accurate prediction of laughter boundaries of up to 10ms was possible. 
 The features investigated by Knox and Mirghafori are MFCCs, AC PEAK, F0 and RMS as well as their corresponding delta and delta-delta features.
 They first trained four separate neural networks each one taking one of the mentioned features as input.
@@ -121,15 +124,14 @@ By training and evaluating separate neural networks for each type of feature fir
 \end{figure}
 
 A survey from 2016 \cite{cosentino2016quantitative} investigates research on laughter and laughter detection in different fields up to that time.
-This survey covers different detection methods, using visual, acoustic and sensory data.
-For this thesis laughter detection using solely acoustic data is the most relevant. Consentino et al. \cite{cosentino2016quantitative} find that in such cases best performance was obtained using MFCCs and PLPs as features and combining the resulting classifier with ones that also use prosodic features.
+This survey covers different detection methods using visual, acoustic and sensory data.
+For this thesis laughter detection using solely acoustic features is the most relevant. Consentino et al. \cite{cosentino2016quantitative} find that in such cases best performance was obtained using MFCCs and PLPs as features and combining the resulting classifier with ones that also use prosodic features.
 This aligns with findings from prior research \cite{truong2007automatic, knox2006automatic}.
 
 More recent research by Gillick et al. \cite{gillick2021robust} finds that features learned from spectrograms using deep convolutional networks outperform previous approaches based on MFCCs.
 Their hypothesis was that models using MFCCs are more prone to pick up surface level characteristics of sound and thus, will be more sensitive to variations like background noise.
 Gillick et al. expected that features learned using a CNN are more representative of the actual laughter and thus, more robust to different environments. 
-Their results suggest that their hypothesis might be correct.
-The results definitely show that the features learned by a CNN architecture (with or without data augmentation) outperform the conventional approach using MFCCs. 
+Their results show that a model using features learned by a CNN architecture outperforms the conventional approach using MFCCs. 
 
 
 \section{Applause}
@@ -143,38 +145,30 @@ Cai et al. evaluated their system on a testing set consisting of 2 hours of vide
 For applause specifically they achieved a precision of 87.37\% and a recall of 92.00\%.
 
 In contrast, Uhle \cite{uhle2011applause} used MFCCs and low-level descriptors (LLD) to represent sound and passed these features to an MLP or an SVM for classification.
-The difference between MLP and SVM classifier were rather small which is why both are mentioned here.
-Uhle worked with a relatively small data set consisting of 210 snippets of 9-30s length. This equates to a total length between 31.5 min and 105 min.
-On a rather small test (10\% of the whole data set) Uhle achieved an accuracy of 95\% with a precision 96.51\% and recall of 97.65\%.
+The difference between MLP and SVM classifier were rather small.
+Uhle worked with a relatively small dataset consisting of 210 snippets of 9-30s length. This equates to a total length between 31.5 min and 105 min.
+On a rather small test (10\% of this dataset) Uhle achieved an accuracy of 95\% with a precision 96.51\% and recall of 97.65\%.
 
 A less complex approach for applause detection was presented by Li et al. \cite{li2009characteristics}.
 They used a manually created 4-layer decision tree to classify a given sound input as applause or not-applause.
-Testing their model on 50 hours of meeting speech containing 500 applause segments ranging from 0.8 to 0.36s they were able to retrieve 491 of the 500 applause segments while incorrectly retrieving 38 non-applause segments.
+Testing their model on 50 hours of meeting speech containing 500 applause segments ranging from 0.8 to 36s they were able to retrieve 491 of the 500 applause segments while incorrectly retrieving 38 non-applause segments.
 This equates to a recall of 98.2\% and a precision of 92.82\%. Li et al. also compared their less complex model to the HMM model proposed by Cai et al.\cite{cai2003highlight} and outperformed it while using less computational time.
 
-Manoj et. al \cite{manoj2011novel} proposed another approach based on manually created decision trees and also compared it to a more complex model similar to the one proposed by Cai et al. \cite{cai2003highlight} - using only GMMs, no HMMs.
-Even though the decision tree stages are different to Li et al. \cite{li2009characteristics} the findings align. The decision tree outperforms the more complex method using MFCCs and GMMs.  
+Manoj et al. \cite{manoj2011novel} proposed another approach based on manually created decision trees. They also compared it to a more complex model similar to the one proposed by Cai et al. \cite{cai2003highlight} - with the difference that this model only used GMMs, no HMMs.
+Even though the decision tree stages were different to Li et al. \cite{li2009characteristics} the findings are similar. The decision tree outperforms the more complex method using MFCCs and GMMs.  
 
-\section{Brief introduction into audio processing} \label{theory}
-Possible topics one could talk about
-\begin{itemize}
-    \item Preprossing: 
-    \begin{itemize}
-        \item Conversion from audio wave to spectrogram 
-        \item Data Augmentation
-    \end{itemize}
-    \item Some details on MFCCs 
-\end{itemize}
+\section{Evaluation metrics} \label{theory}
+still to be written
 
-\chapter{Other}
-\section{Privacy Concerns}\label{privacy-concerns}
-People might have privacy concerns if their visual input is used for classification.
-On the other hand, in video meetings and conferences people often turn off their video input.
-Consentino et al. \cite{cosentino2016quantitative} also mention the privacy implications of video input and raise the same concern for audio input.
-Thus, they suggest the use of individual wearable sensors to address these concerns.
-For our project this approach isn't feasible and further, wearable devices might be quite intrusive.
-In our system people can opt-out of using the laughter-detection feature at any time.
-That way people stay in control of their own privacy.
+% \chapter{Other}
+% \section{Privacy Concerns}\label{privacy-concerns}
+% People might have privacy concerns if their visual input is used for classification.
+% Additionally, in video meetings and conferences people often turn off their video input.
+% Consentino et al. \cite{cosentino2016quantitative}  mention the privacy implications of video input and raise the same concern for audio input.
+% Thus, they suggest the use of individual wearable sensors to address these concerns.
+% For our project this approach isn't feasible and further, wearable devices might be quite intrusive.
+% In our system people can opt-out of using the laughter-detection feature at any time.
+% That way people stay in control of their own privacy.
 \bibliographystyle{plain}
 \bibliography{mybibfile}
 
