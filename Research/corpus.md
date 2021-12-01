@@ -3,6 +3,7 @@
 ### ICSI meetings database (2004)
 
 - http://www1.icsi.berkeley.edu/Speech/mr/icsimc_doc/overview.txt
+- https://catalog.ldc.upenn.edu/LDC2004S02
 - CHECK KNOWN PROBLEMS SECTION FOR FINAL EVALUATION
 - recorded in a conference room with a microphone for each speaker
 - ~72 hours of transcribed meeting speech

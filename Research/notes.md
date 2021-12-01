@@ -153,6 +153,48 @@ _source_: [2d]
     - start is delayed by L -> missing relevant audio
     - end is delayed by L -> streaming irrelevant audio
 
+# Evaluation Metrics:
+
+_source: https://www.researchgate.net/post/How_do_I_calculate_the_false_alarm_rate_for_face_detection_
+
+- True Positive (TP): True is identified True (correct identification)True
+- True Negative (TN): False is identified False (correct identification)
+- False Positive (FP): True is identified False (wrong identification)
+- False Negative (FN): False is identified True (wrong identification)
+
+- P = TP + FN (number of correct identification cases)
+- N = FP + TN (number of wrong identification case) 25
+
+- Recall or Sensitivity or Correct Acceptance Rate or True Positive Rate (TPR):
+- TPR = TP / P = TP / (TP + FN)
+- Specificity (SPC) or True Negative Rate (TNR):
+- SPC = TN / N = TN / (FP + TN)
+- Precision or Positive Predictive Value (PPV):
+- PPV = TP / (TP + FP)
+- Negative Predictive Value (NPV):
+- NPV = TN / (TN + FN)
+- False Alarm Rate or Fall-Out Rate or False Acceptance Rate or False Positive Rate (FPR):
+- FPR = FP / N = FP / (FP + TN) =1 – SPC
+- False Discovery Rate (FDR):
+- FDR = FP / (FP + TP) =1 – PPV
+- Miss Rate or False Rejection Rate or False Negative Rate (FNR):
+- FNR = FN/ (FN + TP)
+- Accuracy (ACC):
+- ACC= (TP+TN)/ (P+N)
+- F1 Score:
+- F1=2*TP/(2*TP+FP+FN)
+
+- an ROC plots
+
+  - True Positive vs False Positive Rate
+  - Correct Acceptance vs False Acceptance Rate
+  - Sensitivity vs False Alarm Rate
+
+- ERR is the point on an Error vs. Threshold Graph where
+  - False Accept and False Reject rate are equal
+  - False Alarm Rate and Miss Rate are equal
+  - False Positive Rate and False Negative Rate are equal
+
 # Sources
 
 ### Audio Processing Theory
