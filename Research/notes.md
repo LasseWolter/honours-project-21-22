@@ -195,6 +195,17 @@ _source: https://www.researchgate.net/post/How_do_I_calculate_the_false_alarm_ra
   - False Alarm Rate and Miss Rate are equal
   - False Positive Rate and False Negative Rate are equal
 
+# ML models compared
+
+### SVM vs NN
+
+- _Link: https://www.baeldung.com/cs/svm-vs-neural-network_
+- SVMs guarantee convergence, NNs don't
+- if 'unlimited'/very large amounts of training data is available NNs are likely to outperform SVMs
+- NNs need to see the whole training set, otherwise they might perform really poorly
+  - also, batch order matters
+- SVMs rely on support vectors which are a (small) subset of the whole training data
+
 # Sources
 
 ### Audio Processing Theory

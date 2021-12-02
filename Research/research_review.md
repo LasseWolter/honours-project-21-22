@@ -230,6 +230,8 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - Features tried:
   - MFCCs
   - delta MFCCs
+    - caculate (delta) MFCCs for 25ms windows with 10ms forward shift => 100 sets per seconds
+      - then calculate mean and variance over these 100sets and use them as features
   - modulation spectrum
     - _idea_
       > trying to catch the coarse repetition of vowel sounds, which is characteristic of most laughter.
@@ -350,6 +352,7 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - First tried using an SVM similar to Kennedy and Ellis
 
   - for that one has to store feature statistics (mean and standard deviation) over a fixed segment length
+    - _is this necessary? could you not just use the features directly for an SVM as well?_
   - need to decide on offset (segment length)
     - determines precision of boundaries
   - First try: offset = 0.5s
