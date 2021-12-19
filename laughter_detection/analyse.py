@@ -303,6 +303,55 @@ def eval_preds(meeting_df, print_stats=False):
            round(tot_transc_laugh_time, 2), num_of_pred_laughs, num_of_VALID_pred_laughs, num_of_tranc_laughs]
 
 
+def create_evaluation_df(path, use_cache=False):
+    """
+    Creates a dataframe summarising evaluation metrics per meeting for each parameter-set
+    """
+    if not use_cache or not os.path.isfile('.cache/eval_df.csv'):
+        all_evals = []
+        for meeting in os.listdir(path):
+            #print(f'Evaluating meeting {meeting}...')
+            meeting_path = os.path.join(path, meeting)
+            for threshold in os.listdir(meeting_path):
+                threshold_dir = os.path.join(meeting_path, threshold)
+                for min_length in os.listdir(threshold_dir):
+                    textgrid_dir = os.path.join(threshold_dir, min_length)
+                    pred_laughs = textgrid_to_df(textgrid_dir)
+                    all_evals.append(eval_preds(pred_laughs))
+
+        cols = ['meeting', 'threshold', 'precision', 'recall',
+                'corr_pred_time', 'tot_pred_time', 'tot_transc_time', 'num_of_pred_laughs', 'valid_pred_laughs', 'num_of_transc_laughs']
+        if len(cols) != len(all_evals[0]):
+            raise Exception(
+                f'List returned by eval_preds() has wrong length. Expected length: {len(cols)}. Found: {len(all_evals[0])}.')
+        eval_df = pd.DataFrame(all_evals, columns=cols)
+        if not os.path.isdir('.cache'):
+            subprocess.run(['mkdir', '.cache'])
+        eval_df.to_csv('.cache/eval_df.csv', index=False)
+    else:
+        print("-----------------------------------------")
+        print("NO NEW EVALUATION - USING CACHED VERSION")
+        print("-----------------------------------------")
+        eval_df = pd.read_csv('.cache/eval_df.csv')
+
+    return eval_df
+
+
+def calc_sum_stats(eval_df):
+    """
+    Calculate summary statistics across all meetings per parameter-set
+    """
+    # Now aggregate stats across meetings
+    # sum_stats = eval_df.groupby('threshold')[
+    #     ['precision', 'recall']].mean().reset_index()
+
+    sum_stats = eval_df.groupby('threshold')[
+        ['precision', 'recall', 'valid_pred_laughs']].agg(['mean', 'median']).reset_index()
+    # Filter thresholds
+    # sum_stats = sum_stats[sum_stats['threshold'].isin([0.2,0.4,0.6,0.8])]
+    return sum_stats
+
+
 ##################################################
 # PLOTS
 ##################################################
@@ -445,55 +494,6 @@ def laugh_df_to_csv(df):
     """
     df = df[df['Type'] == 'breath-laugh']
     df.to_csv('breath_laugh.csv')
-
-
-def create_evaluation_df(path, use_cache=False):
-    """
-    Creates a dataframe summarising evaluation metrics per meeting for each parameter-set
-    """
-    if not use_cache or not os.path.isfile('.cache/eval_df.csv'):
-        all_evals = []
-        for meeting in os.listdir(path):
-            #print(f'Evaluating meeting {meeting}...')
-            meeting_path = os.path.join(path, meeting)
-            for threshold in os.listdir(meeting_path):
-                threshold_dir = os.path.join(meeting_path, threshold)
-                for min_length in os.listdir(threshold_dir):
-                    textgrid_dir = os.path.join(threshold_dir, min_length)
-                    pred_laughs = textgrid_to_df(textgrid_dir)
-                    all_evals.append(eval_preds(pred_laughs))
-
-        cols = ['meeting', 'threshold', 'precision', 'recall',
-                'corr_pred_time', 'tot_pred_time', 'tot_transc_time', 'num_of_pred_laughs', 'valid_pred_laughs', 'num_of_transc_laughs']
-        if len(cols) != len(all_evals[0]):
-            raise Exception(
-                f'List returned by eval_preds() has wrong length. Expected length: {len(cols)}. Found: {len(all_evals[0])}.')
-        eval_df = pd.DataFrame(all_evals, columns=cols)
-        if not os.path.isdir('.cache'):
-            subprocess.run(['mkdir', '.cache'])
-        eval_df.to_csv('.cache/eval_df.csv', index=False)
-    else:
-        print("-----------------------------------------")
-        print("NO NEW EVALUATION - USING CACHED VERSION")
-        print("-----------------------------------------")
-        eval_df = pd.read_csv('.cache/eval_df.csv')
-
-    return eval_df
-
-
-def calc_sum_stats(eval_df):
-    """
-    Calculate summary statistics across all meetings per parameter-set
-    """
-    # Now aggregate stats across meetings
-    # sum_stats = eval_df.groupby('threshold')[
-    #     ['precision', 'recall']].mean().reset_index()
-
-    sum_stats = eval_df.groupby('threshold')[
-        ['precision', 'recall', 'valid_pred_laughs']].agg(['mean', 'median']).reset_index()
-    # Filter thresholds
-    # sum_stats = sum_stats[sum_stats['threshold'].isin([0.2,0.4,0.6,0.8])]
-    return sum_stats
 
 
 def stats_for_different_min_length(preds_path):
