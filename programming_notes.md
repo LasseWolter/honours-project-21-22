@@ -13,6 +13,25 @@
     - https://github.com/open-mmlab/mmdetection/issues/1077
       > Since the custom ops are compiled with CUDA support, they do not work on the CPU-only environment. We will consider adding support for that.
 
+### Model training
+
+- the `--include-words' option seems to be like the laughter next to speech option in our evaluation
+  - comments state that they didn't use this for the paper which lets me conclude that they also looked for 'laughter-only' snippets and only used them for training
+- they use subsamples of the laughter segments instead of the whole regions - WHY?
+
+  - they store a subsample with the segment itself - this is the default subsample used for validation
+  - during training the subsampling happens on regularly to get more variety
+
+- `featurize_melspec()` if used to turn audio file into features
+
+  - optional offset/duration can be passed
+
+- loads all training data in memory upfront using a pre-created hashtable that maps from file-locations to pre-loaded audio files in bytes
+
+### Evaluation
+
+- why do they use bootstrap_metrics()-function and only use a sample of their output values?
+
 # General
 
 ### File Format
