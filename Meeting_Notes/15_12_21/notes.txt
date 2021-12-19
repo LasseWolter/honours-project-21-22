@@ -1,0 +1,12 @@
+- Optimisation while loading audio files 
+  - shouldn't load file twice when there are several laughter segments in it
+
+- subsampling is reasonable to get a fixed input length
+  - the sample duration is determined by the context window 
+    - need to think about this and see how it's done in the current model
+
+- use single file while developing the ML-pipeline
+  - fast feedback until everything works fine
+  - then use larger dataset
+    - if you can use whole dataset -> more data = better
+    - possibly they only used subsets of the ICSI data because of computational limitations back then
