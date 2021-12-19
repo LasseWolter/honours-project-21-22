@@ -149,10 +149,10 @@ _source: https://www.isca-speech.org/archive/pdfs/interspeech_2021/gillick21_int
 - Update on the original paper:
   - **Capturing, Representing, and Interacting with Laughter (2018)**
     - https://dl.acm.org/doi/pdf/10.1145/3173574.3173932
-  - trained on Switchboard dataset
-  - more general, exploring interaction with laughter - qualitative
-    > This work contributes a qualitative evaluation of our prototype
-    > system for capturing, representing, and interacting with laughter.
+    - trained on Switchboard dataset
+    - more general, exploring interaction with laughter - qualitative
+      > This work contributes a qualitative evaluation of our prototype
+      > system for capturing, representing, and interacting with laughter.
 - Augmentation of AudioSet:
   - https://github.com/jrgillick/laughter-detection/tree/master/data/audioset
   - 148 minutes of audio
@@ -600,8 +600,27 @@ There are quite a few papers using **audio-visual** detectors, meaning they comb
 - S. Petridis and M. Pantic, “Audiovisual laughter detection based on temporal features,” in Proc. 10th Int. Conf. Multimodal Interfaces, 2008, pp. 37–44.
   - _[GS-Ranked 5th "laughter detection"]_
 
+### Privacy
+
+Quote from: "Quantitative Laughter Detection, Measurement, and Classification—A Critical Survey (2016)"
+
+> In addition, even if audio and video data based systems are
+> generally the most ecological, as they allow to monitor subjects
+> moving and interacting freely, these systems can raise privacy
+> concerns, especially in the case of applications for laughter
+> aware intelligent machines and interfaces. Individual wearable
+> systems using body movement data, relying on well-established
+> body movement-emotional state models, can help addressing
+> these concerns.
+
+- I understand this argument but disagree because wearable sensors are quite inconvenient and intrusive
+  - Gillick et al. agree with me:
+    > Research within HCI has also explored techniques for detect-ing laughter or related emotional signals through other modalities besides audio. Laughter detection might also be attempted, for example, through cameras trained on facial expressions [20,21]or through wearable technology integrated into clothing in order to track body movements [22,23,24]. These kinds of sensing,however, have proved to be more intrusive and less practical than passive audio-based sensing using the microphones already embedded in our mobile phones [7].
+
 ### Questions
 
+- How sensible is it that we use a model that was made for 'noisy environments' does this suit our domain?
+  - how important is 'resistance to noise' for our model?
 - Which paper first used CNNs instead of other techniques for audio classification?
 - How much should I talk about the history of audio processing in general?
   - include a few more general papers on AED(Audio Event Detection)
