@@ -36,7 +36,7 @@
 
 \date{\today}
 
-\abstract{
+\abstract{j
 
 % This skeleton demonstrates how to use the \texttt{infthesis} style for
 % undergraduate dissertations in the School of Informatics. It also emphasises the
@@ -69,7 +69,14 @@
 
 \chapter{Introduction}
 
-\chapter{Background}
+Achievements
+\begin{enumerate}
+  \item Evaluation of existing laughter detection model on the whole ICSI meeting corpus
+  \item Investigation of bad performance of this model on ICSI corpus
+  \item Retrain model on ICSI corpus
+\end{enumerate}
+
+\chapter{Background} \label{cha:bg}
 Automatic applause and laughter detection isn't a new idea. Nevertheless, the research in these two areas is usually done separately. There are a few papers which cover both, one of the most popular ones being from Cai et. al \cite{cai2003highlight} who used sound effect detection - which included laughter and applause - for video summarisation and highlight extraction.
 Apart from this and a few other papers most research only covers one of the two domains, either applause or laughter. Thus, we split the review of existing research into the following sections:
 \begin{enumerate}
@@ -79,7 +86,7 @@ Apart from this and a few other papers most research only covers one of the two 
 \end{enumerate}
 
 
-\section{Laughter Detection}
+\section{Laughter Detection} \label{sec:bg-laughter}
 The investigation of the acoustic features of laughter reaches back three decades \cite{bickley1992acoustic}.
 In the early 2000s, the first attempts of laughter detection in conversational speech classified presegmented audio data \cite{kennedy2004laughter, truong2005automatic}. These models could only decide whether laughter occurred within in a given segment. The determination of segment boundaries of laughter events wasn't considered. 
 Corpora used in these papers include the development data from the 2004 Spring NIST Rich Transcription Evaluation \cite{ldcnistcorpus}, the Dutch CGN corpus \cite{oostdijk2000spoken} as well as the ICSI Meeting Recorder corpus \cite{morgan2001meeting}. 
@@ -119,7 +126,7 @@ By training and evaluating separate neural networks for each type of feature fir
 \begin{figure}[htp]
     \centering
     \includegraphics[width=10cm]{imgs/Knox_window.png}
-    \caption{Frame window used by Know and Mirghafori}
+    \caption{Frame window used by Knox and Mirghafori}
     \label{fig:know_window}
 \end{figure}
 
@@ -160,15 +167,66 @@ Even though the decision tree stages were different to Li et al. \cite{li2009cha
 \section{Evaluation metrics} \label{theory}
 still to be written
 
-% \chapter{Other}
-% \section{Privacy Concerns}\label{privacy-concerns}
-% People might have privacy concerns if their visual input is used for classification.
-% Additionally, in video meetings and conferences people often turn off their video input.
-% Consentino et al. \cite{cosentino2016quantitative}  mention the privacy implications of video input and raise the same concern for audio input.
-% Thus, they suggest the use of individual wearable sensors to address these concerns.
-% For our project this approach isn't feasible and further, wearable devices might be quite intrusive.
-% In our system people can opt-out of using the laughter-detection feature at any time.
-% That way people stay in control of their own privacy.
+
+\chapter{tbd} 
+
+\section{Model and data selection}\label{sec:model-and-data}
+After having done the initial research we decided to focus solely on laughter detection. 
+There are two main reasons for this, type of previous research and open source code available.  
+As mentioned in the background chapter (\ref{cha:bg}) most research in the field of laughter and applause detection is done separately. 
+Thus, implementing a detection algorithm from existing research requires merging different models. 
+For a combined model to work it is essential that a good understanding of each domain is already present.
+We decided that this is most easily attained by focusing on one domain first. 
+We chose to focus on laughter instead of applause due to the second reason mentioned above.
+There was an open-source repository available which showcased an existing state-of-the-art laughter detection algorithm.
+In fact, the corresponding paper by Gillick et al. \cite{gillick2021robust} was just published a month before this project started.
+
+
+To investigate how this existing model might perform in our considered domain, namely single-person audio recordings - as it is the standard in video conferences - we decided to evaluate it on the ICSI meeting corpus \cite{morgan2001meeting}. 
+We initially considered the use of Audio Set \cite{googleaudioset} as a possible evaluation corpus. After some discussion we discarded this idea because of a mismatch with the domain for our project. Audio Set was built by extracting 10s audio segments from Youtube videos and assigning it to one a set of classes. Laughter is one of the classes considered. Nevertheless, the domain of Youtube videos varies drastrically. It can be a recording of someone laughing in a silent environment inside a room or someone laughing in a very noisy environment outside. This variety of environments might help for generalising laughter detection but isn't suitable for our project where we focus on laughter detection in a relatively quiet environment with audio being recorded individually for every single person.
+In contrast, the ICSI corpus was a good match to our domain as it solely consists of meeting speech recorded with both close-distance and table-top microphones. 
+We only make use of the close-distance microphone recordings which capture the audio of a single meeting participant.
+Laughter occurrences aren't reported by class assignment as in Audio Set. The ICSI corpus provides transcriptions for all its participants containing speech as well as \texttt{Vocal} and \texttt{NonVocal} tags for sounds like microphone noise and laughter. 
+
+Transcriptions are split into segments denoted by a start and end time. Consequently laughter segments cannot be precisely identified if they occur in one segments next to speech. Thus, laughter annotations cannot be considered strongly labeled data. Nevertheless it is possible to get strongly labeled annotations by only using those laughter segments that appear in a transcription segments by itself (see \ref{sec:model-eval}).
+Another reason for choosing the ICSI database is it is size - about 75 hours.
+Even after filtering for laughter segments that occur on their own, there are still 8420 snippets with an accumulated duration of 3.9h. 
+We considered this a reasonable size to do evaluation on. 
+
+
+\section{Model Evaluation} \label{sec:model-eval}
+The first part of evaluation was to filter out the segments that only contain laughter. As mentioned in \ref{sec:model-and-data} this was required to get strongly labeled data. Strongly labeled training data is key for our project as we are trying to accurately determine the boundaries of laughter segments. 
+It is not enough to simply determine if a certain interval contains laughter or not as this won't help in determining accurate segment boundaries. 
+The process of filtering for snippets only containing laughter is similar to Knox and Mirghafori's approach to obtain frame-level training data \cite{knox2006automatic} (\ref{sec:bg-laughter}). 
+Another approach would have been to use an ASR model to align transcriptions with audio. Considering the sufficient amount of laughter segments attained with the simple approach presented above, this more complex and more time consuming approach wasn't necessary. For future projects this might be a useful approach to gain more accurate training/testing data. 
+In contrast to some of the research presented in the background chapter which only used a subset of the ICSI corpus we used the whole dataset for evaluation. We ran the pre-trained detection model by Gillick et al. with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
+Precision and recall for those 1872 experiments can be found in table (TODO).
+A precision-recall curve was plotted (fig:TODO). The precision recall curve has the expected shape but visualises the main problem. The maximum recall achieved is 31.53\%. We expected that a low threshold like 0.2 would yield low precision. Getting such a low recall, however, was surprising. 
+Initially we thought that there might be something wrong with our evaluation method. After some discussion we realised that the discarded laughter occurrences to get strongly labeled data weren't discarded from the predictions. This meant that the model could classify a laughter occurrence correctly but the evaluation method would consider it as false because this laughter occurrence was discarded pre-evaluation. This discrepancy in preprocessing was easily fixed and as one would expect the precision was significantly (fig: TODO). Nevertheless, the recall remained almost unchanged. 
+
+To make these results more tangible we did a theoretical experiment. What would happen is such is system was deployed? The results of this practical experiment can be seen in table TODO. 
+Considering any of the four possible systems - with different thresholds each - it is aparent that such a system would be entirely unusable. We'll briefly examine the two extreme cases. If the threshold was really low, e.g. 0.2, not roughly TODO minutes of TODO minutes laughter would be correctly retrieved. Despite this being a not even half of the laughter events that actually occurred we also got about TODO minutes of noise.  
+On the other hand, choosing a high threshold, e.g. 0.8, yields very high precision and thus, no noise is transmitted. Even though no noise is retrieved we merely retrieve TODO minutes of laughter in a meeting of TODO minutes. With such a low percentage of retrieved laughter events there is not much difference to entirely muting yourself. 
+
+A possible reason for such a bad performance on the ICSI corpus is a data mismatch between training and evaluation data. The pre-trained model by Gillick et al. \cite{gillick2021robust} was trained on the Switchboard corpus \cite{switchboard-corpus}. The Switchboard corpus records telephone conversations between two participants at a sample rate of 8000hz. The ICSI corpus records meeting speech of multiple participants at a sample rate of 16000hz. The Switchboard dataset has one audio track containing all audio whereas the ICSI corpus has a separate audio track for each participant.  
+TODO: possible other differences?
+These differences suggest that a model trained on one of these corpora might not perform well on the other one. 
+TODO: How does this tie in with Gillick et al.'s statement that they tried to create a detection algorithm that performs better on noisy data? How do they define "work well"? Did this cause the model to perform worse on quiet data?
+In response to this finding we decided to retrain the model on the ICSI dataset. 
+
+\chapter{tbd}
+\section{Retraining the model}
+
+\chapter{Other}
+\section{Privacy Concerns}\label{privacy-concerns}
+People might have privacy concerns if their visual input is used for classification.
+Additionally, in video meetings and conferences people often turn off their video input.
+Consentino et al. \cite{cosentino2016quantitative}  mention the privacy implications of video input and raise the same concern for audio input.
+Thus, they suggest the use of individual wearable sensors to address these concerns.
+For our project this approach isn't feasible and further, wearable devices might be quite intrusive.
+In our system people can opt-out of using the laughter-detection feature at any time.
+That way people stay in control of their own privacy.
+
 \bibliographystyle{plain}
 \bibliography{mybibfile}
 
