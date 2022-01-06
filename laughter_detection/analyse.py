@@ -43,8 +43,8 @@ def textgrid_to_df(file_path):
             tot_list += textgrid_to_list(full_path,
                                          params)
 
-    cols = ['Meeting', 'ID', 'Channel', 'Start',
-            'End', 'Length', 'Threshold', 'Type']
+    cols = ['meeting_id', 'part_id', 'chan', 'start',
+            'end', 'length', 'threshold', 'type']
     df = pd.DataFrame(tot_list, columns=cols)
     return df
 
@@ -101,7 +101,7 @@ def remove_breath_laugh(df):
     suitable for our project
     TODO: Decide on this
     """
-    return df[df['Type'] != 'breath-laugh']
+    return df[df['type'] != 'breath-laugh']
 
 
 def sec_to_frame(time):
@@ -128,40 +128,40 @@ def create_laugh_index(df):
     if MIXED_LAUGH_INDEX == {}:
         raise RuntimeError(
             "MIXED_LAUGH_INDEX needs to be created before LAUGH_INDEX")
-    meeting_groups = df.groupby(['Meeting'])
+    meeting_groups = df.groupby(['meeting_id'])
 
     for meeting_id, meeting_df in meeting_groups:
         LAUGH_INDEX[meeting_id] = {}
         LAUGH_INDEX[meeting_id]['tot_laugh_len'] = 0
         LAUGH_INDEX[meeting_id]['tot_laugh_events'] = 0
 
-        # Ensure rows are sorted by 'Start'-time in ascending order
-        part_groups = meeting_df.sort_values('Start').groupby(['ID'])
+        # Ensure rows are sorted by 'start'-time in ascending order
+        part_groups = meeting_df.sort_values('start').groupby(['part_id'])
         for part_id, part_df in part_groups:
             LAUGH_INDEX[meeting_id][part_id] = P.empty()
             for _, row in part_df.iterrows():
                 # If the length is shorter than min_length passed to detection, skip
                 # emprically tested -> this doesn't apply to many segments
-                if(row['Length'] < MIN_LENGTH or row['Type'] == 'breath-laugh'):
+                if(row['length'] < MIN_LENGTH or row['type'] == 'breath-laugh'):
                     # append to invalid segments (assumes that MIXED_LAUGH_INDEX has been created beforehand)
-                    start = sec_to_frame(row['Start'])
-                    end = sec_to_frame(row['End'])
+                    start = sec_to_frame(row['start'])
+                    end = sec_to_frame(row['end'])
                     if part_id in MIXED_LAUGH_INDEX[meeting_id].keys():
                         MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
                             start, end)
-                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
                         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
                     else:
                         MIXED_LAUGH_INDEX[meeting_id][part_id] = P.closed(
                             start, end)
-                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
                         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
                     continue
-                start = sec_to_frame(row['Start'])
-                end = sec_to_frame(row['End'])
+                start = sec_to_frame(row['start'])
+                end = sec_to_frame(row['end'])
                 LAUGH_INDEX[meeting_id][part_id] = LAUGH_INDEX[meeting_id][part_id] | P.closed(
                     start, end)
-                LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
                 LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
 
 
@@ -180,22 +180,22 @@ def create_mixed_laugh_index(df):
         ...
     }
     """
-    meeting_groups = df.groupby(['Meeting'])
+    meeting_groups = df.groupby(['meeting_id'])
     for meeting_id, meeting_df in meeting_groups:
         MIXED_LAUGH_INDEX[meeting_id] = {}
         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] = 0
         MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] = 0
 
-        # Ensure rows are sorted by 'Start'-time in ascending order
-        part_groups = meeting_df.sort_values('Start').groupby(['ID'])
+        # Ensure rows are sorted by 'start'-time in ascending order
+        part_groups = meeting_df.sort_values('start').groupby(['part_id'])
         for part_id, part_df in part_groups:
             MIXED_LAUGH_INDEX[meeting_id][part_id] = P.empty()
             for _, row in part_df.iterrows():
-                start = sec_to_frame(row['Start'])
-                end = sec_to_frame(row['End'])
+                start = sec_to_frame(row['start'])
+                end = sec_to_frame(row['end'])
                 MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
                     start, end)
-                MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['Length']
+                MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
                 MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
 
 ##################################################
@@ -237,27 +237,27 @@ def eval_preds(meeting_df, print_stats=False):
     if meeting_df.size == 0:
         return []
 
-    meeting_id = meeting_df.iloc[0]['Meeting']
-    threshold = meeting_df.iloc[0]['Threshold']
+    meeting_id = meeting_df.iloc[0]['meeting_id']
+    threshold = meeting_df.iloc[0]['threshold']
 
     tot_predicted_time, tot_corr_pred_time, tot_incorr_pred_time = 0, 0, 0
     tot_transc_laugh_time = LAUGH_INDEX[meeting_id]['tot_laugh_len']
-    num_of_tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['Meeting']
+    num_of_tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['meeting_id']
                                               == meeting_id].shape[0]
     num_of_pred_laughs = meeting_df.shape[0]
 
     # Count by
     num_of_VALID_pred_laughs = 0
 
-    group_by_part = meeting_df.groupby(['ID'])
+    group_by_part = meeting_df.groupby(['part_id'])
 
     for part_id, part_df in group_by_part:
         part_pred_frames = P.empty()
         for _, row in part_df.iterrows():
 
             # Create interval representing predicted laughter frames
-            pred_start_frame = sec_to_frame(row['Start'])
-            pred_end_frame = sec_to_frame(row['End'])
+            pred_start_frame = sec_to_frame(row['start'])
+            pred_end_frame = sec_to_frame(row['end'])
             pred_laugh = P.closed(pred_start_frame, pred_end_frame)
 
             # If the there are no invalid frames for this participant
@@ -269,7 +269,7 @@ def eval_preds(meeting_df, print_stats=False):
             # Append interval to total predicted frames for this participant
             part_pred_frames = part_pred_frames | pred_laugh
             # Old Version
-            # tot_predicted_time += row['Length']
+            # tot_predicted_time += row['length']
 
         corr, incorr = laugh_match(part_pred_frames, meeting_id, part_id)
         tot_corr_pred_time += corr
@@ -492,7 +492,7 @@ def laugh_df_to_csv(df):
     e.g. for generating .wav-files using
     ./output_processing/laughs_to_wav.py from this .csv
     """
-    df = df[df['Type'] == 'breath-laugh']
+    df = df[df['type'] == 'breath-laugh']
     df.to_csv('breath_laugh.csv')
 
 
@@ -552,7 +552,7 @@ def create_csvs_for_meeting(meeting_id, preds_path):
         2) containing all predicted laughter events (for threshholds: 0.2, 0.4, 0.6, 0.8)
             - thus, duplicates are possible -> take this into account when analysing
     """
-    tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['Meeting'] == meeting_id]
+    tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['meeting_id'] == meeting_id]
     tranc_laughs.to_csv(f'{meeting_id}_transc.csv')
 
     meeting_path = os.path.join(preds_path, meeting_id)
@@ -592,8 +592,8 @@ def main():
     print(sum_stats)
 
     # Create plots for different thresholds
-    for t in [.2, .4, .6, .8]:
-        plot_aggregated_laughter_length_dist(eval_df, t, save_dir='./imgs/')
+    # for t in [.2, .4, .6, .8]:
+    #     plot_aggregated_laughter_length_dist(eval_df, t, save_dir='./imgs/')
     #     plot_agg_pred_time_ratio_dist(eval_df, t, save_dir='./imgs/')
 
 

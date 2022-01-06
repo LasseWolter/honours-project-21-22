@@ -161,7 +161,8 @@ def create_dfs(file_dir, files):
         general_info_sublist = general_info_to_list(full_path, meeting_id)
         general_info_list += general_info_sublist
 
-    laugh_cols = ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
+    laugh_cols = ['meeting_id', 'part_id',
+                  'chan', 'start', 'end', 'length', 'type']
     laugh_only_df = pd.DataFrame(tot_laugh_only_segs, columns=laugh_cols)
     mixed_laugh_df = pd.DataFrame(tot_mixed_laugh_segs, columns=laugh_cols)
 
