@@ -8,7 +8,7 @@ import sys
 chan_to_part = {}  # index mapping channel to participant per meeting
 part_to_chan = {}  # index mapping participant to channel per meeting
 laugh_only_df = pd.DataFrame()  # dataframe containing transcribed laugh only events
-mixed_laugh_df = pd.DataFrame()  # dataframe containing mixed laugh events
+invalid_df = pd.DataFrame()  # dataframe containing invalid segments
 
 # Dataframe containing total length and audio_path of each channel
 info_df = pd.DataFrame()
@@ -66,13 +66,13 @@ def parse_xml_to_list(xml_seg, meeting_id):
     return [meeting_id, part_id, chan_id, start, end, length, l_type]
 
 
-def laughs_to_list(filename, meeting_id):
+def get_segment_list(filename, meeting_id):
     """
     Returns two list:
         1) List containing segments laughter only (no text or other sounds surrounding it)
-        2) List containing segments of mixed laughter (laughter surrounding by other sounds)
+        2) List containing segments of invalid segments (e.g. laughter surrounding by other sounds)
     """
-    laugh_mixed_list = []
+    invalid_list = []
     laugh_only_list = []
 
     # Get all segments that contain some kind of laughter (e.g. 'laugh', 'breath-laugh')
@@ -88,9 +88,9 @@ def laughs_to_list(filename, meeting_id):
         if seg.text.strip() == '' and len(seg.getchildren()) == 1:
             laugh_only_list.append(seg_as_list)
         else:
-            laugh_mixed_list.append(seg_as_list)
+            invalid_list.append(seg_as_list)
 
-    return laugh_only_list, laugh_mixed_list
+    return laugh_only_list, invalid_list
 
 
 def general_info_to_list(filename, meeting_id):
@@ -135,17 +135,17 @@ def create_dfs(file_dir, files):
     '''
     Creates two laugh_dfs and one info_df:
         1) laugh_only_df: dataframe containing laughter only snippets
-        2) mixed_laugh_df: dataframe containing snippets with laughter next to speech
+        2) invalid_df: dataframe containing snippets with laughter next to speech
         3) general_info_df: dataframe containing total length and audio_path of each channel
 
-    laugh_df columns: ['Meeting', 'ID', 'Channel', 'Start', 'End', 'Length', 'Type']
+    laugh_df columns: ['meeting_id', 'part_id', 'chan', 'start', 'end', 'length', 'type']
 
-    info_df columns: ['meeting_id', 'channel', 'length', 'path']
+    info_df columns: ['meeting_id', 'chan', 'length', 'path']
 
     '''
-    global laugh_only_df, mixed_laugh_df, info_df
+    global laugh_only_df, invalid_df, info_df
     tot_laugh_only_segs = []
-    tot_mixed_laugh_segs = []
+    tot_invalid_segs = []
 
     general_info_list = []
     # Iterate over all .mrt files
@@ -154,9 +154,9 @@ def create_dfs(file_dir, files):
         basename = os.path.basename(filename)
         meeting_id = os.path.splitext(basename)[0]
         full_path = os.path.join(file_dir, filename)
-        laugh_only, mixed_laugh = laughs_to_list(full_path, meeting_id)
+        laugh_only, invalid = get_segment_list(full_path, meeting_id)
         tot_laugh_only_segs += laugh_only
-        tot_mixed_laugh_segs += mixed_laugh
+        tot_invalid_segs += invalid
 
         general_info_sublist = general_info_to_list(full_path, meeting_id)
         general_info_list += general_info_sublist
@@ -164,10 +164,25 @@ def create_dfs(file_dir, files):
     laugh_cols = ['meeting_id', 'part_id',
                   'chan', 'start', 'end', 'length', 'type']
     laugh_only_df = pd.DataFrame(tot_laugh_only_segs, columns=laugh_cols)
-    mixed_laugh_df = pd.DataFrame(tot_mixed_laugh_segs, columns=laugh_cols)
+    invalid_df = pd.DataFrame(tot_invalid_segs, columns=laugh_cols)
 
-    info_cols = ['meeting_id', 'channel', 'length', 'path']
+    info_cols = ['meeting_id', 'chan', 'length', 'path']
     info_df = pd.DataFrame(general_info_list, columns=info_cols)
+
+
+def parse_transcripts(path):
+    '''
+    Function executed on import of this module.
+    Parses transcripts (including preamble.mrt) and creates:
+        - chan_to_part: index mapping channel to participant per meeting
+        - part_to_chan: index mapping participant to channel per meeting
+        - laugh_only_df: dataframe containing transcribed laugh only events
+        - invalid_df: dataframe containing invalid segments (e.g. mixed laugh and speech) 
+    '''
+    parse_preambles(os.path.join(path, 'preambles.mrt'))
+
+    transc_files = get_transcripts(path)
+    create_dfs(path, transc_files)
 
 
 def _print_stats(df):
@@ -178,31 +193,11 @@ def _print_stats(df):
     if df.size == 0:
         print('Empty DataFrame')
         return
-    print('avg-snippet-length: {:.2f}s'.format(df['Length'].mean()))
+    print('avg-snippet-length: {:.2f}s'.format(df['length'].mean()))
     print('Number of snippets: {}'.format(df.shape[0]))
-    tot_dur = df['Length'].sum()
+    tot_dur = df['length'].sum()
     print('Total laughter duration in three formats: \n- {:.2f}h \n- {:.2f}min \n- {:.2f}s'.format(
         (tot_dur / 3600), (tot_dur / 60), tot_dur))
-
-
-def parse_transcripts(path):
-    '''
-    Function executed on import of this module.
-    Parses transcripts (including preamble.mrt) and creates:
-        - chan_to_part: index mapping channel to participant per meeting
-        - part_to_chan: index mapping participant to channel per meeting
-        - laugh_only_df: dataframe containing transcribed laugh only events
-        - mixed_laugh_df: dataframe containing mixed laugh events
-    '''
-    parse_preambles(os.path.join(path, 'preambles.mrt'))
-
-    transc_files = get_transcripts(path)
-    create_dfs(path, transc_files)
-
-
-# Parse transcripts on import
-file_path = os.path.join(os.path.dirname(__file__), 'data')
-parse_transcripts(file_path)
 
 
 def main():
@@ -210,11 +205,14 @@ def main():
     Main executed when file is called directly
     NOT on import
     '''
+    file_path = os.path.join(os.path.dirname(__file__), 'data')
+    parse_transcripts(file_path)
+
     print('\n----LAUGHTER ONLY-----')
     _print_stats(laugh_only_df)
 
-    print('\n----MIXED LAUGHTER-----')
-    _print_stats(mixed_laugh_df)
+    print('\n----INALID SEGMENTS-----')
+    _print_stats(invalid_df)
 
     print('\n----INFO DF-----')
     print(info_df)
@@ -222,3 +220,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+#############################################
+# EXECUTED ON IMPORT
+#############################################
+# Parse transcripts on import
+file_path = os.path.join(os.path.dirname(__file__), 'data')
+parse_transcripts(file_path)

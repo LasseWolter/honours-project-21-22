@@ -8,7 +8,10 @@ import subprocess
 import numpy as np
 import portion as P
 
+import config as cfg
 from transcript_parsing import parse
+import preprocess as prep
+import utils
 
 ##################################################
 # PARSE TEXTGRID
@@ -81,123 +84,6 @@ def get_params_from_path(path):
     params['meeting_id'] = meeting_id
     return params
 
-
-##################################################
-# PREPROCESSING
-##################################################
-LAUGH_INDEX = {}
-MIXED_LAUGH_INDEX = {}
-MIN_LENGTH = 0.2
-
-# Factor determines the frame size
-# 100 means 1sec gets split into 100 10ms intervals
-FRAME_FACTOR = 100
-
-
-def remove_breath_laugh(df):
-    """
-    Remove all events of type breath laugh
-    after manual evaluation of samples breath-laughs are maybe
-    suitable for our project
-    TODO: Decide on this
-    """
-    return df[df['type'] != 'breath-laugh']
-
-
-def sec_to_frame(time):
-    """ Return a time expressed as an integer representing the frame number """
-    return round(time * FRAME_FACTOR)
-
-
-def create_laugh_index(df):
-    """
-    Creates a laugh_index with all transcribed laughter events
-    per particpant per meeting
-    dict structure:
-    {
-        meeting_id: {
-            tot_laugh_len: INT
-            part_id: [P.closed(start,end), P.closed(start,end)]
-            part_id: [P.closed(start,end), P.closed(start,end)]
-        }
-        ...
-    }
-    """
-    global LAUGH_INDEX, MIXED_LAUGH_INDEX
-
-    if MIXED_LAUGH_INDEX == {}:
-        raise RuntimeError(
-            "MIXED_LAUGH_INDEX needs to be created before LAUGH_INDEX")
-    meeting_groups = df.groupby(['meeting_id'])
-
-    for meeting_id, meeting_df in meeting_groups:
-        LAUGH_INDEX[meeting_id] = {}
-        LAUGH_INDEX[meeting_id]['tot_laugh_len'] = 0
-        LAUGH_INDEX[meeting_id]['tot_laugh_events'] = 0
-
-        # Ensure rows are sorted by 'start'-time in ascending order
-        part_groups = meeting_df.sort_values('start').groupby(['part_id'])
-        for part_id, part_df in part_groups:
-            LAUGH_INDEX[meeting_id][part_id] = P.empty()
-            for _, row in part_df.iterrows():
-                # If the length is shorter than min_length passed to detection, skip
-                # emprically tested -> this doesn't apply to many segments
-                if(row['length'] < MIN_LENGTH or row['type'] == 'breath-laugh'):
-                    # append to invalid segments (assumes that MIXED_LAUGH_INDEX has been created beforehand)
-                    start = sec_to_frame(row['start'])
-                    end = sec_to_frame(row['end'])
-                    if part_id in MIXED_LAUGH_INDEX[meeting_id].keys():
-                        MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
-                            start, end)
-                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
-                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
-                    else:
-                        MIXED_LAUGH_INDEX[meeting_id][part_id] = P.closed(
-                            start, end)
-                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
-                        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
-                    continue
-                start = sec_to_frame(row['start'])
-                end = sec_to_frame(row['end'])
-                LAUGH_INDEX[meeting_id][part_id] = LAUGH_INDEX[meeting_id][part_id] | P.closed(
-                    start, end)
-                LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
-                LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
-
-
-def create_mixed_laugh_index(df):
-    global MIXED_LAUGH_INDEX
-    """
-    Creates a mixed_laugh_index with all transcribed laughter events
-    occurring next to other sounds per particpant per meeting
-    dict structure:
-    {
-        meeting_id: {
-            tot_laugh_len: INT
-            part_id: [P.closed(start,end), P.closed(start,end)]
-            part_id: [P.closed(start,end), P.closed(start,end)]
-        }
-        ...
-    }
-    """
-    meeting_groups = df.groupby(['meeting_id'])
-    for meeting_id, meeting_df in meeting_groups:
-        MIXED_LAUGH_INDEX[meeting_id] = {}
-        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] = 0
-        MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] = 0
-
-        # Ensure rows are sorted by 'start'-time in ascending order
-        part_groups = meeting_df.sort_values('start').groupby(['part_id'])
-        for part_id, part_df in part_groups:
-            MIXED_LAUGH_INDEX[meeting_id][part_id] = P.empty()
-            for _, row in part_df.iterrows():
-                start = sec_to_frame(row['start'])
-                end = sec_to_frame(row['end'])
-                MIXED_LAUGH_INDEX[meeting_id][part_id] = MIXED_LAUGH_INDEX[meeting_id][part_id] | P.closed(
-                    start, end)
-                MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_len'] += row['length']
-                MIXED_LAUGH_INDEX[meeting_id]['tot_laugh_events'] += 1
-
 ##################################################
 # ANALYSE
 ##################################################
@@ -211,19 +97,19 @@ def laugh_match(pred_laugh, meeting_id, part_id):
     Returns: (time_predicted_correctly, time_predicted_falsely)
     '''
 
-    if part_id in MIXED_LAUGH_INDEX[meeting_id].keys():
+    if part_id in prep.invalid_index[meeting_id].keys():
         # Remove laughter occurring in mixed settings because we don't evaluate them
-        pred_laugh = pred_laugh - MIXED_LAUGH_INDEX[meeting_id][part_id]
+        pred_laugh = pred_laugh - prep.invalid_index[meeting_id][part_id]
 
-    pred_length = len(list(P.iterate(pred_laugh, step=1)))/float(FRAME_FACTOR)
+    pred_length = utils.to_sec(utils.p_len(pred_laugh))
 
-    if part_id not in LAUGH_INDEX[meeting_id].keys():
+    if part_id not in prep.laugh_index[meeting_id].keys():
         # No laugh events transcribed for this participant - all false
         return(0, pred_length)
 
     # Get correct
-    match = LAUGH_INDEX[meeting_id][part_id] & pred_laugh
-    correct = len(list(P.iterate(match, step=1)))/float(FRAME_FACTOR)
+    match = prep.laugh_index[meeting_id][part_id] & pred_laugh
+    correct = utils.to_sec(utils.p_len(match))
     incorrect = pred_length - correct
     return(correct, incorrect)
 
@@ -241,7 +127,7 @@ def eval_preds(meeting_df, print_stats=False):
     threshold = meeting_df.iloc[0]['threshold']
 
     tot_predicted_time, tot_corr_pred_time, tot_incorr_pred_time = 0, 0, 0
-    tot_transc_laugh_time = LAUGH_INDEX[meeting_id]['tot_laugh_len']
+    tot_transc_laugh_time = prep.laugh_index[meeting_id]['tot_len']
     num_of_tranc_laughs = parse.laugh_only_df[parse.laugh_only_df['meeting_id']
                                               == meeting_id].shape[0]
     num_of_pred_laughs = meeting_df.shape[0]
@@ -256,14 +142,14 @@ def eval_preds(meeting_df, print_stats=False):
         for _, row in part_df.iterrows():
 
             # Create interval representing predicted laughter frames
-            pred_start_frame = sec_to_frame(row['start'])
-            pred_end_frame = sec_to_frame(row['end'])
+            pred_start_frame = utils.to_frames(row['start'])
+            pred_end_frame = utils.to_frames(row['end'])
             pred_laugh = P.closed(pred_start_frame, pred_end_frame)
 
             # If the there are no invalid frames for this participant
             # or if the laugh frame doesn't lie in an invalid section -> increase num of valid predictions
-            if part_id not in MIXED_LAUGH_INDEX[meeting_id].keys() or \
-                    not MIXED_LAUGH_INDEX[meeting_id][part_id].contains(pred_laugh):
+            if part_id not in prep.invalid_index[meeting_id].keys() or \
+                    not prep.invalid_index[meeting_id][part_id].contains(pred_laugh):
                 num_of_VALID_pred_laughs += 1
 
             # Append interval to total predicted frames for this participant
@@ -484,6 +370,7 @@ def plot_agg_pred_time_ratio_dist(df, threshold, save_dir=""):
 ##################################################
 # OTHER
 ##################################################
+MIN_LENGTH = cfg.model['min_length']
 
 
 def laugh_df_to_csv(df):
@@ -496,6 +383,7 @@ def laugh_df_to_csv(df):
     df.to_csv('breath_laugh.csv')
 
 
+# TODO: rewrite this function (if needed) to work with new structure
 def stats_for_different_min_length(preds_path):
     global MIN_LENGTH
 
@@ -512,8 +400,9 @@ def stats_for_different_min_length(preds_path):
         # Need to recreate laughter indices and eval_df because min_length was changed
         # First create laughter segment indices
         # Mixed laugh index needs to be created first (see implementation of laugh_index)
-        create_mixed_laugh_index(parse.mixed_laugh_df)
-        create_laugh_index(parse.laugh_only_df)
+        # NEED TO CHANGED THE FOLLOWING TWO LINES
+        # create_mixed_laugh_index(parse.invalid_df)
+        # create_laugh_index(parse.laugh_only_df)
 
         # Then create or load eval_df -> stats for each meeting
         eval_df = create_evaluation_df(preds_path)
@@ -527,17 +416,17 @@ def stats_for_different_min_length(preds_path):
         # Print out the number of laughter events left for this min_length
         acc_len = 0
         acc_ev = 0
-        for meeting in LAUGH_INDEX.keys():
-            acc_len += LAUGH_INDEX[meeting]['tot_laugh_len']
-            acc_ev += LAUGH_INDEX[meeting]['tot_laugh_events']
+        for meeting in prep.laugh_index.keys():
+            acc_len += prep.laugh_index[meeting]['tot_len']
+            acc_ev += prep.laugh_index[meeting]['tot_events']
         print(f'Agg. laugh length: {acc_len:.2f}')
         print(f'Total laugh events: {acc_ev}')
         # Print number of invalid laughter events for this min_length
         acc_len = 0
         acc_ev = 0
-        for meeting in MIXED_LAUGH_INDEX.keys():
-            acc_len += MIXED_LAUGH_INDEX[meeting]['tot_laugh_len']
-            acc_ev += MIXED_LAUGH_INDEX[meeting]['tot_laugh_events']
+        for meeting in prep.invalid_index.keys():
+            acc_len += prep.invalid_index[meeting]['tot_len']
+            acc_ev += prep.invalid_index[meeting]['tot_events']
         print(f'Agg. invalid laugh length: {acc_len:.2f}')
         print(f'Total invalid laugh events: {acc_ev}')
 
@@ -571,17 +460,6 @@ def create_csvs_for_meeting(meeting_id, preds_path):
 
 
 def main():
-
-    # If preprocessing on transcribed data is needed, use if case in create_laugh_index
-    # This adds 'filtered out events' to MIXED_LAUGHTER_INDEX instead such that
-    # they are discounted from the evaluation completely
-    #   -> This is done by subtracting them from the predicted segments in laugh_match()
-
-    # First create laughter segment indices
-    # Mixed laugh index needs to be created first (see implementation of laugh_index)
-    create_mixed_laugh_index(parse.mixed_laugh_df)
-    create_laugh_index(parse.laugh_only_df)
-
     # Path that contains all predicted laughs in separate dirs for each parameter
     preds_path = './output_processing/outputs/'
     # Then create or load eval_df -> stats for each meeting
