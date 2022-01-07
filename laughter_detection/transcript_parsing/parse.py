@@ -45,6 +45,7 @@ def parse_xml_to_list(xml_seg, meeting_id):
     '''
     Input: xml laughter segment as etree Element, meeting id
     Output: list of features representing this laughter segment
+        - returns [] if no valid part_id was found 
     '''
     part_id = xml_seg.get('Participant')
     start = float(xml_seg.get('StartTime'))
@@ -70,7 +71,7 @@ def get_segment_list(filename, meeting_id):
     """
     Returns two list:
         1) List containing segments laughter only (no text or other sounds surrounding it)
-        2) List containing segments of invalid segments (e.g. laughter surrounding by other sounds)
+        2) List containing invalid segments (e.g. laughter surrounding by other sounds)
     """
     invalid_list = []
     laugh_only_list = []
@@ -84,8 +85,8 @@ def get_segment_list(filename, meeting_id):
     # mixed laugh means that the laugh occurred next to speech or any other sound
     for seg in laugh_segs:
         seg_as_list = parse_xml_to_list(seg, meeting_id)
-        # Check if there is no surrounding text and no other Sound tags
-        if seg.text.strip() == '' and len(seg.getchildren()) == 1:
+        # Check if valid (!=[]) and that there is no surrounding text and no other Sound tags
+        if seg_as_list != [] and seg.text.strip() == '' and len(seg.getchildren()) == 1:
             laugh_only_list.append(seg_as_list)
         else:
             invalid_list.append(seg_as_list)
@@ -112,7 +113,6 @@ def get_transcripts(path):
     '''
 
     files = []
-    file_dir = ""
     # If a directory is given take all .mrt files
     # otherwise only take given file
     dirname = os.path.dirname(__file__)
@@ -120,7 +120,6 @@ def get_transcripts(path):
 
     # Match particular file or all .mrt files
     if os.path.isdir(path):
-        file_dir = path
         for filename in os.listdir(path):
             # All icsi meetings have a 6 letter ID (-> split strips the .mrt extension)
             if filename.endswith('.mrt') and len(filename.split('.')[0]) == 6:
@@ -162,7 +161,6 @@ def create_dfs(file_dir, files):
         general_info_sublist = general_info_to_list(full_path, meeting_id)
         general_info_list += general_info_sublist
 
-    
     # Create laugh_df and invalid_df with specified columns and dtypes
     laugh_dtypes = {'length': 'float', 'start': 'float', 'end': 'float'}
     laugh_cols = ['meeting_id', 'part_id',
