@@ -3,13 +3,15 @@ import utils
 import portion as P
 from transcript_parsing import parse
 
-laugh_index = {}
-invalid_index = {}
+# The following indices are dicts that contain segments per participant per meeting
+laugh_index = {}         # Index containing all laughter segments
+invalid_index = {}       # Index containing invalid segments
+valid_speech_index = {}  # Index of those intervals containing valid speech
 
 
 def seg_invalid(row):
     '''
-    This functions specifies what makes a segment invalid 
+    This functions specifies what makes a segment invalid
     Input: row defining an audio segment with the following columns:
         - ['meeting_id', 'part_id', 'chan', 'start', 'end', 'length', 'type']
     '''
@@ -45,7 +47,7 @@ def create_laugh_index(df):
     dict structure:
     {
         meeting_id: {
-            tot_len: INT, 
+            tot_len: INT,
             tot_events: INT,
             part_id: P.closed(start,end) | P.closed(start,end),
             part_id: P.closed(start,end)| P.closed(start,end)
@@ -85,7 +87,7 @@ def create_invalid_index(df):
     global invalid_index
     """
     Creates an invalid_index with all segments invalid for our project
-    e.g. transcribed laughter events occurring next to other sounds 
+    e.g. transcribed laughter events occurring next to other sounds
     The segments are stored as disjunction of closed intervals (using portion library) per participant per meeting
     dict structure (same as laugh_index):
     {
@@ -110,6 +112,38 @@ def create_invalid_index(df):
             for _, row in part_df.iterrows():
                 invalid_index = append_to_index(
                     invalid_index, row, meeting_id, part_id)
+
+
+def create_valid_speech_index():
+    # TODO: Not used at the moment
+    '''
+    Index of those intervals that contain valid speech.
+
+    Take whole audio files for each participant for each meeting and subtract
+    all laughter and invalid segments.
+    dict_structure (same as laugh_index - without tot_events)
+    {
+        meeting_id: {
+            tot_len: INT,
+            part_id: P.closed(start,end) | P.closed(start,end),
+            part_id: P.closed(start,end) | P.closed(start,end)
+        }
+        ...
+    }
+    '''
+    global valid_speech_index
+    for _, row in parse.info_df.iterrows():
+        if row.meeting_id not in valid_speech_index.keys():
+            valid_speech_index[row.meeting_id] = {}
+
+        end_frame = utils.to_frames(row.length)
+        full_interval = P.closed(0, end_frame)
+        valid_speech = (full_interval
+                        - laugh_index[row.meeting_id].get(row.part_id, P.empty())
+                        - invalid_index[row.meeting_id].get(row.part_id, P.empty()))
+        valid_speech_index[row.meeting_id][row.part_id] = valid_speech
+        valid_speech_index[row.meeting_id]['tot_length'] = utils.p_len(
+            valid_speech)
 
 
 #############################################

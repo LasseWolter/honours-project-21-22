@@ -15,6 +15,7 @@
 
 ### Model training
 
+- **labels:** laughter=1, speech=0
 - the `--include-words' option seems to be like the laughter next to speech option in our evaluation
   - comments state that they didn't use this for the paper which lets me conclude that they also looked for 'laughter-only' snippets and only used them for training
 - they use subsamples of the laughter segments instead of the whole regions - WHY?
