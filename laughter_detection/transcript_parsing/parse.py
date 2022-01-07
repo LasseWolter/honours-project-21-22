@@ -98,9 +98,10 @@ def general_info_to_list(filename, meeting_id):
     tree = etree.parse(filename)
     # Get End-Timestamp of last transcription of the meeting
     meeting_len = tree.findall('//Segment')[-1].get('EndTime')
-    for chan, part in chan_to_part[meeting_id].items():
+    for chan, part_id in chan_to_part[meeting_id].items():
         path = os.path.join(meeting_id, f'{chan}.sph')
-        general_info_list.append([meeting_id, chan, meeting_len, path])
+        general_info_list.append(
+            [meeting_id, part_id, chan, meeting_len, path])
 
     return general_info_list
 
@@ -140,7 +141,7 @@ def create_dfs(file_dir, files):
 
     laugh_df columns: ['meeting_id', 'part_id', 'chan', 'start', 'end', 'length', 'type']
 
-    info_df columns: ['meeting_id', 'chan', 'length', 'path']
+    info_df columns: ['meeting_id', 'part_id', 'chan', 'length', 'path']
 
     '''
     global laugh_only_df, invalid_df, info_df
@@ -161,13 +162,22 @@ def create_dfs(file_dir, files):
         general_info_sublist = general_info_to_list(full_path, meeting_id)
         general_info_list += general_info_sublist
 
+    
+    # Create laugh_df and invalid_df with specified columns and dtypes
+    laugh_dtypes = {'length': 'float', 'start': 'float', 'end': 'float'}
     laugh_cols = ['meeting_id', 'part_id',
                   'chan', 'start', 'end', 'length', 'type']
     laugh_only_df = pd.DataFrame(tot_laugh_only_segs, columns=laugh_cols)
-    invalid_df = pd.DataFrame(tot_invalid_segs, columns=laugh_cols)
+    laugh_only_df = laugh_only_df.astype(dtype=laugh_dtypes)
 
-    info_cols = ['meeting_id', 'chan', 'length', 'path']
+    invalid_df = pd.DataFrame(tot_invalid_segs, columns=laugh_cols)
+    invalid_df = invalid_df.astype(dtype=laugh_dtypes)
+
+    # Create info_df with specified columns and dtypes
+    info_dtypes = {'length': 'float'}
+    info_cols = ['meeting_id', 'part_id', 'chan', 'length', 'path']
     info_df = pd.DataFrame(general_info_list, columns=info_cols)
+    info_df = info_df.astype(dtype=info_dtypes)
 
 
 def parse_transcripts(path):
