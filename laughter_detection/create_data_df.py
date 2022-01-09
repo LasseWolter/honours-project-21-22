@@ -6,6 +6,7 @@ import portion as P
 import config as cfg
 import pandas as pd
 import os
+import subprocess
 
 
 def get_random_speech_segment(duration):
@@ -35,7 +36,20 @@ def get_subsample(start, duration, subsample_duration):
     return subsample_start, subsample_duration
 
 
-def create_train_df():
+def train_val_test_split(df, fracs):
+    '''
+    Split pd.Dataframe into 3 dataframes of given fractions [train, validation]. The test set takes the remainder fraction.
+    '''
+    train = df.sample(frac=fracs[0])
+    remain_df = df.drop(index=train.index)
+    # Recalculate fractions for remaining_df
+    val_frac = 0.1 / (1-fracs[0])
+    val = remain_df.sample(frac=val_frac)
+    test = remain_df.drop(index=val.index)
+    return train, val, test
+
+
+def create_data_df(data_dir):
     '''
     Create a dataframe with training data exactly structured like in the model by Gillick et al.
     Columns:
@@ -59,6 +73,7 @@ def create_train_df():
             laugh_seg.meeting_id, f'{laugh_seg.chan}.sph')
         sub_start, sub_duration = get_subsample(
             laugh_seg.start, laugh_seg.length, cfg.train['subsample_duration'])
+
         laugh_seg_list.append(
             [laugh_seg.start, laugh_seg.length, sub_start, sub_duration, audio_path, 1])
 
@@ -66,9 +81,21 @@ def create_train_df():
             'sub_duration', 'audio_path', 'label']
     speech_df = pd.DataFrame(speech_seg_list, columns=cols)
     laugh_df = pd.DataFrame(laugh_seg_list, columns=cols)
-    train_df = pd.concat([speech_df, laugh_df], ignore_index=True)
-    print(train_df)
+    whole_df = pd.concat([speech_df, laugh_df], ignore_index=True)
+
+    # Round all floats to certain number of decimals (defined in config)
+    whole_df = whole_df.round(cfg.train['float_decimals'])
+
+    subprocess.run(['mkdir', '-p', data_dir])
+    train_df, val_df, test_df = train_val_test_split(
+        whole_df, cfg.train['train_val_test_split'])
+    train_df.to_csv(os.path.join(data_dir, 'train_df.csv'))
+    small_df = train_df[train_df.audio_path.str.contains('Bdb001')].iloc[: 32]
+    small_df = small_df.to_csv('train_df_small.csv')
+    val_df.to_csv(os.path.join(data_dir, 'val_df'))
+    test_df.to_csv(os.path.join(data_dir, 'test_df'))
+    print(whole_df)
 
 
 if __name__ == "__main__":
-    create_train_df()
+    create_data_df('data_dfs')
