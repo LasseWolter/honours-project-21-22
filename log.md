@@ -428,4 +428,18 @@ tqdm==4.62.3
   - need to load validation set in Gillick's train code
     - currently just using train_df as validation data
 
+# Monday 10.01.22
+- fixed Bug: Can now use the normal melspec function  
+  - problem was that the subsampled file passed to the melspec-function in audio utils was subsampled again 
+  - adjusted function in audio_utils accordingly
+- adjusted create dfs script to also create 3 'dummy_dfs' only using the data from one meeting 
+  - this can be used for debugging
+
+- training with dummy data seems to work. But seems like validation set is to small atm
+  - val_batches_per_log = 0 which means that no batches are used for evaluation 
+    - currently the reason is that the number of validation samples is smaller than half of the batch size 
+      - thus, the division in torch_utils.py rounds to 0 
+ 
+- currently using the normal res_net without augmentation because I don't have noise audio files
+  - check again how much worse the normal resnet performed in Gillick et al.'s paper
 
