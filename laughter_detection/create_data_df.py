@@ -55,6 +55,8 @@ def create_data_df(data_dir):
     Columns:
         [region start, region duration, subsampled region start, subsampled region duration, audio path, label]
 
+    Also creates 3 small splits for debuggin (all .csv files preceded with 'small_')
+
     Subsampled region are sampled once during creation. Later either the sampled values can be used or resampling can happen.
     (see Gillick et al. for more details)
     Duration of the subsamples is defined in config.py
@@ -85,15 +87,22 @@ def create_data_df(data_dir):
 
     # Round all floats to certain number of decimals (defined in config)
     whole_df = whole_df.round(cfg.train['float_decimals'])
+    small_df = whole_df[whole_df.audio_path.str.contains('Bdb001')]
 
     subprocess.run(['mkdir', '-p', data_dir])
     train_df, val_df, test_df = train_val_test_split(
         whole_df, cfg.train['train_val_test_split'])
     train_df.to_csv(os.path.join(data_dir, 'train_df.csv'))
-    small_df = train_df[train_df.audio_path.str.contains('Bdb001')].iloc[: 32]
-    small_df = small_df.to_csv('train_df_small.csv')
-    val_df.to_csv(os.path.join(data_dir, 'val_df'))
-    test_df.to_csv(os.path.join(data_dir, 'test_df'))
+    val_df.to_csv(os.path.join(data_dir, 'val_df.csv'))
+    test_df.to_csv(os.path.join(data_dir, 'test_df.csv'))
+
+    # Create small split for debugging
+    small_train_df, small_val_df, small_test_df = train_val_test_split(
+        small_df, cfg.train['train_val_test_split'])
+    small_train_df.to_csv(os.path.join(data_dir, 'small_train_df.csv'))
+    small_val_df.to_csv(os.path.join(data_dir, 'small_val_df.csv'))
+    small_test_df.to_csv(os.path.join(data_dir, 'small_test_df.csv'))
+
     print(whole_df)
 
 
