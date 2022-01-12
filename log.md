@@ -443,3 +443,27 @@ tqdm==4.62.3
 - currently using the normal res_net without augmentation because I don't have noise audio files
   - check again how much worse the normal resnet performed in Gillick et al.'s paper
 
+# Tuesday 11.01.22
+Command used to run train.py on certain cluster node (here 'landonia12') 
+`sbatch -w landonia12 --array=1-1%10 cluster_scripts/laughter_train.sh cluster_scripts/experiment.txt --cpus-per-task=4 --gres=gpu4 --mem=8000`
+  - can be helpful if data is already present on disk of a certain machine
+
+-Getting following error when trying to connect to MLP-cluster
+```
+Could not chdir to home directory /home/s1660656: Transport endpoint is not connected
+rm: cannot remove '/home/s1660656/.last_login': Transport endpoint is not connected
+-bash: /home/s1660656/.last_login: Transport endpoint is not connected
+-bash: cd: /home/s1660656: Transport endpoint is not connected
+-bash: /home/s1660656/.bash_profile: Transport endpoint is not connected
+```
+
+- loaded data onto machines: **landonia12** and **landonia04**
+
+# Wednesday
+- Continued training
+  - checkpointing works but training is really slow
+    - only 30 batches in 2 hours (960 segments -> 8s audio processed per minute)
+      - discussed this issue in the meeting for more details see meeting notes for 12.01.22
+
+- Added another parameter to train.py: data_dfs_dir 
+  - allows to specify the dataframes used for train/val/test split

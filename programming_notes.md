@@ -29,6 +29,11 @@
 
 - loads all training data in memory upfront using a pre-created hashtable that maps from file-locations to pre-loaded audio files in bytes
 
+- Why this formula in `num_batches_per_epoch`?
+  - return len(generator.dataset)/generator.batch_size
+    - shouldn't it be divided by the NUMBER of batches (to get the same amount of validation data for each batch?) not the BATCH SIZE
+
+
 ### Evaluation
 
 - why do they use bootstrap_metrics()-function and only use a sample of their output values?
