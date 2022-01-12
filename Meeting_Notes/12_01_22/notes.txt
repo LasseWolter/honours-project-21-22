@@ -1,0 +1,22 @@
+- try interactive slurm session and check if GPU is at 100% 
+  - use tmux for terminal splitting and nvidia-smi for GPU usage
+
+- training should take around 2x longer than evaluation
+  - because you do a forward AND a backward pass
+
+- check data-loader speed independent of model 
+  - use a simple for loop
+  - check if a file 5 times as large takes 5 times as long
+
+- investigate loading times 
+  - compare loading a segment from start to loading a segment from the end of an audio file
+  - try to read sequentially from different files and then shuffle the segments
+    - this yields in more data with reading less files 
+    - if you keep the classes (speech vs. laughter) balanced for each file you should be fine
+
+- split audio_files/meetings into training/validation/test data 
+  - ideally no speaker overlap between the sets such that you can argue well for generalisation
+
+GOAL for now
+-> get something that trains fast enough
+  - everything else comes later
