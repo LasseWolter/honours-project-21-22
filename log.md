@@ -398,25 +398,29 @@ tqdm==4.62.3
   2. audio_hash: a mapping from audio_paths to the actual audio files
 
 # Saturday 08.01.22
+
 - using the train_df created yesterday and trying to use if with Gillick et al.'s model
 - one error caused is the following:
-> ValueError: can't extend empty axis 0 using modes other than 'constant' or 'empty'
-  - can be fixed by adding `pad_mode` parameter 'empty' to librosa.feature.melspectrogram() 
+
+  > ValueError: can't extend empty axis 0 using modes other than 'constant' or 'empty'
+
+  - can be fixed by adding `pad_mode` parameter 'empty' to librosa.feature.melspectrogram()
     in audio_utils
   - this error was caused by an empty array being passed to the melspectrogram-function
     - I didn't fully understand why this happened
-    - I moved the melspectrogram function into the dataloader itself and didn't get empty arrays 
+    - I moved the melspectrogram function into the dataloader itself and didn't get empty arrays
       - not sure why this was the case when the function in audio_utils was used
 
 - current error happens in the forward pass:
-> running_mean should contain 448 elements not 64
+  > running_mean should contain 448 elements not 64
 
 # Sunday 09.01.22
+
 - looked into audio-processing and audio-signal theory
-  - helped to understand the different parts that audio signals are made up off and how 
+  - helped to understand the different parts that audio signals are made up off and how
     features can be extracted from there
-      - the videos looked at are from: https://www.youtube.com/channel/UCZPFjMe1uRSirmSpznqvJfQ
-- fixed bug: current data loader was using the whole laugther segments - NOT the subsamples 
+    - the videos looked at are from: https://www.youtube.com/channel/UCZPFjMe1uRSirmSpznqvJfQ
+- fixed bug: current data loader was using the whole laugther segments - NOT the subsamples
   - after this change now all spectrograms are of the same shape
 - fixed issue with wrong dimension from yesterday
   - problem seems to be the different sample rate of ICSI data
@@ -429,26 +433,32 @@ tqdm==4.62.3
     - currently just using train_df as validation data
 
 # Monday 10.01.22
-- fixed Bug: Can now use the normal melspec function  
-  - problem was that the subsampled file passed to the melspec-function in audio utils was subsampled again 
+
+- fixed Bug: Can now use the normal melspec function
+  - problem was that the subsampled file passed to the melspec-function in audio utils was subsampled again
   - adjusted function in audio_utils accordingly
-- adjusted create dfs script to also create 3 'dummy_dfs' only using the data from one meeting 
+- adjusted create dfs script to also create 3 'dummy_dfs' only using the data from one meeting
+
   - this can be used for debugging
 
 - training with dummy data seems to work. But seems like validation set is to small atm
-  - val_batches_per_log = 0 which means that no batches are used for evaluation 
-    - currently the reason is that the number of validation samples is smaller than half of the batch size 
-      - thus, the division in torch_utils.py rounds to 0 
- 
+
+  - val_batches_per_log = 0 which means that no batches are used for evaluation
+    - currently the reason is that the number of validation samples is smaller than half of the batch size
+      - thus, the division in torch_utils.py rounds to 0
+
 - currently using the normal res_net without augmentation because I don't have noise audio files
   - check again how much worse the normal resnet performed in Gillick et al.'s paper
 
 # Tuesday 11.01.22
-Command used to run train.py on certain cluster node (here 'landonia12') 
+
+Command used to run train.py on certain cluster node (here 'landonia12')
 `sbatch -w landonia12 --array=1-1%10 cluster_scripts/laughter_train.sh cluster_scripts/experiment.txt --cpus-per-task=4 --gres=gpu4 --mem=8000`
-  - can be helpful if data is already present on disk of a certain machine
+
+- can be helpful if data is already present on disk of a certain machine
 
 -Getting following error when trying to connect to MLP-cluster
+
 ```
 Could not chdir to home directory /home/s1660656: Transport endpoint is not connected
 rm: cannot remove '/home/s1660656/.last_login': Transport endpoint is not connected
@@ -459,11 +469,36 @@ rm: cannot remove '/home/s1660656/.last_login': Transport endpoint is not connec
 
 - loaded data onto machines: **landonia12** and **landonia04**
 
-# Wednesday
+# Wednesday 12.01.22
+
 - Continued training
+
   - checkpointing works but training is really slow
     - only 30 batches in 2 hours (960 segments -> 8s audio processed per minute)
       - discussed this issue in the meeting for more details see meeting notes for 12.01.22
 
-- Added another parameter to train.py: data_dfs_dir 
+- Added another parameter to train.py: data_dfs_dir
   - allows to specify the dataframes used for train/val/test split
+- **Some thoughts on training**
+  - How did Knox and Mighafori train
+    - is training with fixed 1s segments sensible?
+  - random split vs. even split across meetings
+  - balanced vs. imbalenced classes (speech vs. laughter)
+  - does the melspec transformation run on GPU?
+    - does any preprocessing run on GPU in their code?
+
+# Saturday, 15.01.22
+
+- updated store_all_icsi_audio.py script
+  - added function to split the set of training folders into subsets
+    - the whole training data couldn't be loaded into one hash
+
+# Monday, 17.01.22
+
+- changed 'i_gpu' alias on mlp cluster to allows connecting to a specific node with default settings
+- debugging why the training takes so long
+  - when the training runs only ~20% of one GPU are used
+    - is this because the GPU waits for the data to be ready -> the dataloading is the bottleneck?
+    - started writing some code to evaluate dataloading
+      - such evaluations will also go in my thesis as they show how I progressed and which issues I ran into
+      - also mention the quality of the existing code in the thesis and how this made working with it more complicated
