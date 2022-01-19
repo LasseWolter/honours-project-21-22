@@ -502,3 +502,57 @@ rm: cannot remove '/home/s1660656/.last_login': Transport endpoint is not connec
     - started writing some code to evaluate dataloading
       - such evaluations will also go in my thesis as they show how I progressed and which issues I ran into
       - also mention the quality of the existing code in the thesis and how this made working with it more complicated
+
+# Wednesday, 19.01.22
+
+- evaluating loading time of dataloader
+
+**Dataloader loading times**
+
+**SINGLE MEETING**
+
+- 6 different audio files
+  - command: `s_train.audio_path.unique().size `
+
+_on Thinkstation CPU - Intel(R) Core(TM) i5-6500 CPU @ 3.20GHz_
+
+| num_of_batches | total_time [s] | av_time_per_batch [s] | num_of_workers |
+| -------------- | -------------- | --------------------- | -------------- |
+| 1              | 60.73          | 60.73                 | 8              |
+| 3              | 191.08         | 63.69                 | 8              |
+| 5              | 300.04         | 60.01                 | 8              |
+
+_on AT GPU Machine_
+
+| num_of_batches | total_time [s] | av_time_per_batch [s] | num_of_workers |
+| -------------- | -------------- | --------------------- | -------------- |
+| 5              | 194.13         | 38.83                 | 8              |
+
+_on MLP-Cluster GPU Machine_ -> **loading from DFS**
+
+- allocated memory: 16000MB
+
+| num_of_batches | total_time [s] | av_time_per_batch [s] | num_of_workers |
+| -------------- | -------------- | --------------------- | -------------- |
+| 1              | 79.26          | 79.26                 | 8              |
+| 5              | 392.16         | 78.43                 | 8              |
+
+_on MLP-Cluster GPU Machine_ -> **loading from scratch disk**
+
+| num_of_batches | total_time [s] | av_time_per_batch [s] | num_of_workers |
+| -------------- | -------------- | --------------------- | -------------- |
+| 1              | 80.71          | 80.71                 | 8              |
+| 1              | 75.07          | 75.07                 | 24 + 32GB mem  |
+| 5              | 392.16         | 78.43                 | 8              |
+
+**FULL DATASET**
+
+- 135 different audio files loaded in the first 160 rows of the dataframe (5 batches \* 32 rows)
+  - command: `l_train.iloc[:160, :].audio_path.unique().size`
+
+_on MLP-Cluster GPU machine_
+_Note_: Dataloading is still done by the CPU
+
+| num_of_batches | total_time [s] | av_time_per_batch [s] | num_of_workers |
+| -------------- | -------------- | --------------------- | -------------- |
+| 5              | 809.78         | 161.96                | 8              |
