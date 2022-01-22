@@ -216,6 +216,37 @@ In response to this finding we decided to retrain the model on the ICSI dataset.
 
 \chapter{tbd}
 \section{Retraining the model}
+The first approach was to adapt the code that Gillick et al. used and published. After investigating their code, I created a diagram of their data-pipeline (TODO: add figure). 
+I created a similar one for our project and after consultation with my supervisors decided that the hash-map containing the preloaded audio could be neglected for now. 
+
+After looking at their code in more detail,  
+I realised that the code wasn't very concise and didn't seem to adhere to current standards of pytorch programs. 
+For example, they used a manual counter for training steps and triggered a new training phase with 1 epoch each time instead of using this training function and passing more than one epoch as argument. 
+Design decisions like this make the code harder to read and harder to debug. 
+Another realisation was that Gillick et al. programmed lots of augmentation and transformation functions themselves instead of using existing implementations from libraries like pytorchaudio. 
+Programming functions for turning audio files into spectrograms and padding/truncating audio files to a certain length themselves, makes the code unnecessary long and introduces risk for errors. In my opinion using existing and exhaustively tested functions from a popular framework like pytorchaudio is better in terms of readability and efficiency of the code.
+My supervisor doesn't have much experience with pytorch but agreed that he doesn't consider the code as well written.
+
+Despite the concerns about Gillick et al.'s code mentioned above, I decided to try to adapt their code for two main reasons. 
+Firstly, I haven't worked on an ML project of this scale before and writing training and inference code from scratch seemed somewhat daunting to me. I didn't think that doing that would make things easier as I trusted that the code that Gillick et al. published should be usable as they have used it for a paper they published \cite{gillick2021robust}. 
+Secondly, I thought that using their code and just doing minimal adjustments to load the ICSI corpus instead of the switchboard corpus would allow for an easier comparison between the two. If I wrote the code from scratch I'd have to make sure that all the preprocessing and model parameters are sufficiently similar to state the difference of changing the training data. 
+
+After working on adapting the training code for about a week I ran into a major problem regarding the time it takes to train the model. I merely managed to train around 30 batches of audio, each consisting of 32 audio tracks, in 2 hours. This couldn't be right as the audio samples loaded from these audio tracks were only 1 second segments. This equates to 8s of processing time per 1s sample.
+This is significantly slower than the evaluation on a CPU-only machine. TODO:cite rtf table
+
+After some further investigation I realised that it's the data-loading that takes so long. I ran some experiments to check how long it takes to load the data (TODO: add exp data) and found that it's unacceptably slow. 
+
+I discussed these results with my second supervisor and he suggested that it might be due to the different recording length of the switchboard dataset. According to LDC data (TODO link?) the switchboard dataset contains 2400 recordings and a total of approximately 260 hours of speech. This equals an average recroding length of roughly 8 mintues. Compared to the 52 minutes average (TODO check number) of the ICSI recording corpus this is a significant difference. 
+As mentioned before I hadn't done the preloading of audio data like Gillick et al.. I thought about adding that to the pipeline but realised that it doesn't work because not all of the data can be loaded into memory. I'm not sure how Gillick et al. did it for the switchboard dataset. I thought about splitting the training data into subsets and preloading those one by one. This would have meant that the dataloader should only load data from a certain subset and switch to a new subset once this subset has been exhausted. 
+For me this seemed to complicate the code even more and after consultation with my second supervisor I decided to rewrite the data-loader from scratch. 
+
+My second supervisor suggested to possibly use lhotse (TODO: add link) which seemed promising so I decided to try that. 
+
+
+
+
+
+
 
 \chapter{Other}
 \section{Privacy Concerns}\label{privacy-concerns}
