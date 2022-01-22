@@ -556,3 +556,71 @@ _Note_: Dataloading is still done by the CPU
 | num_of_batches | total_time [s] | av_time_per_batch [s] | num_of_workers |
 | -------------- | -------------- | --------------------- | -------------- |
 | 5              | 809.78         | 161.96                | 8              |
+
+# Thursday, 20.01.22
+
+- messaged with Ondrej about slow dataloading
+
+  - he suggested that it might be due to shorter recording length in the switchboard dataset
+    - this seems to be true:
+      - 260 hours and 2400 conversations means 6.5min of average length for a recording
+        - source: https://catalog.ldc.upenn.edu/LDC97S62
+
+- briefly looked into preloading data and storing them in a hash like Gillick et al.
+  - decided against it as it seems to complicate the code even more
+  - going with Ondrej's suggestion to write the dataloading from scratch
+    - possibly using lhotse (https://lhotse.readthedocs.io/en/latest/)
+
+# Friday, 21.01.22
+
+- started looking at lhotse
+
+  - they have a predefined recipe for ICSI-dataset to load data and transcripts into corresponding classes
+    - Recording and Supervision class
+  - the recipe contains a train/val/test split to minimise speaker overlap
+    > This recipe, however, to be self-contained factors out training (67.5 hours), development (2.2 hours
+    > and evaluation (2.8 hours) sets in a way to minimise the speaker-overlap between different partitions,
+    > and to avoid known issues with available recordings during evaluation. This recipe follows [2] where
+    > dev and eval sets are making use of {Bmr021, Bns00} and {Bmr013, Bmr018, Bro021} meetings, respectively.
+    - https://github.com/lhotse-speech/lhotse/blob/master/lhotse/recipes/icsi.py
+
+- why are the mic channels split into different types in the ICSI-recipe
+  - even though the channels of different types are used to record people (according to preambles.mrt)
+    - need to check if that has an impact on the results
+
+```
+MIC_TO_CHANNELS = {
+    "ihm": [1, 2, 3, 4, 5, 6, 8, 9], # we include 6 since it is used as back-off from some speakers for which no headset-mic exists
+    "sdm": [6],
+    "mdm": ["E", "F", 6, 7],
+    "ihm-mix": [],
+}
+```
+
+This mic to channel assignment is a bit confusing to me since according the preamble.mrt there are also people recorded on channel A and B (e.g. in meeting Bdb001)
+
+# Saturday, 22.01.22
+
+- Looked into Lhotse more closely
+
+  - realised that icsi-recipe isn't part of current release
+    - did some adjustments to icsi recipe to make it work
+
+- important point about Lhotse usage: **Cut recordings first, then extract features and store them**:
+
+  > We retrieve the arrays by loading the whole feature matrix from disk and selecting the relevant
+  > region (e.g. specified by a cut). Therefore it makes sense to cut the recordings first,
+  > and then extract the features for them to avoid loading unnecessary data from disk (especially for very long recordings).
+
+- I find it rather confusing that the audio-dir is a required argument whereas the transcripts dir is not required
+
+  - further, it seems like the audio dir could be the toplevel dir where the 'speech' and 'transcripts' folder reside in
+    - I'd suggest that the audio-dir should be passed as the path to the 'speech' dir and the transcripts-dir should be passed as the path to the 'transcripts' dir
+      - this would make it clearer for me
+
+- Why does the recipe use integer IDs for the channels instead of the hexadecimal IDs used in the ICSI transcripts
+
+  - is this more efficient?
+
+- Some channels are missing in the MIC_TO_CHANNELS-dict: e.g. channelA and channelB
+  - thus, they are not even downloaded which is clearly wrong
