@@ -624,3 +624,30 @@ This mic to channel assignment is a bit confusing to me since according the prea
 
 - Some channels are missing in the MIC_TO_CHANNELS-dict: e.g. channelA and channelB
   - thus, they are not even downloaded which is clearly wrong
+
+# Monday, 24.01.22
+
+- according to this part of the lhotse docs (https://lhotse.readthedocs.io/en/v0.6_g/datasets.html), it's recommended to use precomputed features:
+  > In general, pre-computed features can be greatly compressed (we achieve 70% size reduction with regard to un-compressed features), and so the I/O load on your computing infrastructure will be much smaller than if you read the recordings directly. This is especially valuable when working with network file systems (NFS) that are typically used in computational grids for storage. When your experiment is I/O bound, then it is best to use pre-computed features.
+
+came up with following plan:
+
+1. Split create_data_df to match the train/val/test split used by lhotse
+2. load those data_dfs in lhotse data_loader script
+3. create cuts for each in the data_dfs
+4. Compute and store features for all these cuts in the format used by Gillick et al.
+5. Create pytorch dataloader for these cuts, that loads the already computed feature from disk
+
+- finished step 1 to 3
+- step 4: computing and storing features works as well, making use of the CutSet.from_cuts
+
+  - **Bug**: seems like passing 'num_jobs>1' to the `compute_and_store_features` function makes it run forever
+
+  - alternatively one can pass a dict to the CutSet constructor
+  - still need to work on creating the features that match Gillick et. al.'s code
+
+- step 5: Running into some errors when using predefined dataset classes from lhotse
+  - possibly need to write one myself
+    - check these two jupyter notebooks for examples:
+      1. https://colab.research.google.com/github/lhotse-speech/lhotse-speech.github.io/blob/master/notebooks/lhotse-introduction.ipynb#scrollTo=A2nhNy355NaF
+      2. https://colab.research.google.com/drive/1HKSYPsWx_HoCdrnLpaPdYj5zwlPsM3NH?pli=1&authuser=1#scrollTo=Rx6Rhquw9Na0
