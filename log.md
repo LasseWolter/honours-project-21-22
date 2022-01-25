@@ -647,7 +647,40 @@ came up with following plan:
   - still need to work on creating the features that match Gillick et. al.'s code
 
 - step 5: Running into some errors when using predefined dataset classes from lhotse
+
   - possibly need to write one myself
     - check these two jupyter notebooks for examples:
       1. https://colab.research.google.com/github/lhotse-speech/lhotse-speech.github.io/blob/master/notebooks/lhotse-introduction.ipynb#scrollTo=A2nhNy355NaF
       2. https://colab.research.google.com/drive/1HKSYPsWx_HoCdrnLpaPdYj5zwlPsM3NH?pli=1&authuser=1#scrollTo=Rx6Rhquw9Na0
+
+- Getting correct shape with this FbankConfig:
+
+  - first import using `from lhotse import FbankConfig`
+  - `f2 = Fbank(FbankConfig(num_filters=128, frame_shift=0.02275))`
+    - 0.2275 = 16 000 / 364 -> [frame_rate / hop_length]
+
+- I probably need to create a custom feature extractor
+
+  - check this part of the docs: https://lhotse.readthedocs.io/en/v0.12_cm/features.html#creating-custom-feature-extractor
+
+- lhotse doc says there are two types of manifests but compute_and_store_features() only creates a single .lca file
+
+  > There are two types of manifests:
+  > one describing the feature extractor;
+  > one describing the extracted feature matrices.
+  > The feature extractor manifest is mapped to a Python configuration dataclass. An example for spectrogram:
+
+  - in contrast, using save_audio creates a directory in which a recording/audio_file for each cut is stored
+  - if you increase the num_jobs there are more than one file created (as many as there are workers)
+    - but it also runs forever as described above
+    - this doesn't seem to solve the issue because it doesn't create separate files per cut
+      - **Fix**: This can be solved by passing the following paramter `storage_type=LilcomFilesWriter`
+      - this stores each matrix in a single file
+        - but all these files have random ids - how to find the feature representation of a specific segment?
+
+- **Fix** problem with num_jobs was due to dev-version of lhotse
+
+  - fix by using stable release and adding icsi.py to recipes folder and adding reference in **init**.py of recipes folder
+    - currently using a symlink to the icsi.py in my own fork (located in HonoursProject folder)
+
+-
