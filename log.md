@@ -683,4 +683,60 @@ came up with following plan:
   - fix by using stable release and adding icsi.py to recipes folder and adding reference in **init**.py of recipes folder
     - currently using a symlink to the icsi.py in my own fork (located in HonoursProject folder)
 
--
+# Tuesday, 25.01.22
+
+Question from yesterday:
+
+> but all these files have random ids - how to find the feature representation of a specific segment?
+
+- **Answer**: The compute_and_store_features function returns a cutset that contains these ids mapped to the corresponding recording
+  - this cutset needs to be passed to the dataset to create a dataset that has those information
+
+**Question for meeting tomorrow**
+What are the different dataloaders and dataset classes provided by Lhotse? Do you think I can use one of them?
+
+# Wednesday, 26.01.22
+
+- created a script to compare librosa audio loading from different offsets
+  - `./laughter_detection/misc_scripts/check_librosa_loading_times.py`
+  - found out that the loading time is proportional to the offset
+    - for table, see `./Meeting_Notes/26_01_22/Meeting_26_01_22.pdf`
+
+# Friday, 28.01.22
+
+Microphone Abbreviation Meaning:
+
+- ihm: Individual Head Microphone
+- mdm: Medium Distance Microphone?
+- sdm: Short Distance Microphone?
+
+- Created pull request with added IHM channels
+
+- Possibly fix this issue from worklog 22.01.22 and create a PR?:
+
+```
+- I find it rather confusing that the audio-dir is a required argument whereas the transcripts dir is not required
+
+  - further, it seems like the audio dir could be the toplevel dir where the 'speech' and 'transcripts' folder reside in
+    - I'd suggest that the audio-dir should be passed as the path to the 'speech' dir and the transcripts-dir should be passed as the path to the 'transcripts' dir
+      - this would make it clearer for me
+```
+
+- stored chan_to_idx map on disk such that I can reload it from there and use the standard lhotse recipe without modifying it
+
+  - before I modiefied the prepare_icsi function to also return the chan_to_idx map
+
+- problem with num_workers seems to be present again
+
+  - possibly look into this
+
+- found way to store cutsets as .jsonl file
+
+  - cutset.to_jsonl(<path>) / cutset.from_json(<path>)
+
+- I ran into an issue with loading the cutset (with precomputed features) from disk instead of recomputing them
+
+  - I wondered why the changes didn't work but I just reloaded the cutset from disk which had the wrong supervisions
+
+- Created LadDataset (Laugh Activity Detection) which is a modiefied version of Lhotse's VadDataset
+- created a supervision segment for each cut containing the information if the segment is laughter or not
