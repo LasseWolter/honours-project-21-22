@@ -1,0 +1,12 @@
+Did Gillick et al. use the whole switchboard dataset? 
+  - how did they make the data fit into memory when pre-loading audio into hash-maps
+
+If you want to understand what is going on with librosa load - why it's slower to load from the end of the file?
+  - Compare librosa.load() to random python load from different positions in a file
+
+Guideline for the Thesis: "Would another student learn something from reading your thesis?"
+
+Low GPU Utilisation?
+  - possibly the matrix-size is the problem
+  - adjusting paramters during feature creation could compensate that
+    - once the data-loading works, the optimal value can be found by an experiment
