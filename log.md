@@ -740,3 +740,15 @@ Microphone Abbreviation Meaning:
 
 - Created LadDataset (Laugh Activity Detection) which is a modiefied version of Lhotse's VadDataset
 - created a supervision segment for each cut containing the information if the segment is laughter or not
+
+# Monday, 31.01.22
+
+- added load_data.py and lad.py to jrgillick repo and use it in a modiefied train script called `train_lhotse.py`
+
+  - this train script makes use of the lhotse dataloader
+  - needed to make some adjustments to make it work, e.g.:
+    - changing the way signals and labels are loaded from a batch (using 'inputs' and 'is_laugh' keys)
+    - adding a dimension to fit the given structure by Gillick et al.
+
+- first version works: 100 Epochs ran sucessfully and in reasonable time
+  - used same set (of 226 segements) for training and online validation (-> not good, just proof of work)
