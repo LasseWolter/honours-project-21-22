@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import subprocess
 
+DATA_DFS_DIR = 'data/data_dfs' 
 
 # Taken from lhotse icsi recipe to minimise speaker overlap
 PARTITIONS = {
@@ -22,7 +23,7 @@ PARTITIONS = {
         "Bro017", "Bro018", "Bro019", "Bro022", "Bro023", "Bro024", "Bro025", "Bro026",
         "Bro027", "Bro028", "Bsr001", "Btr001", "Btr002", "Buw001",
     ],
-    'val': ["Bmr021", "Bns001"],
+    'dev': ["Bmr021", "Bns001"],
     'test': ["Bmr013", "Bmr018", "Bro021"]
 }
 
@@ -62,7 +63,7 @@ def get_subsample(start, duration, subsample_duration):
 
 def create_data_df(data_dir):
     '''
-    Create 3 dataframes (train,val,test) with data exactly structured like in the model by Gillick et al.
+    Create 3 dataframes (train,dev,test) with data exactly structured like in the model by Gillick et al.
     Columns:
         [region start, region duration, subsampled region start, subsampled region duration, audio path, label]
 
@@ -71,15 +72,15 @@ def create_data_df(data_dir):
     Duration of the subsamples is defined in config.py
     '''
     np.random.seed(cfg.train['random_seed'])
-    speech_seg_lists = {'train': [], 'val': [], 'test': []}
-    laugh_seg_lists = {'train': [], 'val': [], 'test': []}
+    speech_seg_lists = {'train': [], 'dev': [], 'test': []}
+    laugh_seg_lists = {'train': [], 'dev': [], 'test': []}
 
     meeting_groups = parse.laugh_only_df.groupby('meeting_id')
 
     for meeting_id, meeting_laugh_df in meeting_groups:
         split = 'train'
-        if meeting_id in PARTITIONS['val']:
-            split = 'val'
+        if meeting_id in PARTITIONS['dev']:
+            split = 'dev'
         elif meeting_id in PARTITIONS['test']:
             split = 'test'
 
@@ -105,7 +106,7 @@ def create_data_df(data_dir):
     # Create output directory for dataframes
     subprocess.run(['mkdir', '-p', data_dir])
 
-    for split in PARTITIONS.keys():  # [train,val,test]
+    for split in PARTITIONS.keys():  # [train,,test]
         speech_df = pd.DataFrame(speech_seg_lists[split], columns=cols)
         laugh_df = pd.DataFrame(laugh_seg_lists[split], columns=cols)
         whole_df = pd.concat([speech_df, laugh_df], ignore_index=True)
@@ -122,4 +123,4 @@ def create_data_df(data_dir):
 
 
 if __name__ == "__main__":
-    create_data_df('data_dfs')
+    create_data_df(DATA_DFS_DIR)
