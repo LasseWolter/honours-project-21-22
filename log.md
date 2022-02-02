@@ -493,7 +493,7 @@ rm: cannot remove '/home/s1660656/.last_login': Transport endpoint is not connec
   - added function to split the set of training folders into subsets
     - the whole training data couldn't be loaded into one hash
 
-# Monday, 17.01.22
+# Monday, 17.01.22:
 
 - changed 'i_gpu' alias on mlp cluster to allows connecting to a specific node with default settings
 - debugging why the training takes so long
@@ -752,3 +752,51 @@ Microphone Abbreviation Meaning:
 
 - first version works: 100 Epochs ran sucessfully and in reasonable time
   - used same set (of 226 segements) for training and online validation (-> not good, just proof of work)
+
+# Tuesday, 01.02.22
+
+- use the following command to install lhotse at the state of my icis-update commit as pip package:
+  `pip install git+https://github.com/lhotse-speech/lhotse@f1b66b8a8db2ea93e87dcb9db3991f6dd473b89d`
+
+- changed name from 'val' to 'dev' to match lhotse's naming scheme
+
+- got the following warnings when manifests for the whole ICSI data were created:
+
+```
+Parsing ICSI mrt files: 76it [00:05, 14.27it/s]
+Preparing audio: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 75/75 [04:52<00:00,  3.90s/it]
+Preparing supervision:  12%|██████████████████                                                                                                                                     | 9/75 [00:00<00:00, 87.80it/s]WARNING:root:Segment Bed002-2-271 exceeds recording duration. Not adding to supervisions.
+WARNING:root:Segment Bmr019-4-128 exceeds recording duration. Not adding to supervisions.
+WARNING:root:Segment Bmr028-0-293 exceeds recording duration. Not adding to supervisions.
+Preparing supervision:  25%|██████████████████████████████████████                                                                                                                | 19/75 [00:00<00:00, 90.72it/s]WARNING:root:Segment Bro028-1-320 exceeds recording duration. Not adding to supervisions.
+Preparing supervision:  39%|██████████████████████████████████████████████████████████                                                                                            | 29/75 [00:00<00:00, 65.56it/s]WARNING:root:Segment Bmr015-1-150 exceeds recording duration. Not adding to supervisions.
+Preparing supervision:  55%|██████████████████████████████████████████████████████████████████████████████████                                                                    | 41/75 [00:00<00:00, 80.27it/s]WARNING:root:Segment Bro021-1-201 exceeds recording duration. Not adding to supervisions.
+Preparing supervision:  71%|██████████████████████████████████████████████████████████████████████████████████████████████████████████                                            | 53/75 [00:00<00:00, 89.93it/s]WARNING:root:Segment Bmr031-5-156 exceeds recording duration. Not adding to supervisions.
+WARNING:root:Segment Bro027-1-462 exceeds recording duration. Not adding to supervisions.
+Preparing supervision:  84%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████                        | 63/75 [00:00<00:00, 92.87it/s]WARNING:root:Segment Bmr005-4-353 exceeds recording duration. Not adding to supervisions.
+Preparing supervision: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 75/75 [00:00<00:00, 87.43it/s]
+Write cutset_dict to disk...
+```
+
+More expressive tqdm output when running multiple workers would be useful
+
+- atm it just shows the number of workers that have completed which doesn't give a good estimate of how long one worker will take to finish
+
+`compute_and_store_features` is a function of the CutSet class which calls the `extract_from_samples_and_store` of the extractor-instance passed to it
+
+- The `FeatureExtractor` class is an abstract class that defines the structure of all FeatureExtractors
+
+  - a feature extractor is initialised by passing a config object (a dataclass) to the init-function
+
+- added script for downloading dummy data to repo for easier debugging on different machines
+
+- the shape we are looking for is (44,128)
+
+- why does it sometimes work with multiple jobs and sometimes it doesn't
+
+  - in function `compute_and_store_features`
+  - first thought it might be the Config that is passed to the Fbank extractor - but using the normal Fbank() without config still doesn't work
+
+- some parameters in the FbankConfig are the problem
+  - they seem to stop the execution when num_jobs > 1 is used
+  - opened issue on github: https://github.com/lhotse-speech/lhotse/issues/559
