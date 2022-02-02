@@ -800,3 +800,59 @@ More expressive tqdm output when running multiple workers would be useful
 - some parameters in the FbankConfig are the problem
   - they seem to stop the execution when num_jobs > 1 is used
   - opened issue on github: https://github.com/lhotse-speech/lhotse/issues/559
+
+# Wednesday, 02.02.21
+
+- check what Fbank-extractor actually returns
+
+  - plot the returned features and see if that seems reasonable
+    - is the volume already transformed to logscale?
+
+- What is multithreaded BLAS?
+  > Basic Linear Algebra Subprograms (BLAS) is a specification that prescribes a set of low-level routines for performing common linear algebra operations such as vector addition, scalar multiplication, dot products, linear combinations, and matrix multiplication.
+
+source: https://en.wikipedia.org/wiki/BLAS
+
+- Gillick et al. used the whole dataset
+
+  > Of 2435 total conversations, we partition the dataset into
+  > 2159 for training, 119 for development, and 157 for testing,
+  > using the same splits as Ryokai et al. [ 7]. Aggregate statistics
+  > on the timing information across these partitions is summarized
+  > in Table 1.
+
+- how did that fit into memory? (-> ~180 hours of training data)
+
+  - a sample rate of 8000 compared to 16000 means half the size for the same length of audio
+  - Ondrey says the following and assumes they had a machine with large enough RAM to load all data into memory:
+    > 180 hours of data takes aproximately 10GB of RAM (180 hours _ 3600 seconds per hour _ 8000 samples per second \* 2 bytes / 1024^3). With 16000 samples per second, which is your case, it would take 20GB of RAM. Does that make sense?
+
+- some feature files (.llc) seem corrupted/invalid: Following error is thrown:
+  - until now it's only been 1 file
+
+> ValueError: lilcom: Length of string was too short
+> [extra info] When calling: MonoCut.load_features(args=(MonoCut(id='train_14174', start=1414.59, duration=1.0, channel=7, supervisions=[SupervisionSegment(id='sup_train_14174', recording_id='Bro003', start=1414.59, duration=1.0, channel=7, text=None, language=None, speaker=None, gender=None, custom={'is_laugh': 1}, alignment=None)], features=Features(type='kaldi-fbank', num_frames=44, num_features=128, frame_shift=0.02275, sampling_rate=16000, start=1414.59, duration=1.0, storage_type='lilcom_files', storage_path='data/icsi/lhotse/feats', storage_key='2c3/2c3be5eb-0dde-4f3f-b812-a28406d2c44e.llc', recording_id=None, channels=7), recording=Recording(id='Bro003', sources=[AudioSource(type='file', channels=[0], source='data/icsi/speech/Bro003/chan0.sph'), AudioSource(type='file', channels=[1], source='data/icsi/speech/Bro003/chan1.sph'), AudioSource(type='file', channels=[2], source='data/icsi/speech/Bro003/chan2.sph'), AudioSource(type='file', channels=[3], source='data/icsi/speech/Bro003/chan3.sph'), AudioSource(type='file', channels=[4], source='data/icsi/speech/Bro003/chan4.sph'), AudioSource(type='file', channels=[5], source='data/icsi/speech/Bro003/chan6.sph'), AudioSource(type='file', channels=[6], source='data/icsi/speech/Bro003/chan7.sph'), AudioSource(type='file', channels=[7], source='data/icsi/speech/Bro003/chan8.sph'), AudioSource(type='file', channels=[8], source='data/icsi/speech/Bro003/chan9.sph')], sampling_rate=16000, num_samples=83565782, duration=5222.861375, transforms=None), custom=None),) kwargs={})
+
+**Quick fix**: replace with other feature-representation: `cp 2c3979e9-fb7d-445a-a533-598ea2e9b363.llc 2c3be5eb-0dde-4f3f-b812-a28406d2c44e.llc`
+
+- shouldn't make a difference in such a large dataset
+
+- Gillick et al. do 100 000 steps
+
+  - match that for the first model for comparison
+
+- command used to run the train_lhotse on certain cluster node:
+  `sbatch -w landonia12 --array=1-10%1 cluster_scripts/laughter_train.sh cluster_scripts/train_exp.txt --cpus-per-task=8 --gres=gpu4 --mem=32000`
+  meaning: sbatch --array=1-${NR_EXPTS}%${MAX_PARALLEL_JOBS} mnist_arrayjob.sh $EXPT_FILE
+
+  - MAX_PARALLEL_JOBS is set 1 because each excution will need the checkpoint data of the prior execution
+  - I adapted `train_lhotse.py` in such a way that it runs 10 epochs and then exits
+  - thus, 10\*10=100 epochs (split in 10 sequential subjobs) are run by the command above
+
+- default setting is to apply gradients after each batch
+
+  - can be changed by `--gradient_accumulation_steps`-flag
+
+- renaming thesis?
+  - still stating the motivation (original title) is important as it affected my choices
+    - e.g. choice of the corpus
