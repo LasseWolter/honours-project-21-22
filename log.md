@@ -790,7 +790,7 @@ More expressive tqdm output when running multiple workers would be useful
 
 - added script for downloading dummy data to repo for easier debugging on different machines
 
-- the shape we are looking for is (44,128)
+- the feature shape we are looking for is (44,128)
 
 - why does it sometimes work with multiple jobs and sometimes it doesn't
 
@@ -854,5 +854,35 @@ source: https://en.wikipedia.org/wiki/BLAS
   - can be changed by `--gradient_accumulation_steps`-flag
 
 - renaming thesis?
+
   - still stating the motivation (original title) is important as it affected my choices
     - e.g. choice of the corpus
+
+- Created lhotse-pull request to show a warning if num_jobs >1 and torch.get_num_threads>1
+  - this addresses the issue I faced when using num_jobs>1
+
+### 07.02.22
+
+- realised that I need to adapt the laughter recognitions script to apply data transformation like lhotse-preprocssing
+
+- check how Gillick et al. did the training
+
+- the shape of the training features and the length of the final prediction units is related (for Gillick et al. 23ms)
+
+  - the shape of features is (44,128) meaning that we have 44 frames for 1 second which equates to 1000/44 =~23ms which is the unit used for inference
+
+- for our ICSI dataset we have 16000 frames and also created feature representation of shape (44,128) which means we should also use 23ms long units for inference
+
+From: https://github.com/lhotse-speech/lhotse/issues/573
+
+> Yes, it will still be efficient.
+> I’d say if your training examples are fixed (eg ASR training, cut == supervision) then first cut, then extract features. If your training examples are dynamic (eg you’re sampling chunks for self supervised training or VAD etc) then it’s definitely better to extract, then cut.
+
+- for training with subsampling it's probably best to extract first and then subsample since I won't know the exact cuts beforehand
+
+  - and according to pzelasko's comment above the sampling will still be efficient
+
+- should the inference generator return 1 or 44 frames?
+
+- `eb05e753d56a9ba7e42e29b14a6dbc4bf21930d2`almost works but throws an error that tensors of different dimension cannot be stacked
+  - I assume that this is due to missing padding for the last segment
