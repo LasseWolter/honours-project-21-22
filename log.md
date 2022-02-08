@@ -886,3 +886,33 @@ From: https://github.com/lhotse-speech/lhotse/issues/573
 
 - `eb05e753d56a9ba7e42e29b14a6dbc4bf21930d2`almost works but throws an error that tensors of different dimension cannot be stacked
   - I assume that this is due to missing padding for the last segment
+
+### 08.02.22
+
+- Analyse.py: temporary adjustment to account for changed TextGrid file names
+
+  - originally the convention was and in the future will be 'chanN.TextGrid'
+  - changed it temporarily to 'laughter_chanN.TextGrid' to make it work with current output
+
+- added sys-argument to analyse.py to make passing the output directory easier
+
+First analysis works - recall significantly higher:
+
+```
+  threshold precision              recall           valid_pred_laughs
+                 mean    median      mean    median              mean  median
+0       0.1  0.009289  0.009289  0.926635  0.926635            2342.0  2342.0
+1       0.2  0.018489  0.018489  0.917084  0.917084            1897.0  1897.0
+2       0.3  0.033927  0.033927  0.897891  0.897891            1103.0  1103.0
+3       0.4  0.057323  0.057323  0.860460  0.860460             623.0   623.0
+4       0.5  0.089995  0.089995  0.776256  0.776256             344.0   344.0
+5       0.6  0.136735  0.136735  0.649098  0.649098             202.5   202.5
+6       0.7  0.199281  0.199281  0.477080  0.477080             112.5   112.5
+7       0.8  0.275497  0.275497  0.346883  0.346883              59.0    59.0
+8       0.9  0.373416  0.373416  0.176774  0.176774              26.0    26.0
+```
+
+- very low precision, check the feature representation I'm using
+  - also didn't apply augmentation
+  - talk about best feature representation in the meeting tomorrow
+    - and how to implement that in lhotse
