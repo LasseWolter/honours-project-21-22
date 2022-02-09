@@ -913,6 +913,38 @@ First analysis works - recall significantly higher:
 ```
 
 - very low precision, check the feature representation I'm using
+
   - also didn't apply augmentation
   - talk about best feature representation in the meeting tomorrow
     - and how to implement that in lhotse
+
+### 09.02.22
+
+- number of samples seems to be incorrect
+
+  - realised this when trying to plot the audio
+
+    - it uses `num_samples` as value for scaling the x-axis which is way to long in my case
+
+  - `num_samples` wasn't the problem but the fact that 0 was always the start of the x-linspace used in the plot
+    - changing that to `self.start` and the end to `self.start+self.duration` fixes the problem
+      - Not sure about this: Need to check which expression for 'end' is correct
+      - create a PR with this adjustment
+
+- created visualise_feats notesbook to compare fbank and spectrogram extractor
+
+  - also see email conversation with Ondrej
+  - for now I'd say that using Fbank-Features seems reasonable
+    - Fbank is 'kinda applied on top of Melspectrograms'
+      - would have to look this up to have a clearer understanding
+
+- got lots of input during the meeting today
+
+  - see presentation and meeting notes
+
+- paper to look at: https://asmp-eurasipjournals.springeropen.com/articles/10.1186/s13636-020-00176-2
+
+_Idea for increasing performance:_
+
+- use more 'speech data' because randomly sampling a small amount (like I do now) will likely yield
+  lots of 'silence'-segment which is possibly why the performance looked like VAD to Ondrej
