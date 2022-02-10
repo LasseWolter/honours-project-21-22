@@ -948,3 +948,29 @@ _Idea for increasing performance:_
 
 - use more 'speech data' because randomly sampling a small amount (like I do now) will likely yield
   lots of 'silence'-segment which is possibly why the performance looked like VAD to Ondrej
+
+### 10.02.22
+
+- trying to use GPU for computing features (on cluster)
+
+  - checked with interactive session and the feature extraction doesn't seem to use GPU
+
+- seems like Kaldi's Fbank computation on torchaudio doesn't support GPU
+
+  - https://github.com/pytorch/audio/issues/613
+
+- added timing the duration of training to train_lhotse.py
+
+- more helpful output when audio file is missing -> lotse load_audio?
+
+  - current error is not very descriptive
+
+- kaldifeat can't be installed because the version of Cmake on the cluster is too old...
+
+  - trying to install a new version of cmake from source
+  - needed to install cmake version manually and add this to .bashrc
+    `export PATH=/home/$USER/cmake-3.22.2/bin/:$PATH`
+
+  - but still an error that CUDA_TOOLKIT_ROOT_DIR ins't found
+    - possibly it's here: `./lib/python3.9/site-packages/conda/common/cuda.py`
+    - possibly here: `/home/s1660656/miniconda3/pkgs/cudatoolkit-11.3.1-h2bc3f7f_2`
