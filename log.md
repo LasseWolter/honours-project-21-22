@@ -974,3 +974,21 @@ _Idea for increasing performance:_
   - but still an error that CUDA_TOOLKIT_ROOT_DIR ins't found
     - possibly it's here: `./lib/python3.9/site-packages/conda/common/cuda.py`
     - possibly here: `/home/s1660656/miniconda3/pkgs/cudatoolkit-11.3.1-h2bc3f7f_2`
+
+- trying to just run it on cpu with 16 parallel jobs
+
+  - saves the time of debugging the requirements for using kaldifeat
+
+- crated new version of data_dfs with 10 speech segments per laugh
+
+  - want to see if that improves the performance
+  - put normal data_dfs in `old_data_dfs` folder for now
+    - need to find a better way to do this
+
+- modified the load_data.py directly on the cluster to use 16 jobs and load the data from scratch disk
+
+  - I hardcoded this for now, need to find a better implementation for this as well
+
+- running the job on `landonia04` where all the speech data is copied to
+  command run: `sbatch cluster_scripts/load_data_job.sh --cpus-per-task=16 --mem=32000`
+  - need to commit the `load_data_job.sh` to repo as well
