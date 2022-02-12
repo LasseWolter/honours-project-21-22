@@ -216,36 +216,66 @@ In response to this finding we decided to retrain the model on the ICSI dataset.
 
 \chapter{tbd}
 \section{Retraining the model}
-The first approach was to adapt the code that Gillick et al. used and published. After investigating their code, I created a diagram of their data-pipeline (TODO: add figure). 
+The first approach was to adapt the code that Gillick et al. used and published \cite{gillick-codebase}. After investigating their code, I created a diagram of their data-pipeline (TODO: add figure). 
 I created a similar one for our project and after consultation with my supervisors decided that the hash-map containing the preloaded audio could be neglected for now. 
 
 After looking at their code in more detail,  
 I realised that the code wasn't very concise and didn't seem to adhere to current standards of pytorch programs. 
-For example, they used a manual counter for training steps and triggered a new training phase with 1 epoch each time instead of using this training function and passing more than one epoch as argument. 
+For example, they used a manual batch counter for training steps instead of using epochs.  
 Design decisions like this make the code harder to read and harder to debug. 
-Another realisation was that Gillick et al. programmed lots of augmentation and transformation functions themselves instead of using existing implementations from libraries like pytorchaudio. 
-Programming functions for turning audio files into spectrograms and padding/truncating audio files to a certain length themselves, makes the code unnecessary long and introduces risk for errors. In my opinion using existing and exhaustively tested functions from a popular framework like pytorchaudio is better in terms of readability and efficiency of the code.
+Gillick et al. programmed lots of augmentation and transformation functions themselves instead of using existing implementations from libraries like pytorchaudio [TODO add link]. 
+Programming functions for turning audio files into spectrograms and padding/truncating audio files to a certain length themselves, makes the code unnecessary long and introduces risk for errors. In my opinion using existing and exhaustively tested functions from a popular framework like pytorchaudio is better in terms of readability, efficiency and stability of the code.
 My supervisor doesn't have much experience with pytorch but agreed that he doesn't consider the code as well written.
 
 Despite the concerns about Gillick et al.'s code mentioned above, I decided to try to adapt their code for two main reasons. 
-Firstly, I haven't worked on an ML project of this scale before and writing training and inference code from scratch seemed somewhat daunting to me. I didn't think that doing that would make things easier as I trusted that the code that Gillick et al. published should be usable as they have used it for a paper they published \cite{gillick2021robust}. 
-Secondly, I thought that using their code and just doing minimal adjustments to load the ICSI corpus instead of the switchboard corpus would allow for an easier comparison between the two. If I wrote the code from scratch I'd have to make sure that all the preprocessing and model parameters are sufficiently similar to state the difference of changing the training data. 
+Firstly, I haven't worked on an ML project of this scale before and writing training and inference code from scratch seemed somewhat daunting to me. Further, I trusted that the code that Gillick et al. published should be usable as they have used it for a paper they published \cite{gillick2021robust}. 
+Secondly, I thought that using their code and just doing minimal adjustments would allow for an easier comparison between the two data sets. If I wrote the code from scratch I'd have to make sure that all the preprocessing and model parameters are sufficiently similar to state the difference of changing the training data. 
 
-After working on adapting the training code for about a week I ran into a major problem regarding the time it takes to train the model. I merely managed to train around 30 batches of audio, each consisting of 32 audio tracks, in 2 hours. This couldn't be right as the audio samples loaded from these audio tracks were only 1 second segments. This equates to 8s of processing time per 1s sample.
-This is significantly slower than the evaluation on a CPU-only machine. TODO:cite rtf table
+After adapting the training code for about a week I ran into a major problem. Training the model was really slow. The model trained around 30 batches of audio in two hours, each consisting of 32 audio tracks. 
+With training samples of 1 second each this equates to one sample every eight seconds.
+This training performance on a GPU machine is significantly slower than the evaluation on a CPU-only machine. TODO:cite rtf table
 
-After some further investigation I realised that it's the data-loading that takes so long. I ran some experiments to check how long it takes to load the data (TODO: add exp data) and found that it's unacceptably slow. 
+After some further investigation I realised that the data-loading is the bottleneck. I ran some experiments to check how long it takes to load the data (TODO: add exp data) and found that it's unacceptably slow. 
+I also investigated the librosa loading times from different offsets in an audio file. It turned out that the loading time of a sample of an audio track grows linearly with the offset at which this sample is located. [TODO: add graph/table]
 
-I discussed these results with my second supervisor and he suggested that it might be due to the different recording length of the switchboard dataset. According to LDC data (TODO link?) the switchboard dataset contains 2400 recordings and a total of approximately 260 hours of speech. This equals an average recroding length of roughly 8 mintues. Compared to the 52 minutes average (TODO check number) of the ICSI recording corpus this is a significant difference. 
-As mentioned before I hadn't done the preloading of audio data like Gillick et al.. I thought about adding that to the pipeline but realised that it doesn't work because not all of the data can be loaded into memory. I'm not sure how Gillick et al. did it for the switchboard dataset. I thought about splitting the training data into subsets and preloading those one by one. This would have meant that the dataloader should only load data from a certain subset and switch to a new subset once this subset has been exhausted. 
-For me this seemed to complicate the code even more and after consultation with my second supervisor I decided to rewrite the data-loader from scratch. 
-
-My second supervisor suggested to possibly use lhotse (TODO: add link) which seemed promising so I decided to try that. 
+I discussed these results with my second supervisor and he suggested that it might be due to the different recording length of the switchboard dataset. According to LDC data \cite{switchboard-ldc} the switchboard dataset contains 2400 recordings and a total of approximately 260 hours of speech. This equals an average recording length of roughly 6.5 minutes. Compared to around 58 minutes average \cite{icsi-ldc} of the ICSI recording corpus this is a significant difference.
 
 
+As mentioned before I hadn't done the preloading of audio data like Gillick et al.. 
+I thought about adding that to the pipeline but realised that it doesn't work because the accumulated data won't fit into memory. 
+The following estimates show the difference in storage space needed to preload the whole ICSI/Switchboard corpus as .wav-files. We assume a bitrate of 16bits = 2bytes per sample.
 
+Gillick et al. were able to fit all audio data into memory because all switchboard recordings consist of only one audio file which contains the recordings from both participants. Thus, we have 260 hours of raw audio sampled at 8khz which can be estimated as:
 
+\[ \frac{260hours * 3600 seconds * 8000 samples per second * 2 bytes}{1024^3} \approx 13.95 GB \]
 
+For the ICSI corpus we are using the close-microphone recordings which record each speaker individually. Thus, with an average participant number of 6 we have 72*6=432 hours of audio sampled at 16khz:
+
+\[ \frac{432 hours * 3600 seconds * 16000 samples per seconds * 2bytes}{1024^3} \approx 46.35 GB \]
+
+This shows that using a machine with lots of RAM would allow loading the whole audio data into memory. 
+Regardless of the fact that I didn't have access to such a machine I considered this bad practice and decided to rewrite the dataloader from scratch. 
+
+My second supervisor suggested looking at Lhotse \cite{zelasko2021lhotse} a new python library for speech and audio data preperation. It's still in development but at a state where it's already usable.
+
+\subsection{Lhotse}
+Two main feature that make Lhotse suitable for my use case are:
+\begin{enumerate}
+    \item Simplified loading of popular corpora like ICSI
+    \item Sample creation without actually loading audio data from disk
+\end{enumerate}
+
+Lhotse provides so called \textit{recipes} which simplify working with popular corpora like the ICSI corpus.
+These \textit{recipes} are python scripts that create \textit{manifests}.
+\textit{Manifests} are representation of the entire corpus which contain only meta data of the recordings as well as the corresponding supervisions. 
+Only by using this metadata Lhotse can create samples - Lhotse calls them \textit{Cuts} - without loading any audio or transcript data into memory. 
+
+Due to Lhotse being in development I needed to make some adjustments myself. The recipe for the ICSI corpus wasn't part of the latest release \textit{v0.12} which meant that I had to work with the development version. I fixed some bugs in the ICSI recipe to make it work. I also ran into some other issues with Lhotse and decided to debug some of them. Some of the debugging wasn't strictly necessary for my project. Nevertheless, I decided to spent the time on this because I wanted to contribute to this open source project which has potential to be useful in the field of audio and speech processing in the future (list contributions?).
+Contributions: 
+\begin{itemize}
+    \item improved/debugged ICSI recipe 
+    \item bug when trying to compute features with multiple workers in parallel (TODO: add link?).
+\end{itemize}
 
 
 \chapter{Other}
