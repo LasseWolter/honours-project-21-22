@@ -59,5 +59,29 @@
 - try to include all your work (at least mention it)
 - state your achievements in the introduction and refer back to it
 - also include paths you followed that didn't work (otherwise it won't count)
+
   - mention things that took significant amount of effort (for me e.g. the dataloading part of the training)
     - possibly write clear code that compares the two methods and shows the huge improvement of using lhotse
+
+- possibly explain that you needed to go beyond what was taught in the courses and what explicitly was more complex
+
+- clearly state that the model used in first semester wasn't adapter but just evaluated!
+
+- summarise long paragraphs to help the reader to remember the important bits for the following sections
+
+- reverse outlining -> reread a paragraphs and try to improve the structure by splitting it into sections
+
+- try to write with active verbs and subject at the beginning of the sentence.
+
+### Abstract
+
+- write abstract last
+
+  - it's NOT an introduction, it should tell you what is in the thesis (the content)
+  - be specific not just general information/generic statements
+
+- 1-2 sentences bg and main objectives
+- 1-2 sentences summarising the key methods
+- 1-2 sentence that detail the outcomes in specific,mearsurable terms
+- 1-2 sentences summarising the discussion
+  Taken from the workshop slides which can be found at: https://www.inf.ed.ac.uk/teaching/courses/proj/dissertation_workshop.pdf
