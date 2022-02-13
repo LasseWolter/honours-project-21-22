@@ -992,3 +992,21 @@ _Idea for increasing performance:_
 - running the job on `landonia04` where all the speech data is copied to
   command run: `sbatch cluster_scripts/load_data_job.sh --cpus-per-task=16 --mem=32000`
   - need to commit the `load_data_job.sh` to repo as well
+
+### 11.02.22
+
+Issue with the comman yesterday night:
+
+- used old manifest were the paths are on DFS and don't use scratch disk
+
+  - thus the audio files weren't found
+
+- need to make sure that when using a new audio_dir that manifest is recreated as well
+
+- landonia04 went down so now I'm using landonia08
+
+  - unfortunately now all the data has to be copied to that scratch disk again
+
+- note that it's not 72hours \* 6 channels of speech
+  - it's that amount of audio data, yes, but this contains lots of silence because participants don't talk simultaneously in one meeting
+  - this also affects training when sampling speech segments at random
