@@ -56,8 +56,11 @@ def get_subsample(start, duration, subsample_duration):
     '''
     Take a segment defined by (start, duration) and return a subsample of passed duration within that region
     '''
+    # Taking min is important because otherwise the subsample start can fall out of the range of the laughter
+    # and even get negative (e.g. if start=0.1, duration=0.5 -> 0.1+0.5-1.0 = -0.4)
+    # If the laughter is shorter than 1s, a length of 1s is still kept for consistency (thus, the end of the snippet will contain non-laughter)
     subsample_start = np.random.uniform(
-        start, start+duration-subsample_duration)
+        start, start+duration- min(duration, subsample_duration))
     return subsample_start, subsample_duration
 
 
@@ -87,8 +90,10 @@ def create_data_df(data_dir):
         # For each laughter segment get a random speech segment with the same length
         for _, laugh_seg in meeting_laugh_df.iterrows():
             # Get and append random speech segment of same length as current laugh segment
-            speech_seg_lists[split].append(
-                get_random_speech_segment(laugh_seg.length, meeting_id))
+            # Get 10 speech segment per one laughter segment
+            for _ in range(0,10):
+                speech_seg_lists[split].append(
+                    get_random_speech_segment(laugh_seg.length, meeting_id))
 
             # Subsample laugh segment and append to list
             audio_path = os.path.join(
@@ -112,7 +117,15 @@ def create_data_df(data_dir):
         whole_df = pd.concat([speech_df, laugh_df], ignore_index=True)
         # Round all floats to certain number of decimals (defined in config)
         whole_df = whole_df.round(cfg.train['float_decimals'])
-        whole_df.to_csv(os.path.join(data_dir, f'{split}_df.csv'))
+
+        # Make sure there are no negative start times or durations
+        assert whole_df[whole_df.start < 0].shape[0] == 0, "Found row with negative start-time"
+        assert whole_df[whole_df.duration < 0].shape[0] == 0, "Found row with negative duration"
+        assert whole_df[whole_df.sub_start < 0].shape[0] == 0, "Found row with negative sub_start-time"
+        assert whole_df[whole_df.sub_duration < 0].shape[0] == 0, "Found row with negative sub_duration"
+
+        # Check that only valid lables are in the dataframe
+        assert whole_df[~whole_df.label.isin([0,1])].shape[0] == 0, "There are labels which are not 0 or 1"
 
         # Check that df only contains correct meeting ids for this split
         audio_paths = whole_df.audio_path.unique().tolist()
@@ -120,6 +133,9 @@ def create_data_df(data_dir):
         mismatched_meetings = meeting_ids - set(PARTITIONS[split])
         assert len(
             mismatched_meetings) == 0, f"Found meetings in {split}_df with meeting_id not corresponding to that split, namely: {mismatched_meetings}"
+
+        # Save file to disk
+        whole_df.to_csv(os.path.join(data_dir, f'{split}_df.csv'))
 
 
 if __name__ == "__main__":
