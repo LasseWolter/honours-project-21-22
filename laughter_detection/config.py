@@ -4,6 +4,7 @@ model = {
 }
 
 train = {
+    # How long each sample for training should be 
     "subsample_duration": 1.0,  # in s
     "random_seed": 23,
 

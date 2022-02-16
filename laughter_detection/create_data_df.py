@@ -8,7 +8,7 @@ import pandas as pd
 import os
 import subprocess
 
-DATA_DFS_DIR = 'data/data_dfs' 
+DATA_DFS_DIR = 'data/data_dfs'
 
 # Taken from lhotse icsi recipe to minimise speaker overlap
 PARTITIONS = {
@@ -33,6 +33,10 @@ def get_random_speech_segment(duration, meeting_id):
     Get a random speech segment from any channel in the passed meeting
     If there is an overlap between this segment and laughter/invalid regions, resample
     '''
+    # Don't create speech samples shorter than the sample duration because these would be padded 
+    # during feature computation. Doing this for laugh segments makes sense but for speech segments it's better
+    # to use longer segments from the start to avoid having lots of silence in both speech and laughter segments
+    duration = max(duration, cfg.train['subsample_duration'])
     # Only consider segments with passed meeting_id
     info_df = parse.info_df[parse.info_df.meeting_id == meeting_id]
     # Get segment info for this segment from info_df
@@ -58,10 +62,12 @@ def get_subsample(start, duration, subsample_duration):
     '''
     # Taking min is important because otherwise the subsample start can fall out of the range of the laughter
     # and even get negative (e.g. if start=0.1, duration=0.5 -> 0.1+0.5-1.0 = -0.4)
-    # If the laughter is shorter than 1s, a length of 1s is still kept for consistency (thus, the end of the snippet will contain non-laughter)
+    # We also need to limit the duration to the length of the original segment in case it's at the very end
+    # This can lead to segments shorter than 1s. These are padded when features are computed
+    sub_dur = min(duration, subsample_duration)
     subsample_start = np.random.uniform(
-        start, start+duration- min(duration, subsample_duration))
-    return subsample_start, subsample_duration
+        start, start+duration - sub_dur)
+    return subsample_start, sub_dur
 
 
 def create_data_df(data_dir):
@@ -91,7 +97,7 @@ def create_data_df(data_dir):
         for _, laugh_seg in meeting_laugh_df.iterrows():
             # Get and append random speech segment of same length as current laugh segment
             # Get 10 speech segment per one laughter segment
-            for _ in range(0,10):
+            for _ in range(0, 10):
                 speech_seg_lists[split].append(
                     get_random_speech_segment(laugh_seg.length, meeting_id))
 
@@ -119,13 +125,18 @@ def create_data_df(data_dir):
         whole_df = whole_df.round(cfg.train['float_decimals'])
 
         # Make sure there are no negative start times or durations
-        assert whole_df[whole_df.start < 0].shape[0] == 0, "Found row with negative start-time"
-        assert whole_df[whole_df.duration < 0].shape[0] == 0, "Found row with negative duration"
-        assert whole_df[whole_df.sub_start < 0].shape[0] == 0, "Found row with negative sub_start-time"
-        assert whole_df[whole_df.sub_duration < 0].shape[0] == 0, "Found row with negative sub_duration"
+        assert whole_df[whole_df.start <
+                        0].shape[0] == 0, "Found row with negative start-time"
+        assert whole_df[whole_df.duration <
+                        0].shape[0] == 0, "Found row with negative duration"
+        assert whole_df[whole_df.sub_start <
+                        0].shape[0] == 0, "Found row with negative sub_start-time"
+        assert whole_df[whole_df.sub_duration <
+                        0].shape[0] == 0, "Found row with negative sub_duration"
 
         # Check that only valid lables are in the dataframe
-        assert whole_df[~whole_df.label.isin([0,1])].shape[0] == 0, "There are labels which are not 0 or 1"
+        assert whole_df[~whole_df.label.isin(
+            [0, 1])].shape[0] == 0, "There are labels which are not 0 or 1"
 
         # Check that df only contains correct meeting ids for this split
         audio_paths = whole_df.audio_path.unique().tolist()
