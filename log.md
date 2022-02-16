@@ -965,7 +965,7 @@ _Idea for increasing performance:_
 
   - current error is not very descriptive
 
-- kaldifeat can't be installed because the version of Cmake on the cluster is too old...
+- `kaldifeat` can't be installed because the version of Cmake on the cluster is too old...
 
   - trying to install a new version of cmake from source
   - needed to install cmake version manually and add this to .bashrc
@@ -1010,3 +1010,46 @@ Issue with the comman yesterday night:
 - note that it's not 72hours \* 6 channels of speech
   - it's that amount of audio data, yes, but this contains lots of silence because participants don't talk simultaneously in one meeting
   - this also affects training when sampling speech segments at random
+
+### 14.02.22
+
+- transcript dir on scratch disk: `disk/scratch/s1660656/icsi/data`
+- this is where the speech data is at on scratch disk: `disk/scratch/s1660656/icsi/data/speech/all`
+- feats data location on disk: `/disk/scratch/s1660656/icsi/data/feats`
+
+- trying to use this command to install kaldifeat (with adjusted versions) lead to conflicts in dependencies
+  `conda install -c kaldifeat -c pytorch -c conda-forge kaldifeat python=3.9 cudatoolkit=11.3 pytorch`
+
+  - using the default command from https://github.com/csukuangfj/kaldifeat seems to work:
+    `conda install -c kaldifeat -c pytorch -c conda-forge kaldifeat python=3.8 cudatoolkit=11.1 pytorch=1.8.1`
+    - to add torchaudio to this
+      `conda install -c kaldifeat -c pytorch -c conda-forge kaldifeat python=3.8 cudatoolkit=11.1 pytorch=1.8.1 torchaudio`
+
+- is it a problem to use a mixture of `conda install` and `pip install` ?
+
+- program feat-compute code in a way that one error doesn't throw away all progress
+
+- got this error when trying to compute features:
+
+```
+lhotse.audio.DurationMismatchError: Requested more audio (1.0s) than available (0.93s)
+[extra info] When calling: Recording.load_audio(args=(Recording(id='Bmr019', sources=[AudioSource(type='file', channels=[0], source='data/icsi/speech/Bmr019/chan0.sph'), AudioSource(type='file', channels=[1], source='data/icsi/speech/Bmr019/chan1.sph'), AudioSource(type='file', channels=[2], source='data/icsi/speech/Bmr019/chan2.sph'), AudioSource(type='file', channels=[3], source='data/icsi/speech/Bmr019/chan3.sph'), AudioSource(type='file', channels=[4], source='data/icsi/speech/Bmr019/chan4.sph'), AudioSource(type='file', channels=[5], source='data/icsi/speech/Bmr019/chan5.sph'), AudioSource(type='file', channels=[6], source='data/icsi/speech/Bmr019/chan6.sph'), AudioSource(type='file', channels=[7], source='data/icsi/speech/Bmr019/chan7.sph'), AudioSource(type='file', channels=[8], source='data/icsi/speech/Bmr019/chan8.sph'), AudioSource(type='file', channels=[9], source='data/icsi/speech/Bmr019/chanA.sph'), AudioSource(type='file', channels=[10], source='data/icsi/speech/Bmr019/chanB.sph')], sampling_rate=16000, num_samples=57378219, duration=3586.1386875, transforms=None),) kwargs={'channels': 8, 'offset': -0.07, 'duration': 1.0})
+[extra info] When calling: MonoCut.load_audio(args=(MonoCut(id='train_39309', start=-0.07, duration=1.0, channel=8, supervisions=[SupervisionSegment(id='sup_train_39309', recording_id='Bmr019', start=-0.07, duration=1.0, channel=8, text=None, language=None, speaker=None, gender=None, custom={'is_laugh': 0}, alignment=None)], features=None, recording=Recording(id='Bmr019', sources=[AudioSource(type='file', channels=[0], source='data/icsi/speech/Bmr019/chan0.sph'), AudioSource(type='file', channels=[1], source='data/icsi/speech/Bmr019/chan1.sph'), AudioSource(type='file', channels=[2], source='data/icsi/speech/Bmr019/chan2.sph'), AudioSource(type='file', channels=[3], source='data/icsi/speech/Bmr019/chan3.sph'), AudioSource(type='file', channels=[4], source='data/icsi/speech/Bmr019/chan4.sph'), AudioSource(type='file', channels=[5], source='data/icsi/speech/Bmr019/chan5.sph'), AudioSource(type='file', channels=[6], source='data/icsi/speech/Bmr019/chan6.sph'), AudioSource(type='file', channels=[7], source='data/icsi/speech/Bmr019/chan7.sph'), AudioSource(type='file', channels=[8], source='data/icsi/speech/Bmr019/chan8.sph'), AudioSource(type='file', channels=[9], source='data/icsi/speech/Bmr019/chanA.sph'), AudioSource(type='file', channels=[10], source='data/icsi/speech/Bmr019/chanB.sph')], sampling_rate=16000, num_samples=57378219, duration=3586.1386875, transforms=None), custom=None),) kwargs={})
+```
+
+After checking the `train_df` I found that there are `sub_starts` that are less than 0
+
+- what if a segment is at the very end of the file
+
+  - there could be the same issue because at the moment all segements are 1s long
+    - if the laugh was shorter than 1s and at the very end we could go over the end of the audio
+    - need to include padding for such cases -> that way allow for segments shorter than 1s
+    - discarding all short laughs is not an option because there are 30723 in the training data
+      - probably best to fix that and only create speech segments that are at least 1s?
+
+- data_df dir isn't needed in training script anymore because it handles precomputed features
+
+  - possibly need to use it when doing resampling
+
+- started training experiment with metrics logging on MLP cluster (10 rounds with 10epochs each)
+- started feature computation on local machine for 10-to-1 dataset
