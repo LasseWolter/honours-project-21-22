@@ -153,7 +153,7 @@ For applause specifically they achieved a precision of 87.37\% and a recall of 9
 
 In contrast, Uhle \cite{uhle2011applause} used MFCCs and low-level descriptors (LLD) to represent sound and passed these features to an MLP or an SVM for classification.
 The difference between MLP and SVM classifier were rather small.
-Uhle worked with a relatively small dataset consisting of 210 snippets of 9-30s length. This equates to a total length between 31.5 min and 105 min.
+Uhle worked with a relatively small dataset consisting of 210 segments of 9-30s length. This equates to a total length between 31.5 min and 105 min.
 On a rather small test (10\% of this dataset) Uhle achieved an accuracy of 95\% with a precision 96.51\% and recall of 97.65\%.
 
 A less complex approach for applause detection was presented by Li et al. \cite{li2009characteristics}.
@@ -175,34 +175,40 @@ After having done the initial research we decided to focus solely on laughter de
 There are two main reasons for this, type of previous research and open source code available.  
 As mentioned in the background chapter (\ref{cha:bg}) most research in the field of laughter and applause detection is done separately. 
 Thus, implementing a detection algorithm from existing research requires merging different models. 
-For a combined model to work it is essential that a good understanding of each domain is already present.
+For a combined model to work a good understanding of each domain is essential.
 We decided that this is most easily attained by focusing on one domain first. 
-We chose to focus on laughter instead of applause due to the second reason mentioned above.
-There was an open-source repository available which showcased an existing state-of-the-art laughter detection algorithm.
+We chose to focus on laughter instead of applause because there was an open-source repository available which showcased an existing state-of-the-art laughter detection algorithm \cite{gillick-codebase}.
 In fact, the corresponding paper by Gillick et al. \cite{gillick2021robust} was just published a month before this project started.
 
-
-To investigate how this existing model might perform in our considered domain, namely single-person audio recordings - as it is the standard in video conferences - we decided to evaluate it on the ICSI meeting corpus \cite{morgan2001meeting}. 
-We initially considered the use of Audio Set \cite{googleaudioset} as a possible evaluation corpus. After some discussion we discarded this idea because of a mismatch with the domain for our project. Audio Set was built by extracting 10s audio segments from Youtube videos and assigning it to one a set of classes. Laughter is one of the classes considered. Nevertheless, the domain of Youtube videos varies drastrically. It can be a recording of someone laughing in a silent environment inside a room or someone laughing in a very noisy environment outside. This variety of environments might help for generalising laughter detection but isn't suitable for our project where we focus on laughter detection in a relatively quiet environment with audio being recorded individually for every single person.
+The domain we are working with in video conferences is separate single person audio tracks usually recorded in a relatively quiet environment.
+To investigate how the existing model might perform in this domain, we decided to evaluate it on the ICSI meeting corpus \cite{morgan2001meeting}. 
+We initially considered the use of Audio Set \cite{googleaudioset} as a possible evaluation corpus. After some discussion we discarded this idea because of a mismatch with the domain for our project. Audio Set  consists of 10s audio segments from Youtube videos which were labeled according to a fixed set of classes - including laughter. Nevertheless, the domain of Youtube videos varies drastically. It can be a recording of someone laughing in a silent environment inside a room or someone laughing in a very noisy environment outside. This variety of environments might help for generalising laughter detection but isn't suitable for our project.
 In contrast, the ICSI corpus was a good match to our domain as it solely consists of meeting speech recorded with both close-distance and table-top microphones. 
 We only make use of the close-distance microphone recordings which capture the audio of a single meeting participant.
 Laughter occurrences aren't reported by class assignment as in Audio Set. The ICSI corpus provides transcriptions for all its participants containing speech as well as \texttt{Vocal} and \texttt{NonVocal} tags for sounds like microphone noise and laughter. 
-
-Transcriptions are split into segments denoted by a start and end time. Consequently laughter segments cannot be precisely identified if they occur in one segments next to speech. Thus, laughter annotations cannot be considered strongly labeled data. Nevertheless it is possible to get strongly labeled annotations by only using those laughter segments that appear in a transcription segments by itself (see \ref{sec:model-eval}).
-Another reason for choosing the ICSI database is it is size - about 75 hours.
-Even after filtering for laughter segments that occur on their own, there are still 8420 snippets with an accumulated duration of 3.9h. 
+Another reason for choosing the ICSI corpus is it is size - about 72 hours.
+Even after filtering for laughter segments that occur on their own, there are still 8420 segments with an accumulated duration of 3.9h. 
 We considered this a reasonable size to do evaluation on. 
 
 
+
+
 \section{Model Evaluation} \label{sec:model-eval}
-The first part of evaluation was to filter out the segments that only contain laughter. As mentioned in \ref{sec:model-and-data} this was required to get strongly labeled data. Strongly labeled training data is key for our project as we are trying to accurately determine the boundaries of laughter segments. 
-It is not enough to simply determine if a certain interval contains laughter or not as this won't help in determining accurate segment boundaries. 
-The process of filtering for snippets only containing laughter is similar to Knox and Mirghafori's approach to obtain frame-level training data \cite{knox2006automatic} (\ref{sec:bg-laughter}). 
+
+\subsection{Filter out laughter only segments} \label{subsec:filter-laughter}
+ICSI transcriptions are split into segments denoted by a start and end time.
+Consequently laughter segments co-occurring to speech in one segment cannot be precisely identified.
+Thus, ICSI's laughter annotations cannot be considered strongly labeled data.
+Strongly labeled training data is key for our project.
+It is not enough to determine if a certain segment contains laughter or not as this doesn't give accurate segment boundaries. 
+The process of filtering for segments only containing laughter is similar to Knox and Mirghafori's approach to obtain frame-level training data \cite{knox2006automatic} (\ref{sec:bg-laughter}). 
 Another approach would have been to use an ASR model to align transcriptions with audio. Considering the sufficient amount of laughter segments attained with the simple approach presented above, this more complex and more time consuming approach wasn't necessary. For future projects this might be a useful approach to gain more accurate training/testing data. 
-In contrast to some of the research presented in the background chapter which only used a subset of the ICSI corpus we used the whole dataset for evaluation. We ran the pre-trained detection model by Gillick et al. with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
+
+\subsection{First evaluation}
+In contrast to some existing research \cite{kennedy2004laughter, knox2006automatic} which only used a subset of the ICSI corpus we used the whole dataset for evaluation. We ran the pre-trained detection model by Gillick et al. with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
 Precision and recall for those 1872 experiments can be found in table (TODO).
 A precision-recall curve was plotted (fig:TODO). The precision recall curve has the expected shape but visualises the main problem. The maximum recall achieved is 31.53\%. We expected that a low threshold like 0.2 would yield low precision. Getting such a low recall, however, was surprising. 
-Initially we thought that there might be something wrong with our evaluation method. After some discussion we realised that the discarded laughter occurrences to get strongly labeled data weren't discarded from the predictions. This meant that the model could classify a laughter occurrence correctly but the evaluation method would consider it as false because this laughter occurrence was discarded pre-evaluation. This discrepancy in preprocessing was easily fixed and as one would expect the precision was significantly (fig: TODO). Nevertheless, the recall remained almost unchanged. 
+Initially we thought that there might be something wrong with our evaluation method. After some discussion we realised that the discarded laughter occurrences to get strongly labeled data weren't discarded from the predictions. This meant that the model could classify a laughter occurrence correctly but the evaluation method would consider it as false because this laughter occurrence was discarded pre-evaluation. This discrepancy in preprocessing was easily fixed and as improved the precision significantly (fig: TODO). Nevertheless, the recall remained almost unchanged. 
 
 To make these results more tangible we did a theoretical experiment. What would happen is such is system was deployed? The results of this practical experiment can be seen in table TODO. 
 Considering any of the four possible systems - with different thresholds each - it is aparent that such a system would be entirely unusable. We'll briefly examine the two extreme cases. If the threshold was really low, e.g. 0.2, not roughly TODO minutes of TODO minutes laughter would be correctly retrieved. Despite this being a not even half of the laughter events that actually occurred we also got about TODO minutes of noise.  
@@ -277,6 +283,13 @@ Contributions:
     \item bug when trying to compute features with multiple workers in parallel (TODO: add link?).
 \end{itemize}
 
+For the first version, I didn't make use of the supervisions in the manifest but created them manually 
+for each segment. (TODO: add example of supervision segment)
+The reason for this is that I already had an existing dataframe with laughter and speech segments and a code that generates variants of such dataframes.
+The generated dataframe contained all information needed for a supervision segment, the channel, the start and end time of a segment as well as its label. 
+I used the label in each row in the dataframe to create a custom supervision segment stating if this segment was laughter or not. 
+This way I could simply adapt a voice activity detector sample already provided by Lhotse. This way I didn't have to work with the raw transcriptions in the supervision segments whose additional information isn't needed if I'm just working with binary labels. 
+For future use and trying alternative audio segmentation - e.g. segments containing laughter and speech - it would be better to compute the supervision segments from the original manifest.  
 
 \chapter{Other}
 \section{Privacy Concerns}\label{privacy-concerns}
