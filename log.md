@@ -1224,3 +1224,36 @@ Created google collab project to compute features:
       - that doesn't seem much faster than running it on my CPU
       - what's the reason for this?
         - possibly I don't need to spend time on debugging the GPU stuff on the cluster then?
+
+### 18.02.22
+
+- I'd find it helpful if you could see the tqdm-bar for parallel computation as well
+
+  - this allows to keep track of the computations
+    - isn't it normal that you would do such long feature computations at once (e.g. 5hours)?
+    - if you don't have the individual progress bars you don't know the progress at all.
+
+Comments from Ondrej today:
+
+- feature structure: 100 frames and 40 bins
+  - check Gillick et al. code for that
+    - how do I need to change their structure
+- mix audio with noise - lhotse has an implementation for it
+- change the speech sampling according to the transcriptions
+- Vad: how does that work in Lhotse
+- check the false positives - see if they are mostly speech (VAD) or silence
+- precision/recall curve to show how the threshold could be changed
+
+- Refactored parse.py to also filter out speech and noise
+  - now I get 8720 instead of 8420 laughter snippets
+    - not a problem. Just make sure that it's stated consistently in the thesis
+
+Questions about ResNet Structure:
+
+- what does AvgPool2d(4) do?
+- what do the dropout stages do?
+- what does the batchnorm do?
+
+### 19.02.22
+
+- first thing to do: Create feature representation of the whole ICSI corpus using 100x40 Fbank representation
