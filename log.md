@@ -1,4 +1,4 @@
-# Log:
+g Log:
 
 ### Wednesday, 27.10.21
 
@@ -1027,6 +1027,8 @@ Issue with the comman yesterday night:
 
 - is it a problem to use a mixture of `conda install` and `pip install` ?
 
+### 15.02.22
+
 - program feat-compute code in a way that one error doesn't throw away all progress
 
 - got this error when trying to compute features:
@@ -1053,3 +1055,172 @@ After checking the `train_df` I found that there are `sub_starts` that are less 
 
 - started training experiment with metrics logging on MLP cluster (10 rounds with 10epochs each)
 - started feature computation on local machine for 10-to-1 dataset
+
+### 16.02.22
+
+- refactored some of the existing thesis (up to line 212) using advice from dissertation writing workshop
+
+  - trying to make it clearer and more concise
+
+- changed `create_data_df.py` to
+
+  - use the minimum of sub_sample_duration and segment duration as sub_sample_duration
+    - this ensures that no subsample runs over the end of an audio track
+  - only create speech segments >= 1s
+
+- adapted `compute_features` to pad segments to a minimum of 1s. This ensures that all features have the same shape
+
+  - this is necessary due to the change in create_data_dfs which now also outputs sub_samples with duration less than 1s
+
+- command I use to compute features:
+  `python compute_features.py --audio_dir data/icsi/speech/ --transcript_dir data/icsi/ --data_df_dir data/icsi/1_to_10_data_dfs/ --output_dir data/icsi/feats/1_to_10`
+
+### 17.02.22
+
+- copied over 1_to_10 feats from thinkstation to MLP cluster
+- running training with 1_to_10 feats using:
+  `sbatch -w landonia04 --array=1-10%1 cluster_scripts/train_laugh_job.sh cluster_scripts/train_exp.txt --cpus-per-task=8 --gres=gpu2 --mem=32000`
+
+- ran into issue:
+  `AssertionError: MonoCut db32b95d-8f99-4205-bd07-c1785467af0a: supervision sup_train_91863 has a mismatched recording_id (expected None, supervision has Buw001)`
+
+Only padded recording not supervision
+Problem was that lhotse loaded transcriptions recursively and thus, loaded some transcripts twice.
+
+- setting up google colab env for running experiments
+
+- refactoring code to use .env variables instead of argparse
+
+  - easier to reproduce
+  - easier to handle because one doesn't have to remember all the arguments for each execution
+
+- refactor code structure
+  Current structure has two repos
+
+1. Forked from Gillick et al. (../laughter-detection-jrgillick-local)
+   (removed **pycache** and ./env dirs)
+
+```
+laughter-detection-jrgillick-local/
+├── checkpoints
+│   ├── comparisons
+│   ├── current
+│   ├── icsi
+│   └── in_use
+├── cluster_scripts
+│   ├── copy_checkpoints.sh
+│   ├── eval_exp.txt
+│   ├── eval_laugh_job.sh
+│   ├── gen_eval_exp.py
+│   ├── gen_train_exp.py
+│   ├── remove_icsi_data.sh
+│   ├── run_one.sh
+│   ├── train_exp_bmr.txt
+│   ├── train_exp_small.txt
+│   ├── train_exp.txt
+│   └── train_laugh_job.sh
+├── compute_features.py
+├── configs.py
+├── data
+│   ├── audioset
+│   ├── icsi
+│   └── rtf_samples
+├── eval_output
+│   └── short
+├── lad.py
+├── laugh_segmenter.py
+├── laughter-detection-interactive.ipynb
+├── LICENSE
+├── load_data.py
+├── models.py
+├── notebooks
+├── README.md
+├── requirements.txt
+├── scripts
+│   ├── aggregate_switchboard_annotations.py
+│   ├── aggregrate_audioset_annotations.py
+│   ├── audio_set_loading.py
+│   ├── download_audioset_metadata.sh
+│   ├── download_audio_set_mp3s.py
+│   ├── Evaluation
+│   ├── make_switchboard_text_dataset.py
+│   ├── store_all_audioset_laughter_audio.py
+│   ├── store_all_icsi_audio.py
+│   └── store_all_switchboard_audio.py
+├── segment_laughter.py
+├── train_lhotse.py
+├── train.py
+└── utils
+    ├── audio_utils.py
+    ├── data_loaders.py
+    ├── dataset_utils.py
+    ├── __pycache__
+    ├── text_utils.py
+    └── torch_utils.py
+
+23 directories, 45 files
+
+```
+
+2. the code used for evaluation and analysing outputs (../git_repo/laughter_detection)
+
+```
+git_repo/laughter_detection/
+├── analyse.py
+├── config.py
+├── create_data_df.py
+├── data
+│   ├── data_dfs
+│   └── icsi
+├── eval_output
+│   ├── Bmr021
+│   └── Bns001
+├── lad.py
+├── misc_scripts
+│   └── check_librosa_loading_times.py
+├── output_processing
+│   ├── break.wav
+│   ├── concat_laughs.sh
+│   └── laughs_to_wav.py
+├── preprocess.py
+├── results -> /afs/inf.ed.ac.uk/user/s16/s1660656/Documents/Semester_7/Honours_Project/results
+├── transcript_parsing
+│   ├── data
+│   ├── filter_all_laughs.sh
+│   ├── filter_laugh_only.sh
+│   ├── parse.py
+│   ├── __pycache__
+│   └── xpath_command.txt
+├── utils.py
+└── visualise.py
+```
+
+Created new repo with all these files in one repo:
+
+- https://github.com/LasseWolter/laughter-detection-icsi
+
+  - can be structured better: currently lots of file at root level
+
+- updated lhotse-icsi-recipe (Bugfixes)
+
+  - new dir structure created by download_icsi wasn't used by the prepare_icsi
+  - zip file in target dir wasn't found
+
+- updated compute_features script to use variables from an .env file instead of argparse
+
+From Lhotse docs(https://lhotse.readthedocs.io/en/latest/api.html#lhotse-s-feature-extractors):
+might be useful for realtime inference
+
+```
+Update January 2022: These modules now expose a new API function called “online_inference” that may be used to compute the features when the audio is streaming. The implementation is stateless, and passes the waveform remainders back to the user to feed them to the modules once new data becomes available. The implementation is compatible with JIT scripting via TorchScript.
+```
+
+Created google collab project to compute features:
+
+- https://colab.research.google.com/drive/1-e6UOsRg47-Uh_mGvmxftTiNO9miIYt-#scrollTo=-yPsJSA9g7UD
+- using GPU with `kaldifeat` doesn't throw an error but GPU utilisation doesn't go up
+  - took 8minutes for 2 meetings
+    - 8\*(75meeeting/2) = 300minutes = 5h
+      - that doesn't seem much faster than running it on my CPU
+      - what's the reason for this?
+        - possibly I don't need to spend time on debugging the GPU stuff on the cluster then?
