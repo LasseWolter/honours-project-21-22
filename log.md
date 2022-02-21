@@ -1257,3 +1257,168 @@ Questions about ResNet Structure:
 ### 19.02.22
 
 - first thing to do: Create feature representation of the whole ICSI corpus using 100x40 Fbank representation
+
+### 20.02.22
+
+- can't use `play_audio()` in firefox
+
+  - in chrome it works with no problems
+
+- what is the difference between `supervisions_feature_mask` and `supervisions_audio_mask`?
+
+  - https://lhotse.readthedocs.io/en/latest/api.html#lhotse.cut.Cut.supervisions_feature_mask
+
+- running training with 1_to_10 feats on cluster:
+
+  - `sbatch -w landonia04 --array=1-10%1 cluster_scripts/train_laugh_job.sh cluster_scripts/train_exp.txt --cpus-per-task=8 --gres=gpu2 --mem=32000`
+  - needed to adapt some settings to make it work with the new repo
+
+- getting this error when trying to train (also on local machine):
+
+```
+ValueError: lilcom: Lilcom-compressed data must begin with L
+[extra info] When calling: MonoCut.load_features(args=(MonoCut(id='dev_415', start=15.53, duration=1.0, channel=0, supervisions=[SupervisionSegment(id='sup_dev_415', recording_id='Bmr021', start=15.53, duration=1.0, channel=0, text=None, language=None, speaker=None, gender=None, custom={'is_laugh': 0}, alignment=None)], features=Features(type='kaldi-fbank', num_frames=44, num_features=128, frame_shift=0.02275, sampling_rate=16000, start=15.53, duration=1.0, storage_type='lilcom_chunky', storage_path='data/icsi/feats/1_to_10_full/feats/feats-2.lca', storage_key='273486,6867', recording_id=None, channels=0), recording=Recording(id='Bmr021', sources=[AudioSource(type='file', channels=[0], source='data/icsi/speech/Bmr021/chan0.sph'), AudioSource(type='file', channels=[1], source='data/icsi/speech/Bmr021/chan1.sph'), AudioSource(type='file', channels=[2], source='data/icsi/speech/Bmr021/chan2.sph'), AudioSource(type='file', channels=[3], source='data/icsi/speech/Bmr021/chan3.sph'), AudioSource(type='file', channels=[4], source='data/icsi/speech/Bmr021/chan4.sph'), AudioSource(type='file', channels=[5], source='data/icsi/speech/Bmr021/chan5.sph'), AudioSource(type='file', channels=[6], source='data/icsi/speech/Bmr021/chan6.sph'), AudioSource(type='file', channels=[7], source='data/icsi/speech/Bmr021/chan7.sph')], sampling_rate=16000, num_samples=35391062, duration=2211.941375, transforms=None), custom=None),) kwargs={})
+```
+
+- trying to debug by recreating feats just for dev set on local machine
+
+  - getting missmatched supervision segment again
+    `AssertionError: MonoCut 591564f8-480b-4bac-b06c-436587bead91: supervision sup_dev_1228 has a mismatched recording_id (expected None, supervision has Bns001)`
+    - there are some MonoCuts with random_ids like '88f0bfc3-f3d1-4e00-af24-fd20d1599ef6'
+      - not sure how they come to be, need to investigate
+        - all of these cuts are laughs (printed them to ipython console)
+        - these are the cuts where the laugh segment in data_df is shorter than 1s
+          - the `pad(duration=1.0)` call on the MonoCut returns a MixedCut with the modified ID
+            - this MixedCut contains the original `MonoCut` and a `PaddingCut`
+          - the feature computation works and the spectrogram looks as expected:
+      - MixedCut's `compute_and_store_features` returns a `MonoCut` by default.
+        - this `MonoCut` has no recording attached to it
+          - it also seems like start time is just set to 0
+        - https://lhotse.readthedocs.io/en/latest/api.html#lhotse.cut.MixedCut.compute_and_store_features
+        - one can use `mix_eagerly`== False which stores the features for each track separately
+          - but that's also not what we want
+          - I want a MonoCut that has the length 1.0s and the whole computed features (with padding) and the correct recording attached to it...
+
+![padded_cut](./log_imgs/padded_cut.png)
+
+- manually setting the rec_id to `None` if the Cut is padded doesn't work either
+
+  - feature computation succeds but when you try to reload the data from disk it fails, saying:
+    - `TypeError: __init__() missing 1 required positional argument: 'recording_id'`
+  - fixed and commited the issue by manually re-assigning recordings and channels to both the cut and its feature-representation
+    - doesn't seem like a clean way though
+
+- possibly use trim supervisions instead of mask supervisions
+
+  - what's the purpose of mask_supervisions?
+  - trim_supervisions returns a list of cuts
+    - takes one cut and returns a list of cuts which line up with the supervisions of that initial cut
+
+- created 2 jupyter notebooks:
+
+  1. for debugging the issue above
+  2. the other for getting a better intution of feature representations
+
+- tried computing feature representations for all channels in the dev set and store them to disk
+  - took ~90s (check Kaldifeat-Fbank jupyter notebook)
+  - considering that those are 2 meetings one can estimate the time for creating a representation for the whole corpus by
+    - (75/2) \* 90s = 3375 (which is slightly less than an hour)
+      - why is this so much shorter than creating the represenations for all the small cuts?
+      - talk about this in the thesis
+
+### 21.02.22
+
+- write code to create such feat represenations for each meeting
+- Pytorch seems to automatically calculate accuracy when a model is evaluated
+
+  - don't need to calculate this manually
+  - check: https://colab.research.google.com/drive/1HKSYPsWx_HoCdrnLpaPdYj5zwlPsM3NH#scrollTo=Rx6Rhquw9Na0
+
+- not all nodes on the mlp cluster have the `scl` command available
+
+  - `scl enable devtoolset-10 bash`
+    - needed to have access to newer library versions
+  - `damnii02` has it available
+
+- need to create dir if I don't use the same as the manifest_dir
+
+  - the manifest_dir is automatically created
+
+- command to use a specific partition
+  `srun --partition=Teach-Interactive --partition=PGR-Standard --time=08:00:00 --mem=14000 --cpus-per-task=4 --gres=gpu:1 --pty bash`
+
+- steps to make the execution of `compute_features` work on GPU
+  - ssh into headnode
+  - ssh into compute_node that has `scl` installed (e.g. damnii02)
+  - excecute `scl enable devtoolset-10 bash`
+  - excecute `conda activate kaldifeat`
+  - run command `python compute_features.py`
+
+**Ondrej's Email for installing kaldifeat (for reference)**:
+git clone https://github.com/csukuangfj/kaldifeat.git
+cd kaldifeat
+conda create -n kaldifeat -c pytorch -c conda-forge python=3.8 cudatoolkit=11.1 pytorch=1.8.1 torchaudio
+scl enable devtoolset-10 bash
+conda activate kaldifeat
+sed -i 's/cmake /cmake3 /' cmake/cmake_extension.py
+KALDIFEAT_CMAKE_ARGS="-DCUDA_TOOLKIT_ROOT_DIR=/opt/cuda-9.2.148 -DCUDNN_INCLUDE_PATH=/opt/cuDNN-7.6.0.64_9.2/include/" python3 setup.py install
+python3 -c "import kaldifeat; print(kaldifeat.**version**)"
+
+- pytorch download-guide-page for previous versions:
+
+  - https://pytorch.org/get-started/previous-versions/
+  - possibly useful because using kaldifeat v9.2
+
+- double uninsatll torch? REALLY?!
+
+  - https://stackoverflow.com/questions/55476131/error-libtorch-python-so-cannot-open-shared-object-file-no-such-file-or-direct
+
+- try setting LD_LIBRARY_PATH and adding Cuda to it
+
+- issue with cuda when running `torch.cuda.is_available()` seems to resolve after reconnecting
+  - don't know why this is but it works with the 'new_kaldi' and the 'pip_kaldi' env now even though I haven't changed anything
+    - I'm also on a different machine -> could this make a difference (current machine letha06)
+
+Started 2 new envs:
+
+##### pip_kaldi
+
+conda create -n pip_kaldi python=3.8
+`pip install torch==1.7.1+cu92 torchvision==0.8.2+cu92 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html`
+pip install git+https://github.com/lhotse-speech/lhotse@f1b66b8a8db2ea93e87dcb9db3991f6dd473b89d
+pip install pandas python-dotenv
+
+_on headnode_
+
+- scl enable devtoolset-10 bash
+- (when running first time: `sed -i 's/cmake /cmake3 /' cmake/cmake_extension.py` is necessary)
+- python setup.py install (without custom env variable)
+  Fails with CUDA error
+
+_on compute-node_
+
+- scl enable devtoolset-10 bash
+- python setup.py install (without custom env variables)
+
+TESTING:
+`python -c 'import torch; print(torch.cuda.is_available())'` returns True
+`python compute_features` - works as well
+
+- not sure if it's using the GPU though
+  - why is it so fast now (less than an hour, even though it doesn't use GPU? -> checked with nvidia-smi and gpustat)
+
+##### new_kaldi
+
+conda create -n new_kaldi python=3.8
+`conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=9.2 -c pytorch`
+
+---
+
+- copied over newest version of data_dfs to cluster into folder 1_to_10
+
+- ran compute_features to compute features for whole tracks for all cuts on cluster
+  - stored in 'data/icsi/feats/corpus_splits'
+
+### 22.02.22
+
+- run compute_features with the new version where cuts are created from the track-features
