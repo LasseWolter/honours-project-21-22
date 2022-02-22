@@ -1372,6 +1372,7 @@ python3 -c "import kaldifeat; print(kaldifeat.**version**)"
 - double uninsatll torch? REALLY?!
 
   - https://stackoverflow.com/questions/55476131/error-libtorch-python-so-cannot-open-shared-object-file-no-such-file-or-direct
+  - didn't work for me (for fix see new creation below **pip_kaldi**)
 
 - try setting LD_LIBRARY_PATH and adding Cuda to it
 
@@ -1401,11 +1402,18 @@ _on compute-node_
 - python setup.py install (without custom env variables)
 
 TESTING:
-`python -c 'import torch; print(torch.cuda.is_available())'` returns True
-`python compute_features` - works as well
+
+- `python -c 'import torch; print(torch.cuda.is_available())'` returns True
+- `python compute_features` - works as well
 
 - not sure if it's using the GPU though
   - why is it so fast now (less than an hour, even though it doesn't use GPU? -> checked with nvidia-smi and gpustat)
+  - setting `device='cuda'` in KaldifbankConf() works as well now - YEEES
+    - have only briefly tried it but seems to speed up the calculation quite a bit
+
+SETUP_MODIFICATIONS: (to meet other dependencies)
+
+- (None so far)
 
 ##### new_kaldi
 
@@ -1422,3 +1430,40 @@ conda create -n new_kaldi python=3.8
 ### 22.02.22
 
 - run compute_features with the new version where cuts are created from the track-features
+  - got it to work after a few tries
+    - needed to add padding and supervisions and some other minor adjustments
+- cannot compute Gillick et al.'s feature-repr-shape (44x128) on GPU
+  - setting `mel_opts=KaldifeatMelOptions(num_bins=128)` throws:
+
+```
+check failed!
+x: first_index != -1 && last_index >= first_index && "You may have set num_mel_bins too large."
+Aborted (core dumped)
+```
+
+- need to adapt model to allow for different size input
+
+- exceeded disk quota on dice when trying to copy over 1_to_10-feats
+
+- validation and train_loss are always the same in train_results/1_to_1_15_02
+
+  - saved validation metrics as train and validation output
+    - 'copy and paste' mistake :D
+
+- also logging the corresponding epoch for each metric log
+
+  - this can be used in the plot to make it clearer
+  - also refactored and improved metric logging
+
+- some machines throw the GPU error from yesterday.
+  - waited a bit and tried it on a different machine which works now
+  - running feature computation such that I can run training tomorrow
+  - GPU seems underutilised -> not sure how many CPU loaders were allocated, ran standard `interactive_gpu` command
+    - check it: only 1 CPU loader and 4GB of RAM - that's little XD
+    - even with more CPUs and 32GB RAM the GPU is starving
+      - only spikes of 30/50/70% usage
+
+### 23.02.22
+
+- train model with 1_to_10 features and new feature shape (100x40)
+  - btw. improve visulalisation and analysis functions
