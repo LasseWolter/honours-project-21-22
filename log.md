@@ -1466,4 +1466,111 @@ Aborted (core dumped)
 ### 23.02.22
 
 - train model with 1_to_10 features and new feature shape (100x40)
+
   - btw. improve visulalisation and analysis functions
+
+- truncating the cut doesn't truncate the features
+  - loaded the whole track features in each cut
+  - actually stated in the docs (https://lhotse.readthedocs.io/en/latest/api.html#lhotse.cut.MonoCut.truncate):
+
+```
+Note that no operation is done on the actual features or recording - it’s only during the call to MonoCut.load_features() / MonoCut.load_audio() when the actual changes happen (a subset of features/audio is loaded).
+```
+
+- if I'm not mistaken this means that the validate cuts won't work properly for this
+
+  - the meta data isn't changed and only when loading happens (`load_features` / `load_audio`) the truncated parts are extracted
+    - thus, a validation upfront will always fail
+
+- seems to do some caching, the second time the iterations run a lot faster
+
+  - and GPU is utilised constantly
+
+- command to run training:
+
+  - `sbatch --array=1-10%10 cluster_scripts/train_laugh_job.sh cluster_scripts/train_exp.txt --cpus-per-task=8 --gres=gpu1 --mem=32000`
+  - one GPU is fine because until now I haven't seen it fully utilised anyway
+  - not running on a specific node anymore in case that node goes down
+    - downside of switching to a new node: copy data over to scratch space
+    - possibly slurm scheduler takes this into account? (since I seem to be getting similar nodes when running)
+
+- (_WRONG - REVERSED CHANGE_)moved corpus_split_feats to `data/icsi/corpus_feats`
+
+  - not sure if this breaks it for future use
+
+    - no, it doesn't still works fine -> just needed to change the variable in .env
+
+  - **!!!** needed to reverse this change because the original feature are used to create the new ones on the fly
+
+    - thus, the original features (corpus_splits) need to be compied over as well
+
+- lad.py:
+
+  - Uncommented Validate(Cuts) for now
+  - added a comment why
+
+- printed epoch doesn't help much because I run each epoch as a separate process
+
+  - so epoch will always be 1
+
+- possibly there was an issue with old checkpoints being loaded
+
+  - created new script in cluster_scripts to remove all checkpoints from all nodes
+  - rerunning training on 1_to_10 feats from scratch now
+
+- copy checkpoints+metrics from cluster to afs
+
+  - `cp checkpoints/icsi_cluster/* /afs/inf.ed.ac.uk/user/s16/s1660656/Documents/Semester_7/Honours_Project/results/tmp`
+
+- adapted validation batches for online evaluation and rerunning experiment with name `1_to_10_new_val_23_02`
+
+- timing the traing doesn't work
+
+  - possibly run_training_loop runs asynchronously?
+  - seems to work now
+
+- only recompute corpus_feats when the dir doesn't exist
+
+  - implemented and commited
+
+- fixed analyse.py calculations of precision and recall
+  - collecting prediction and transcribed times over whole corpus and then calculating prec and recall once
+    - that way, there is no problem because of different meeting lenghts (-> would have to calculate weighted average)
+
+**Compare results for first model (1_to_10 with 44x128 features)**
+**New Results**
+
+```
+  threshold precision    recall
+
+0       0.1  0.004776  0.906774
+1       0.2  0.011180  0.899961
+2       0.3  0.023692  0.884997
+3       0.4  0.044900  0.849108
+4       0.5  0.075420  0.762914
+5       0.6  0.118556  0.641256
+6       0.7  0.169893  0.478357
+7       0.8  0.253591  0.348974
+8       0.9  0.359325  0.183885
+```
+
+**Old Results**
+
+```
+  threshold precision              recall           valid_pred_laughs
+                 mean    median      mean    median              mean  median
+0       0.1  0.009289  0.009289  0.926635  0.926635            2342.0  2342.0
+1       0.2  0.018489  0.018489  0.917084  0.917084            1897.0  1897.0
+2       0.3  0.033927  0.033927  0.897891  0.897891            1103.0  1103.0
+3       0.4  0.057323  0.057323  0.860460  0.860460             623.0   623.0
+4       0.5  0.089995  0.089995  0.776256  0.776256             344.0   344.0
+5       0.6  0.136735  0.136735  0.649098  0.649098             202.5   202.5
+6       0.7  0.199281  0.199281  0.477080  0.477080             112.5   112.5
+7       0.8  0.275497  0.275497  0.346883  0.346883              59.0    59.0
+8       0.9  0.373416  0.373416  0.176774  0.176774              26.0    26.0
+```
+
+### 24.02.22
+
+- Check output:
+  - ran some more epochs (10 more) to see if loss rises again on validation set
