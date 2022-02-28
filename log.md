@@ -1,4 +1,4 @@
-g Log:
+Log:
 
 ### Wednesday, 27.10.21
 
@@ -1413,7 +1413,10 @@ TESTING:
 
 SETUP_MODIFICATIONS: (to meet other dependencies)
 
-- (None so far)
+(for evaluation -> segment_laughter.py)
+
+- pip install librosa
+- pip install tgt
 
 ##### new_kaldi
 
@@ -1537,7 +1540,8 @@ Note that no operation is done on the actual features or recording - it’s only
   - collecting prediction and transcribed times over whole corpus and then calculating prec and recall once
     - that way, there is no problem because of different meeting lenghts (-> would have to calculate weighted average)
 
-**Compare results for first model (1_to_10 with 44x128 features)**
+**Compare results for first model (1_to_1 with 44x128 features) with old and new analyse.py methods**
+_old version doesn't care about weighted average, new version does (see comments above)_
 **New Results**
 
 ```
@@ -1574,3 +1578,49 @@ Note that no operation is done on the actual features or recording - it’s only
 
 - Check output:
   - ran some more epochs (10 more) to see if loss rises again on validation set
+  - for some reason it doesn't. How come?
+    - structure of resNet?
+
+### 28.02.22
+
+- minor update to visualise.py
+- created data/samples folder containing some audio samples for testing
+
+- command for evaluting a model:
+
+  - `run_experiment -b cluster_scripts/eval_laugh_job.sh -e cluster_scripts/eval_exp.txt`
+  - currently uses model checkpoint from `checkpoints/icsi_eval` (can be changed in `gen_eval_exp.py`)
+
+- new structure for storing checkpoints and predictions
+
+  - create one folder per experiment and store the checkpoints at the root of this folder
+    - the metrics are also stored at the root
+    - the preds are stored in a separate folder called `preds`
+      - subfolders for `dev` and `train` (eventually also for `test`)
+
+- evaluated 1_to_10 feats on dev set:
+
+```
+  threshold precision    recall
+
+0       0.1  0.152767  0.876603
+1       0.2  0.234284  0.798195
+2       0.3  0.296579  0.726599
+3       0.4  0.351380  0.654578
+4       0.5  0.406157  0.578664
+5       0.6  0.481685  0.512725
+6       0.7  0.563532  0.437845
+7       0.8  0.652621  0.351408
+8       0.9  0.733473  0.234191
+```
+
+**RESULT**: Significantly better precision than 1_to_1 features
+
+- why do I not get recall higher than 90% even with low threshhold? Check calculations again.
+
+- started evaluation for 1_to_10 feats on train set
+
+### 01.03.22
+
+- compare evaluation on train set to eval on dev set and training performance
+  - might give insight on if this method of training (on 1s segments) makes sense
