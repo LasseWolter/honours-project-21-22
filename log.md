@@ -1583,7 +1583,17 @@ _old version doesn't care about weighted average, new version does (see comments
 
 ### 28.02.22
 
-- minor update to visualise.py
+- update to visualise.py
+
+  - storing plots in separate folder
+    - create one function for each type of evaluation
+      - currently one for comaparing number of validation batches for online validation
+
+- renamed configs.py to config.py
+
+  - now also holds other configs
+    - not only the model configs
+
 - created data/samples folder containing some audio samples for testing
 
 - command for evaluting a model:
@@ -1623,4 +1633,91 @@ _old version doesn't care about weighted average, new version does (see comments
 ### 01.03.22
 
 - compare evaluation on train set to eval on dev set and training performance
+
   - might give insight on if this method of training (on 1s segments) makes sense
+
+- separating cluster eval scripts for train and dev set
+
+  - they require copying over of different data such that it makes sense to create a separate file
+    - saves time for dev eval because the training data doesn't have to be copied over
+    - results get copied into subfolder ('dev'/'train') of `eval_output`
+
+- updated gen_eval_exp.py to allow generation for different splits
+
+- running training evaluation with new script:
+  - `run_experiment -b cluster_scripts/eval_laugh_job_train.sh -e cluster_scripts/eval_exp.txt`
+
+**Low recall investigation**
+possibly due to refactored parsing - from 18.02.22
+
+```
+- Refactored parse.py to also filter out speech and noise
+  - now I get 8720 instead of 8420 laughter snippets
+    - not a problem. Just make sure that it's stated consistently in the thesis
+```
+
+- compared manually to bash-script `laughter_detection/transcript_parsing/filter_laugh_only.sh`
+
+  - new parse.py returns one more result than the bash script, namely:
+
+    - `b'<Segment StartTime="632.233" EndTime="635.020" Participant="me011">\n <VocalSound Description="laugh"/> Watching the disk meter.\n </Segment>\n '`
+
+      - contains speech next to laughter segment - should be ignored
+
+    - needed to use `"".join(element.itertext())` instead of `element.text()` which only considers text before the first tag
+    - now it returns 8415 which is 5 less than the 8420 returned from the bash script
+      - possibly due to some nested text that wasn't captured by the bash script
+      - that's fine though and it's better to be too strict than too loose
+
+New evaluation compared to the one before:
+
+- slight changes are noticable
+- most importantly, the new method applies the intended preprocesssing
+  - i.e. only consider laughs that occur on their own - NOT next to speech
+
+**new: 8415 total laughter only segments in whole corpus**
+
+```
+  threshold precision    recall
+
+0       0.1  0.144963  0.888216
+1       0.2  0.223329  0.808375
+2       0.3  0.283902  0.736269
+3       0.4  0.339759  0.670062
+4       0.5  0.395182  0.595727
+5       0.6  0.470828  0.528996
+6       0.7  0.553786  0.453547
+7       0.8  0.643106  0.363218
+8       0.9  0.725525  0.242408
+```
+
+**old: 8720 total laughter only segments in whole corpus**
+
+```
+  threshold precision    recall
+
+0       0.1  0.152767  0.876603
+1       0.2  0.234284  0.798195
+2       0.3  0.296579  0.726599
+3       0.4  0.351380  0.654578
+4       0.5  0.406157  0.578664
+5       0.6  0.481685  0.512725
+6       0.7  0.563532  0.437845
+7       0.8  0.652621  0.351408
+8       0.9  0.733473  0.234191
+```
+
+- isn't it a bit confusing that the sampler has a `num_cuts` property
+
+  - doesn't this break with the pytorch dataset convetion of defining a dataset for each dataset
+  - even if it's only defined on the sampler, should there be a convenience `len` method for this?
+
+- `natbib` citation doesn't work
+
+- made feature repr-shape configurable via config.py
+
+### 02.03.22
+
+- check train evaluation output -> ran over night
+- do original evaluation again
+- do original evaluation with downsampled audio
