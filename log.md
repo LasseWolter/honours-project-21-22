@@ -1718,6 +1718,65 @@ New evaluation compared to the one before:
 
 ### 02.03.22
 
+- worked on Theory
+  - understood what Binary Cross Entropy Loss (BCE) is
+  - helpful video: https://www.youtube.com/watch?v=Md4b67HvmRo
+- worked on Thesis
+  - added 2 sections for evaluation metrics section
+
+TODO
+
 - check train evaluation output -> ran over night
 - do original evaluation again
 - do original evaluation with downsampled audio
+
+# 04.03.22
+
+1_to_10 eval on dev set:
+
+```
+  threshold precision    recall
+
+0       0.1  0.144963  0.888216
+1       0.2  0.223329  0.808375
+2       0.3  0.283902  0.736269
+3       0.4  0.339759  0.670062
+4       0.5  0.395182  0.595727
+5       0.6  0.470828  0.528996
+6       0.7  0.553786  0.453547
+7       0.8  0.643106  0.363218
+8       0.9  0.725525  0.242408
+```
+
+1_to_10 eval on train set:
+
+```
+  threshold precision    recall
+
+0       0.1  0.180698  0.854400
+1       0.2  0.253554  0.776425
+2       0.3  0.311196  0.706093
+3       0.4  0.363484  0.639463
+4       0.5  0.416208  0.573450
+5       0.6  0.475792  0.505549
+6       0.7  0.545905  0.433595
+7       0.8  0.634595  0.352436
+8       0.9  0.747055  0.251844
+```
+
+**Analysis**
+
+- good: the performance on the dev set is comparable to the one on the training set
+  - indicates that we don't overfit
+- problem: during training we have
+
+simple_job.sh runs activates a conda env and then calls the command in the passed file
+
+- no copying over of data but a simple script for running a simple script (e.g. python file) on a cluster node
+
+- added syslink to transcripts folder in `transcript_parsing`
+
+  - cleaner would be if the script there would use the normal transcripts folder
+
+- running training on 1_to_20 feats
+  - checkpoints will be in `checkpoints/icsi_cluster`
