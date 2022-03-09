@@ -453,7 +453,7 @@ tqdm==4.62.3
 # Tuesday 11.01.22
 
 Command used to run train.py on certain cluster node (here 'landonia12')
-`sbatch -w landonia12 --array=1-1%10 cluster_scripts/laughter_train.sh cluster_scripts/experiment.txt --cpus-per-task=4 --gres=gpu4 --mem=8000`
+`sbatch -w landonia12 --array=1-10%1 cluster_scripts/laughter_train.sh cluster_scripts/experiment.txt --cpus-per-task=4 --gres=gpu4 --mem=8000`
 
 - can be helpful if data is already present on disk of a certain machine
 
@@ -1417,6 +1417,10 @@ SETUP_MODIFICATIONS: (to meet other dependencies)
 
 - pip install librosa
 - pip install tgt
+- pip install pydantic
+- pip install strenum
+- pip install lxml
+- pip install portion
 
 ##### new_kaldi
 
@@ -1491,7 +1495,7 @@ Note that no operation is done on the actual features or recording - it’s only
 
 - command to run training:
 
-  - `sbatch --array=1-10%10 cluster_scripts/train_laugh_job.sh cluster_scripts/train_exp.txt --cpus-per-task=8 --gres=gpu1 --mem=32000`
+  - `sbatch --array=1-10%1 cluster_scripts/train_laugh_job.sh cluster_scripts/train_exp.txt --cpus-per-task=8 --gres=gpu1 --mem=32000`
   - one GPU is fine because until now I haven't seen it fully utilised anyway
   - not running on a specific node anymore in case that node goes down
     - downside of switching to a new node: copy data over to scratch space
@@ -1779,4 +1783,98 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
   - cleaner would be if the script there would use the normal transcripts folder
 
 - running training on 1_to_20 feats
+
   - checkpoints will be in `checkpoints/icsi_cluster`
+
+- 1_to_20 feats performance on dev set
+  - precision goes up a lot but recall goes down
+    - probably because more things are considered non-laughter in general
+    - how is this different from moving the threshold?
+      - compare 1_to_20 with 0.7 to 1_to_10 with 0.9
+
+```
+  threshold precision    recall
+
+0       0.1  0.267469  0.756262
+1       0.2  0.342139  0.657083
+2       0.3  0.458765  0.517066
+3       0.4  0.521419  0.445222
+4       0.5  0.573975  0.373575
+5       0.6  0.645483  0.296946
+6       0.7  0.733245  0.217302
+7       0.8  0.820494  0.143819
+8       0.9  0.981884  0.053293
+```
+
+- started evaluation of 1_to_20 feats on train-set
+
+### 07.03.22
+
+- check eval on trainset
+  1_to_20 eval on train split
+
+```
+  threshold precision    recall
+
+0       0.1  0.304906  0.694862
+1       0.2  0.383289  0.601628
+2       0.3  0.442028  0.523959
+3       0.4  0.494366  0.454034
+4       0.5  0.552453  0.387489
+5       0.6  0.624487  0.322887
+6       0.7  0.707752  0.253769
+7       0.8  0.804161  0.175896
+8       0.9  0.913738  0.057168
+```
+
+- create manual even split?
+
+### 09.03.22
+
+- create prec-recall plots in `prec_recall` folder
+
+  - the `dev.png` compares the performance of 1_to_10 and 1_to_20 feats on the dev split
+  - the `train.png` compares the performance of 1_to_10 and 1_to_20 feats on the train split
+  - create this as a funciton in visualise.py
+
+- clean up the way 'create_data_df' and 'compute_features' works such that they use the same .env file now
+  - allows for having one .env file for each experiment
+- meeting with phil and ondrey see notes.
+
+- TODO: go through past meeting notes and see what you want to turn into TODO on Planner
+
+- recreated features for 1_to_1 mapping and running the training for that using 100x40 features
+
+- oder book: elements of style to improve bachelor thesis writing
+
+- we can do the confusion matrix only one way
+
+  - if the model doesn't think it's speech, we don't know what it thought it was because we don't do multi-class labelling
+    - we can only look at the parts incorrectly classified as laughter and see what these actually are
+
+- added three mismatch classes (noise, speech and silence) added a 4th category to capture the remaining time
+
+  - for some reason the three classes above don't add up to the incorrectly classified time
+    - thus, the 4th category `remaining_mismatch` captures this difference
+
+- does setting min length to 0 solve the problem with recall not equal to 1?
+
+  - seems to solve the problem with recall
+    - recall for threshold 0.0 is now 0.994538
+      - BECAUSE ONLY THE BMR021 meeting was evaluated
+    - but precision for threshold 1.0 is still only 0.905172
+      - need to investigate further
+
+- running eval on dev split (1_to_1-feats) with thresholds above 1
+
+  - does this solve the issue with precision not equal to 1?
+    - yes, it does: now precision at threshold 1.05 is 1.000000
+      - need to check probabilities for this
+      - somehow the recall is smaller than 1 for threshold 0 again
+        - need to check that as well
+        - recall for BNS001 with threshold 0 is 0.43. What's wrong there?!
+          - need to investigate further
+
+- created tmp_dev-dir in preds for 1_to_1 features for debugging
+
+### 10.03.22
