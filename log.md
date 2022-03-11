@@ -1421,6 +1421,10 @@ SETUP_MODIFICATIONS: (to meet other dependencies)
 - pip install strenum
 - pip install lxml
 - pip install portion
+  _For analyse_
+- pip install matplotlib
+- pip install praat-textgrids
+- pip install seaborn
 
 ##### new_kaldi
 
@@ -1878,3 +1882,88 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
 - created tmp_dev-dir in preds for 1_to_1 features for debugging
 
 ### 10.03.22
+
+- added confusion matrix plot
+
+  - why is so much silence classified as laughter?
+    - shouldn't that be easier to separate from laughter than speech?
+
+- fixed eval_df calculation for meetings with no predictions at all
+
+  - does returning 0 everywhere make a difference?
+    - it does because if there are no predictions, the transcribed laughter time (and number) should still be taken into account
+      - `tot_transc_laugh_time` and `num_of_transc_laughs` are independent of the existence of predictions
+      - returning [] wouldn't capture these numbers either
+      - (note: for low thresholds this case will almost never happen, but for higher thresholds it likely will be the case)
+  - same question applies to participants with no laughter predictions at all
+    - no it doesn't because the transcribed laughters of such participants are still counted
+      - they are included in the index[meeting_id]['tot_len']
+      - same for number of transcribed laughs. They are taken directly from the index
+      - all other numbers are only affected by predictions and thus, participants with no predictions can be ignored
+
+- debugging probabilities output by the model
+  - found probabilities lower than 0:
+    - explains why recall doesn't go up to 100%
+
+```
+-0.019356852912611335
+-0.01935653343500082
+-0.01932683342241519
+-0.019326722979734354
+-0.019268796746827216
+-0.01926504694572539
+-0.019183443500839854
+-0.0191706976065868
+-0.019071770213633522
+-0.019042516573301187
+```
+
+- plotting probs for each audio track of Bns001 now to see if there are also values >1
+  - could explain the precision of < 1
+  - yes there are values greater than 1
+
+```
+1.0005095705478504
+1.0010086325960883
+1.001458153007622
+1.0020216670664635
+1.0023423314954147
+1.0029468746674806
+1.0031613289235717
+1.0037853445054008
+1.0039143523844072
+1.0045381573829837
+1.0046005913586429
+1.0052063836507907
+1.0052192208703248
+1.005769405028217
+1.0057910828942918
+1.0062502979347132
+1.0062933045889546
+1.006661043588464
+1.0067140879356444
+1.0070007758825996
+1.0070544605165406
+1.0072686185056015
+1.0073154364333121
+1.0074636845276137
+1.007498014299779
+1.00758507571606
+1.007603175175419
+1.0076318812149379
+```
+
+- fixed this by just setting >1 to 1 and <0 to 0.0000001 to not match threshold 0
+
+- why is there the remaining part in the confusion matrix?
+  - changing framesize to 1 improved it but there is still a difference
+  - check the outputs in detail to figure out what's wrong
+  - **SOLUTION** took the wrong end time of a meeting
+    - took the endtime of the last segment and ignored possible silence at the end
+    - fixed that now
+    - still one of issue when taking the length of an interval but I think that shouldn't be an issue
+      - example P.closed(0,2) has length 3 instead of 2 (=> Zaunpfahl problem)
+      - you can do -1 but then additions of the length of intervals will yield lower numbers
+        - because you are missing out on some
+        - trying openclosed interval (because it solves the Zaunpfahl problem)
+          - decided to use that, mention why in the thesis
