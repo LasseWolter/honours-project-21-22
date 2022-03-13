@@ -9,6 +9,9 @@
     citecolor=blue
 ]{hyperref}
 \usepackage[authoryear,comma]{natbib}
+\usepackage{csvsimple}
+\usepackage{fancyvrb}
+
 % \setcitestyle{authoryear,comma,open={(},close={)}} 
 
 \begin{document}
@@ -260,7 +263,7 @@ TODO: How does this tie in with Gillick et al.'s statement that they tried to cr
 In response to this finding we decided to retrain the model on the ICSI dataset. 
 
 \chapter{tbd}
-\section{Retraining the model}
+\section{Retraining the model} \label{sec:retraining}
 The first approach was to adapt the code that Gillick et al. used and published \citep{gillick-codebase}. After investigating their code, I created a diagram of their data-pipeline (TODO: add figure). 
 I created a similar one for our project and after consultation with my supervisors decided that the hash-map containing the preloaded audio could be neglected for now. 
 
@@ -322,8 +325,7 @@ Contributions:
     \item bug when trying to compute features with multiple workers in parallel (TODO: add link?).
 \end{itemize}
 
-For the first version, I didn't make use of the supervisions in the manifest but created them manually 
-for each segment. (TODO: add example of supervision segment)
+For the first version, I didn't make use of the supervisions in the manifest but created them manually for each segment. (TODO: add example of supervision segment)
 The reason for this is that I already had an existing dataframe with laughter and speech segments and a code that generates variants of such dataframes.
 The generated dataframe contained all information needed for a supervision segment, the channel, the start and end time of a segment as well as its label. 
 I used the label in each row in the dataframe to create a custom supervision segment stating if this segment was laughter or not. 
@@ -334,7 +336,59 @@ For future use and trying alternative audio segmentation - e.g. segments contain
 The feature representation is another important design decision. Gillick et al. \citep{gillick2021robust} used a Melspectrogram, representing each second of audio with a 44 by 128 feature matrix. 44 means 44 samples per 1 second. 128 means that each sample is represented by 128 values, i.e. 128 mel-bins. They don't state explicitly why they have chosen this shape. 
 Experimenting with different shapes is important to investigate its impact on the real-time-factor and performance.  
 
+\section{Experiments} \label{sec:experiments}
+\textbf{Experiment 2}
+This set of experiments evaluates the effect of the structure of training data on the final model performance. Structure here refers to two things: 
+\begin{enumerate}
+    \item class balance between laughter and non-laughter samples
+    \item diversity of non-laughter samples 
+\end{enumerate}
+
+For our use case real-world data will contain significantly more non-laughter than laughter. My hypothesis is that training data that mirrors this class imbalance will produce better outcomes than balanced training data. 
+
+The second factor is class diversity. Even though laughter detection is a binary classification problem there are lots of types of non-laughter, the most obvious distinction being speech and silence. Having a good representation of this diversity of non-laughter segments is essential for a good performance of the model.
+In our evaluation we distinguish five different kinds of non-laughter:
+speech, silence, vocal-sounds, non-vocal-sounds, invalid segments. 
+
+In the experiments shown we first selected the same amount of laughter and speech (1-to-1), then we selected 10 and 20 times as many speech segments as laughter segments (1-to-10 and 1-to-20).
+Looking at the results.
+
+
+\csvautotabular{csvs/1_to_10/dev_eval.csv}
+
+% \begin{document}
+%     \begin{tabular}{l|c}%
+%     \bfseries Person & \bfseries Matr.~No.% specify table head
+%     \csvreader[head to column names]{dev_eval.csv}{}% use head of csv as column names
+%     {\\\hline\givenname\ \name & \matriculation}% specify your coloumns here
+%     \end{tabular}
+% \end{document}
+
+\textbf{General ML advice}
+When using online validation, the number of validation batches matters a lot. To get a better intutition about this I plotted the metrics during training for different batch sizes and log frequency
+
+
+Another issue I ran into was that that the precision for threshold 1 wasn't 100\% and the recall for threshold 0 wasn't 100\% either. After some debugging I found a bug in Gillick et al.'s model. 
+The model sometimes yields probabilities smaller than 0 and larger than 1. The overhead was usually smaller than 0.02. I didn't spent time on finding the exact reason for this bug but capped the output 0 and 1, respectively.
+
+\chapter{Lessons Learned}
+
+\section{Use of published code}
+In hindsight, I would be more careful in choosing the codebase I base my work on.
+Working with sparsely documented code that doesn't adhere to certain standards (e.g. for pytorch training) slowed down my working progress. 
+Missing experience in the field and the fact that the paper was published at Interspeech 2021 made me think that this was a good codebase to work with.
+Only during retraining the model and working more closely with the codebase I realised certain bugs and issues with the original code, including:
+\begin{enumerate}
+    \item unnecessary long training code (\ref{sec:retraining})
+    \item lots of unused function
+    \item a bug that the model outputs probabilities out of bounds ($<0$ or $>1$) (\ref{sec:experiments})
+    \item sub-optimal code like recreation of a large object inside a for-loop even though it's independent of it
+    \item seemingly misunderstanding of python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
+\end{enumerate}
+
 \chapter{Other}
+
+
 \section{Privacy Concerns}\label{privacy-concerns}
 People might have privacy concerns if their visual input is used for classification.
 Additionally, in video meetings and conferences people often turn off their video input.
