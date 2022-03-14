@@ -11,8 +11,9 @@
 \usepackage[authoryear,comma]{natbib}
 \usepackage{csvsimple}
 \usepackage{fancyvrb}
-
 % \setcitestyle{authoryear,comma,open={(},close={)}} 
+
+\newcommand{\coderepo}{\href{https://github.com/LasseWolter/laughter-detection-icsi}{github-repo} }
 
 \begin{document}
 \begin{preliminary}
@@ -99,7 +100,7 @@ Two examples of such classification of presegmented audio data were presented by
 Even though both models classified presegmented audio there were some significant differences. 
 Firstly, the definition of laughter and the motivation behind the research differed.
 While Kennedy and Ellis define laughter events as 'points in the meeting where more than one person laughs', Truong and Van Leeuwen considered one person laughing as a laughter event.
-Kennedy and Ellis didn't specify a particular motivation whereas Truong and Van Leeuwen's long-term goal was the investigation of 'paralinguistic events' - laughter being one of them - to classify the speaker's emotional state.   
+Kennedy and Ellis did not specify a particular motivation whereas Truong and Van Leeuwen's long-term goal was the investigation of 'paralinguistic events' - laughter being one of them - to classify the speaker's emotional state.   
 
 Secondly, there was a difference between the best performing features and predictors.  
 Kennedy and Ellis \citep{kennedy2004laughter} got the best results using Mel Frequency Cepstral Coefficients (MFCCs) as features and a Support Vector Machine (SVM) for decision making. 
@@ -268,7 +269,7 @@ The first approach was to adapt the code that Gillick et al. used and published 
 I created a similar one for our project and after consultation with my supervisors decided that the hash-map containing the preloaded audio could be neglected for now. 
 
 After looking at their code in more detail,  
-I realised that the code wasn't very concise and didn't seem to adhere to current standards of pytorch programs. 
+I realised that the code wasn't very concise and did not seem to adhere to current standards of pytorch programs. 
 For example, they used a manual batch counter for training steps instead of using epochs.  
 Design decisions like this make the code harder to read and harder to debug. 
 Gillick et al. programmed lots of augmentation and transformation functions themselves instead of using existing implementations from libraries like pytorchaudio [TODO add link]. 
@@ -302,7 +303,7 @@ For the ICSI corpus we are using the close-microphone recordings which record ea
 \[ \frac{432 hours * 3600 seconds * 16000 samples per seconds * 2bytes}{1024^3} \approx 46.35 GB \]
 
 This shows that using a machine with lots of RAM would allow loading the whole audio data into memory. 
-Regardless of the fact that I didn't have access to such a machine I considered this bad practice and decided to rewrite the dataloader from scratch. 
+Regardless of the fact that I did not have access to such a machine I considered this bad practice and decided to rewrite the dataloader from scratch. 
 
 My second supervisor suggested looking at Lhotse \citep{zelasko2021lhotse} a new python library for speech and audio data preperation. It's still in development but at a state where it's already usable.
 
@@ -325,19 +326,23 @@ Contributions:
     \item bug when trying to compute features with multiple workers in parallel (TODO: add link?).
 \end{itemize}
 
-For the first version, I didn't make use of the supervisions in the manifest but created them manually for each segment. (TODO: add example of supervision segment)
+For this project, I did not make use of the supervisions in the manifest but created them manually for each segment. (TODO: add example of supervision segment)
 The reason for this is that I already had an existing dataframe with laughter and speech segments and a code that generates variants of such dataframes.
 The generated dataframe contained all information needed for a supervision segment, the channel, the start and end time of a segment as well as its label. 
 I used the label in each row in the dataframe to create a custom supervision segment stating if this segment was laughter or not. 
-This way I could simply adapt a voice activity detector sample already provided by Lhotse. This way I didn't have to work with the raw transcriptions in the supervision segments whose additional information isn't needed if I'm just working with binary labels. 
+This way I could simply adapt a voice activity detector sample already provided by Lhotse. This way I did not have to work with the raw transcriptions in the supervision segments whose additional information isn't needed if I'm just working with binary labels. 
 For future use and trying alternative audio segmentation - e.g. segments containing laughter and speech - it would be better to compute the supervision segments from the original manifest.  
 
 
 The feature representation is another important design decision. Gillick et al. \citep{gillick2021robust} used a Melspectrogram, representing each second of audio with a 44 by 128 feature matrix. 44 means 44 samples per 1 second. 128 means that each sample is represented by 128 values, i.e. 128 mel-bins. They don't state explicitly why they have chosen this shape. 
 Experimenting with different shapes is important to investigate its impact on the real-time-factor and performance.  
 
-\section{Experiments} \label{sec:experiments}
-\textbf{Experiment 2}
+\chapter{Experiments} \label{cha:experiments}
+
+
+\section{Experiment 1}
+
+\section{Experiment 2}
 This set of experiments evaluates the effect of the structure of training data on the final model performance. Structure here refers to two things: 
 \begin{enumerate}
     \item class balance between laughter and non-laughter samples
@@ -350,7 +355,34 @@ The second factor is class diversity. Even though laughter detection is a binary
 In our evaluation we distinguish five different kinds of non-laughter:
 speech, silence, vocal-sounds, non-vocal-sounds, invalid segments. 
 
-In the experiments shown we first selected the same amount of laughter and speech (1-to-1), then we selected 10 and 20 times as many speech segments as laughter segments (1-to-10 and 1-to-20).
+\subsection{Method}
+In the experiments shown we first selected the same amount of laughter and non-laughter (1-to-1).
+All samples were one second long and during training no subsampling was applied. 
+The non-laughter segments were selected on a random basis.
+To select non-laughter segments across a variety of meetings the following selection process was used.
+For each laughter segment a non-laughter segment of the same duration was sampled from the same meeting. It is possible that the sample if from a different speaker, the channel within that meeting is chosen at random.
+If the laughter segment was longer than one second, both laughter and non-laughter segments were truncated to a random one second region of their segment. 
+If the segment was shorter than one second, it was stored as is and padded during feature computation.
+All these segments were stored in a table as shown in \ref{table:data-df}.
+The code creating this table can be found in \verb|create_data_df.py|. 
+
+For each segment in this table an Fbank feature representation of shape 100x40 was created (\ref{fig:fbank-sample}). 100 stands for 100 samples, each of length 10ms. 40 stands for the number of Fbank-filters. These dimensions were chosen as they are a standard in the ASR community.
+The \texttt{demo-notebook} on google collab linked from the \coderepo shows a simplified version of how \verb|compute_features.py| computes features. 
+The main difference is that the provided example loads the audio file directly into a Lhotse Cut whereas \verb|compute_features.py| loads already computed feature representation of the whole meeting and only selects a the requested subset. In practice this is a lot faster for computing large amounts of features.
+
+
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=14cm]{imgs/sample_fbank_feat.png}
+    \caption{Example feature representation of a 1s laughter segment}
+    \label{fig:fbank-sample}
+\end{figure}
+
+
+\label{table:data-df}
+% \csvautotabular{csvs/data_dfs/tiny_sample.csv}
+
+then we selected 10 and 20 times as many speech segments as laughter segments (1-to-10 and 1-to-20). 
 Looking at the results.
 
 
@@ -369,7 +401,7 @@ When using online validation, the number of validation batches matters a lot. To
 
 
 Another issue I ran into was that that the precision for threshold 1 wasn't 100\% and the recall for threshold 0 wasn't 100\% either. After some debugging I found a bug in Gillick et al.'s model. 
-The model sometimes yields probabilities smaller than 0 and larger than 1. The overhead was usually smaller than 0.02. I didn't spent time on finding the exact reason for this bug but capped the output 0 and 1, respectively.
+The model sometimes yields probabilities smaller than 0 and larger than 1. The overhead was usually smaller than 0.02. I did not spent time on finding the exact reason for this bug but capped the output 0 and 1, respectively.
 
 \chapter{Lessons Learned}
 
