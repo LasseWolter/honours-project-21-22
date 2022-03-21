@@ -114,7 +114,7 @@ They worked with the Bmr-subset of the ICSI Meeting corpus \citep{morgan2001meet
 Their goal was to obtain accurate interval boundaries of laughter segments.
 One limiting factor for the precision of these boundaries is the frame size. 
 When Knox and Mirghafori first experimented with SVMs similar to Kennedy and Ellis \citep{kennedy2004laughter}, they realised that the time to compute the features and train the SVM increased significantly with decreasing frame size. 
-This is due to the fact that aggregate statistics need to be calculated and stored for each frame of training data.  
+This is because aggregate statistics need to be calculated and stored for each frame of training data.  
 On the contrary, a neural network trained with features from a context window can directly use the features of each frame without aggregating them.  
 
 To obtain frame-level training labels for the ICSI dataset Knox and Mirghafori first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries couldn't be identified in those segments. 
@@ -147,11 +147,10 @@ Their results show that a model using features learned by a CNN architecture out
 
 
 \section{Applause}
-The following review is less exhaustive compared to the review on laughter detection.
-This is due to the fact that we decided to focus on laughter detection for now and possibly add applause detection afterwards.
+The following review is less exhaustive because we decided to focus on laughter detection for now. Applause detection is a possible extension of the project. 
 More information on this decision can be found (TODO: Link to corresponding section).
 
-As mentioned at the beginning of this chapter, in 2003 Cai et al. \citep{cai2003highlight} worked on the detection of sound events, including but not limited to applause.
+As mentioned at the beginning of this chapter, in 2003 Cai et al. \citep{cai2003highlight} worked on the detection of sound events, including applause.
 They used perceptual features and MFFCs as features, Hidden Markov Models (HMM) and Gaussian Mixture models (GMM) to model sound and log likelihood for decision making.
 Cai et al. evaluated their system on a testing set consisting of 2 hours of video material from different programs.
 For applause specifically they achieved a precision of 87.37\% and a recall of 92.00\%.
@@ -211,6 +210,10 @@ Due to the logarithmic nature of this loss-function confidently misclassified ex
 
 To summarise, the Binary Cross Entropy Loss captures how far off the predictions of the model are from the true values. It sums negative log probabilities of belonging to the true class and punishes confidently misclassified samples more heavily.
 
+\subsection{Confusion Matrix}
+TODO
+special case - because it's only a 'one-sided' confusion matrix.
+
 \chapter{tbd} 
 
 \section{Model and data selection}\label{sec:model-and-data}
@@ -241,11 +244,14 @@ We considered this a reasonable size to do evaluation on.
 \subsection{Filter out laughter only segments} \label{subsec:filter-laughter}
 ICSI transcriptions are split into segments denoted by a start and end time.
 Consequently laughter segments co-occurring to speech in one segment cannot be precisely identified.
-Thus, ICSI's laughter annotations cannot be considered strongly labeled data.
-Strongly labeled training data is key for our project.
-It is not enough to determine if a certain segment contains laughter or not as this doesn't give accurate segment boundaries. 
-The process of filtering for segments only containing laughter is similar to Knox and Mirghafori's approach to obtain frame-level training data \citep{knox2006automatic} (\ref{sec:bg-laughter}). 
-Another approach would have been to use an ASR model to align transcriptions with audio. Considering the sufficient amount of laughter segments attained with the simple approach presented above, this more complex and more time consuming approach wasn't necessary. For future projects this might be a useful approach to gain more accurate training/testing data. 
+Such laughter transcriptions are also called weakly labeled. Weakly labeled means that only the presence or absence of an event is given, whereas strongly labeled data states precise boundaries.
+Strongly labeled data is key for this project.
+Filtering for strongly labeled laughter segments resembles Knox and Mirghafori's approach to obtain frame-level training data \citep{knox2006automatic} (\ref{sec:bg-laughter}). 
+After applying this approach I ended up with TODO laughter segments.
+
+Alternatively, I could have created an ASR model to align weakly-labeled laughter events with their audio counterpart. 
+I did not follow this approach for two reasons: it would have more time consuming and the amount of data achieved with the above approach was sufficient. 
+Future projects might consider this approach to gain strongly labeled data for the whole corpus. 
 
 \subsection{First evaluation}
 In contrast to some existing research \citep{kennedy2004laughter, knox2006automatic} which only used a subset of the ICSI corpus we used the whole dataset for evaluation. We ran the pre-trained detection model by Gillick et al. with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
@@ -268,8 +274,7 @@ In response to this finding we decided to retrain the model on the ICSI dataset.
 The first approach was to adapt the code that Gillick et al. used and published \citep{gillick-codebase}. After investigating their code, I created a diagram of their data-pipeline (TODO: add figure). 
 I created a similar one for our project and after consultation with my supervisors decided that the hash-map containing the preloaded audio could be neglected for now. 
 
-After looking at their code in more detail,  
-I realised that the code wasn't very concise and did not seem to adhere to current standards of pytorch programs. 
+After looking at the code in more detail, I realised that it was cumbersome and disregarded current standards of pytorch programs. 
 For example, they used a manual batch counter for training steps instead of using epochs.  
 Design decisions like this make the code harder to read and harder to debug. 
 Gillick et al. programmed lots of augmentation and transformation functions themselves instead of using existing implementations from libraries like pytorchaudio [TODO add link]. 
@@ -303,7 +308,7 @@ For the ICSI corpus we are using the close-microphone recordings which record ea
 \[ \frac{432 hours * 3600 seconds * 16000 samples per seconds * 2bytes}{1024^3} \approx 46.35 GB \]
 
 This shows that using a machine with lots of RAM would allow loading the whole audio data into memory. 
-Regardless of the fact that I did not have access to such a machine I considered this bad practice and decided to rewrite the dataloader from scratch. 
+Regardless of my missing access to such a machine I considered this bad practice and decided to rewrite the dataloader from scratch. 
 
 My second supervisor suggested looking at Lhotse \citep{zelasko2021lhotse} a new python library for speech and audio data preperation. It's still in development but at a state where it's already usable.
 
@@ -330,35 +335,41 @@ For this project, I did not make use of the supervisions in the manifest but cre
 The reason for this is that I already had an existing dataframe with laughter and speech segments and a code that generates variants of such dataframes.
 The generated dataframe contained all information needed for a supervision segment, the channel, the start and end time of a segment as well as its label. 
 I used the label in each row in the dataframe to create a custom supervision segment stating if this segment was laughter or not. 
-This way I could simply adapt a voice activity detector sample already provided by Lhotse. This way I did not have to work with the raw transcriptions in the supervision segments whose additional information isn't needed if I'm just working with binary labels. 
+This way I could simply adapt a voice activity detector dataset already provided by Lhotse(TODO Link). Due to the preprocessing applied, all segment in the dataframe are either fully laughter or no laughter at all.
+Thus, the data is strongly labeled even though the lables are binary.
 For future use and trying alternative audio segmentation - e.g. segments containing laughter and speech - it would be better to compute the supervision segments from the original manifest.  
 
 
 The feature representation is another important design decision. Gillick et al. \citep{gillick2021robust} used a Melspectrogram, representing each second of audio with a 44 by 128 feature matrix. 44 means 44 samples per 1 second. 128 means that each sample is represented by 128 values, i.e. 128 mel-bins. They don't state explicitly why they have chosen this shape. 
 Experimenting with different shapes is important to investigate its impact on the real-time-factor and performance.  
 
-\chapter{Experiments} \label{cha:experiments}
+\chapter{ML Pipeline}
 
+
+
+\chapter{Experiments} \label{cha:experiments}
 
 \section{Experiment 1}
 
-\section{Experiment 2}
+\section{Experiment 2a} \label{exp:2}
 This set of experiments evaluates the effect of the structure of training data on the final model performance. Structure here refers to two things: 
 \begin{enumerate}
     \item class balance between laughter and non-laughter samples
     \item diversity of non-laughter samples 
 \end{enumerate}
 
-For our use case real-world data will contain significantly more non-laughter than laughter. My hypothesis is that training data that mirrors this class imbalance will produce better outcomes than balanced training data. 
 
 The second factor is class diversity. Even though laughter detection is a binary classification problem there are lots of types of non-laughter, the most obvious distinction being speech and silence. Having a good representation of this diversity of non-laughter segments is essential for a good performance of the model.
 In our evaluation we distinguish five different kinds of non-laughter:
 speech, silence, vocal-sounds, non-vocal-sounds, invalid segments. 
 
 \subsection{Method}
-In the experiments shown we first selected the same amount of laughter and non-laughter (1-to-1).
-All samples were one second long and during training no subsampling was applied. 
-The non-laughter segments were selected on a random basis.
+\subsubsection{Experiment 2A}
+In the first set of experiments different ratios between laughter and non-laughter segments in the training data were evaluated. 
+The non-laughter segments were selected on a random basis from remaining audio tracks after subtracting the laughter and invalid regions (see types of segments - TODO add ref). 
+Three different ratios were tried where the amount of non-laughter segments was gradually increased from the same amount, over 10 times as many, to 20 times as many non-laughter segments.
+All samples were one second long and there was no subsampling applied during training.
+
 To select non-laughter segments across a variety of meetings the following selection process was used.
 For each laughter segment a non-laughter segment of the same duration was sampled from the same meeting. It is possible that the sample if from a different speaker, the channel within that meeting is chosen at random.
 If the laughter segment was longer than one second, both laughter and non-laughter segments were truncated to a random one second region of their segment. 
@@ -370,6 +381,20 @@ For each segment in this table an Fbank feature representation of shape 100x40 w
 The \texttt{demo-notebook} on google collab linked from the \coderepo shows a simplified version of how \verb|compute_features.py| computes features. 
 The main difference is that the provided example loads the audio file directly into a Lhotse Cut whereas \verb|compute_features.py| loads already computed feature representation of the whole meeting and only selects a the requested subset. In practice this is a lot faster for computing large amounts of features.
 
+\subsubsection{Experiment 2B}
+The second set of experiments investigated the impact of more balanced non-laughter segments. The general selection and feature computation process was similar. The only difference is that non-laughter segments weren't chosen at random but a fixed percentage of non-laughter segments was assigned to the three types of non-laughter - speech, noise and silence.
+The ratio between laughter and non-laughter segments was set to 1-to-20 for all these experiments. The reason for this is that a larger amount of non-laughter segments seemed more promising to allow conclusions about its structure. 
+Different percentages were tried to evaluate this impact.
+
+\section{Experiment 3}
+The reason for running this experiment is that the first few models I trained on the ICSI corpus had the same performance on both training and development set.
+Usually you shouldn't evaluate on the training set because the ML model already knows that data. That's why I surprised me that the performance was so poor. So I decided to investigate this further with another set of experiments.
+
+\subsection{Method}
+Choose one meeting from the training set - 
+
+TODO: Show initial evaluation on dev vs train set
+TODO: Overfit one meeting completely and hopefully get high performance on the meeting to proof that the model works.
 
 \begin{figure}[htp]
     \centering
@@ -402,23 +427,28 @@ When using online validation, the number of validation batches matters a lot. To
 
 Another issue I ran into was that that the precision for threshold 1 wasn't 100\% and the recall for threshold 0 wasn't 100\% either. After some debugging I found a bug in Gillick et al.'s model. 
 The model sometimes yields probabilities smaller than 0 and larger than 1. The overhead was usually smaller than 0.02. I did not spent time on finding the exact reason for this bug but capped the output 0 and 1, respectively.
+This happens when evaluating the original model and newly trained ones.
 
 \chapter{Lessons Learned}
 
 \section{Use of published code}
 In hindsight, I would be more careful in choosing the codebase I base my work on.
 Working with sparsely documented code that doesn't adhere to certain standards (e.g. for pytorch training) slowed down my working progress. 
-Missing experience in the field and the fact that the paper was published at Interspeech 2021 made me think that this was a good codebase to work with.
+Missing experience in the field and the paper's publication at Interspeech 2021 made me think that it was a good codebase to work with.
 Only during retraining the model and working more closely with the codebase I realised certain bugs and issues with the original code, including:
 \begin{enumerate}
     \item unnecessary long training code (\ref{sec:retraining})
     \item lots of unused function
     \item a bug that the model outputs probabilities out of bounds ($<0$ or $>1$) (\ref{sec:experiments})
     \item sub-optimal code like recreation of a large object inside a for-loop even though it's independent of it
-    \item seemingly misunderstanding of python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
+    \item mistakes in use of python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
 \end{enumerate}
 
 \chapter{Other}
+
+The computations for ML training and evaluation were run on a slurm cluster of the university \citep{yoo2003slurm, tange2011gnu}.
+
+The 72 meetings were split into training, development and test set to minimise speaker overlap. The partitioning follows the structure from \citeauthor{renals2014neural}. It uses meetings \texttt{(Bmr021, Bns001)} as development set and meetings \texttt{(Bmr013, Bmr018, Bmr021)} as test set.
 
 
 \section{Privacy Concerns}\label{privacy-concerns}
@@ -430,7 +460,7 @@ For our project this approach isn't feasible and further, wearable devices might
 In our system people can opt-out of using the laughter-detection feature at any time.
 That way people stay in control of their own privacy.
 
-\bibliographystyle{plain}
+\bibliographystyle{plainnat}
 \bibliography{mybibfile}
 
 %% You can include appendices like this:
