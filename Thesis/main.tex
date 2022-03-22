@@ -451,14 +451,33 @@ The computations for ML training and evaluation were run on a slurm cluster of t
 The 72 meetings were split into training, development and test set to minimise speaker overlap. The partitioning follows the structure from \citeauthor{renals2014neural}. It uses meetings \texttt{(Bmr021, Bns001)} as development set and meetings \texttt{(Bmr013, Bmr018, Bmr021)} as test set.
 
 
-\section{Privacy Concerns}\label{privacy-concerns}
-People might have privacy concerns if their visual input is used for classification.
-Additionally, in video meetings and conferences people often turn off their video input.
-Consentino et al. \citep{cosentino2016quantitative}  mention the privacy implications of video input and raise the same concern for audio input.
-Thus, they suggest the use of individual wearable sensors to address these concerns.
-For our project this approach isn't feasible and further, wearable devices might be quite intrusive.
-In our system people can opt-out of using the laughter-detection feature at any time.
-That way people stay in control of their own privacy.
+\section{Practicality}
+In this section I will talk about the practicality of a laughter recognition feature integrated in a video-call system. 
+This section is split into two parts: 
+\begin{enumerate}
+    \item General practicality of such a system
+    \item Alternative solutions to using a machine learning approach 
+\end{enumerate}
+
+\subsection{General practicality} \label{sec:general-pract}
+Even though users will be able to opt out of using this feature, it is important to think about privacy. If most users do not feel comfortable using such a system, it will significantly affect its practicality.  
+The audio of every meeting participant will be constantly analysed. Even if the system promised to discard all audio immediately, users might feel uncomfortable using such a system. False positives in particular are a problem. If the system detects something as laughter and feeds it into the audio stream it is irreversible. If the false positive is a sensitive conversation with a friend, the cost of this issue is huge. 
+The extent of this issue can be limited by tuning the model threshold in such a way that the False positive rate is minimised. Nevertheless, the use case outlined above will always remain possible. 
+
+Another general problem is missing detection of laughter sentiment. There is laughter in response to a joke which will be pleasing to the speaker. In contrast, laughter that makes fun of the speaker might seriously affect the speaker's confidence. I talked to a member of staff from the university who told me that she would be afraid of using such a system for this reason. 
+For a machine learning model to pick up the sentiment conveyed by a laughter occurrence is a completely different task. Even if this succeeded to a certain degree, false positives would be an issue again. 
+
+
+\subsection{Alternatives}
+Considering the privacy concerns mentioned in section \ref{sec:general-pract}, we can think about alternative sensory data. 
+Constantly analysing video input will likely yield similar discomfort for participants. Further, video inputs are often turned off during larger video conferences.
+Consentino et al. \citep{cosentino2016quantitative}  also mention the privacy implications of video and audio inputs.
+Thus, they suggest the use of individual wearable sensors to address these concerns. For our project this approach wasn't feasible due to the lack of available sensory data.
+It is also impractical to deploy such a system on a large scale. Participants join video conferences from everywhere around the world, where wearable sensors are not available to them. Lastly, it is debatable if a wearable sensor brings more comfort to participants than being listened to all the time. 
+
+During a presentation another student suggested an interesting idea. He suggested to constantly analyse all audio inputs of the meeting without looking for laughter specifically. Considering that usually only one person is speaking, audio activity on lots of inputs synchronously suggests some common activity, e.g. laughter or applause. Trying to find identify patterns like this is an interesting alternative worth thinking about. 
+
+
 
 \bibliographystyle{plainnat}
 \bibliography{mybibfile}
