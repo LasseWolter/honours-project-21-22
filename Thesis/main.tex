@@ -2,6 +2,7 @@
 \documentclass[bsc,frontabs,parskip,deptreport]{infthesis}
 
 \usepackage{graphicx}
+\usepackage{subfig}
 \usepackage[%  
     colorlinks=true,
     pdfborder={0 0 0},
@@ -13,6 +14,11 @@
 \usepackage{fancyvrb}
 % \setcitestyle{authoryear,comma,open={(},close={)}} 
 
+\def\sectionautorefname{Section}	
+\def\chapterautorefname{Chapter}
+\def\subsectionautorefname{Section}
+\def\subfigureautorefname{Figure}
+\def\tableautorefname{Table}
 \newcommand{\coderepo}{\href{https://github.com/LasseWolter/laughter-detection-icsi}{github-repo} }
 
 \begin{document}
@@ -120,7 +126,7 @@ On the contrary, a neural network trained with features from a context window ca
 To obtain frame-level training labels for the ICSI dataset Knox and Mirghafori first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries couldn't be identified in those segments. 
 The remaining audio data could be accurately separated into laughter and non-laughter segments which were then divided into 10ms frames and labeled accordingly.
 
-The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and 37 after the frame (\ref{fig:know_window}).
+The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and 37 after the frame (\autoref{fig:know_window}).
 This way an accurate prediction of laughter boundaries of up to 10ms was possible. 
 The features investigated by Knox and Mirghafori are MFCCs, AC PEAK, F0 and RMS as well as their corresponding delta and delta-delta features.
 They first trained four separate neural networks each one taking one of the mentioned features as input.
@@ -188,7 +194,7 @@ $$Precision = \frac{TP}{TP+FP}$$
 $$Recall = \frac{TP}{TP+FN}$$
 
 \subsection{Binary Cross Entropy Loss}
-In comparison to accuracy, precision and recall (\ref{sec:acc-prec-rec}) the loss of a model is computed from the raw probabilities output by the model, not the predicted labels which are inferred from this probability.
+In comparison to accuracy, precision and recall (\autoref{sec:acc-prec-rec}) the loss of a model is computed from the raw probabilities output by the model, not the predicted labels which are inferred from this probability.
 
 A the model of our binary classifier outputs a probability between 0 and 1. Only applying a threshold turns this probability into a class label. This threshold is a variable parameter.
 For example, with a threshold of 0.5 all predicted probabilities of 0.5 and higher are output as class 1, in our case laughter. All probabilities below 0.5 are output as non-laughter. 
@@ -211,15 +217,21 @@ Due to the logarithmic nature of this loss-function confidently misclassified ex
 To summarise, the Binary Cross Entropy Loss captures how far off the predictions of the model are from the true values. It sums negative log probabilities of belonging to the true class and punishes confidently misclassified samples more heavily.
 
 \subsection{Confusion Matrix}
-TODO
-special case - because it's only a 'one-sided' confusion matrix.
+A confusion matrix is a good way to identify misclassifications. In a multi-class problem it shows the true label on one axis and the predicted label on the other. It can either show the actual counts of predictions or normalised values between 0 and 1. \autoref{fig:example-conf-matrix} shows a normalised confusion matrix for a classification problem with three classes.
+For laughter recognition we only have two classes. Nevertheless we can plot one row of the confusion matrix, namely for laughter classifications. For non-laughter classifications it's unknown if the model considered a segment as speech, noise or silence but for laughter classifications this can be evaluated. In our case we plot several rows in one plot to compare the confusion for different thresholds, e.g. \autoref{fig:conf-matrix-rand}
+\begin{figure}
+    \centering
+    \includegraphics{imgs/examples/exmaple_confusion_matrix.png}
+    \caption{Normalised confusion matrix (source: \citeauthor{confmatrixscikit})}
+    \label{fig:example-conf-matrix}
+\end{figure}
 
 \chapter{tbd} 
 
 \section{Model and data selection}\label{sec:model-and-data}
 After having done the initial research we decided to focus solely on laughter detection. 
 There are two main reasons for this, type of previous research and open source code available.  
-As mentioned in the background chapter (\ref{cha:bg}) most research in the field of laughter and applause detection is done separately. 
+As mentioned in the \autoref{cha:bg} most research in the field of laughter and applause detection is done separately. 
 Thus, implementing a detection algorithm from existing research requires merging different models. 
 For a combined model to work a good understanding of each domain is essential.
 We decided that this is most easily attained by focusing on one domain first. 
@@ -240,18 +252,52 @@ We considered this a reasonable size to do evaluation on.
 
 
 \section{Model Evaluation} \label{sec:model-eval}
-
+\section{preprocessing} \label{sec:preprocessing}
 \subsection{Filter out laughter only segments} \label{subsec:filter-laughter}
 ICSI transcriptions are split into segments denoted by a start and end time.
 Consequently laughter segments co-occurring to speech in one segment cannot be precisely identified.
 Such laughter transcriptions are also called weakly labeled. Weakly labeled means that only the presence or absence of an event is given, whereas strongly labeled data states precise boundaries.
-Strongly labeled data is key for this project.
-Filtering for strongly labeled laughter segments resembles Knox and Mirghafori's approach to obtain frame-level training data \citep{knox2006automatic} (\ref{sec:bg-laughter}). 
-After applying this approach I ended up with TODO laughter segments.
+Strongly labeled data is key for this project because our model should identify laughter segments in a continuous audio stream.
+Obtaining only strongly labeled laughter segments resembles Knox and Mirghafori's approach to obtain frame-level training data \citep{knox2006automatic} (\autoref{sec:bg-laughter}). 
+After this reduction 8415 laughter segments, with a total duration of roughly 3.9h, remained. For a full breakdown of segment types see \autoref{table:segment-types}.
+All weakly labeled segments containing laughter were categorised as invalid an disregarded from the evaluation, a total of 3765 segments.
 
 Alternatively, I could have created an ASR model to align weakly-labeled laughter events with their audio counterpart. 
 I did not follow this approach for two reasons: it would have more time consuming and the amount of data achieved with the above approach was sufficient. 
-Future projects might consider this approach to gain strongly labeled data for the whole corpus. 
+Nevertheless, it is always better to have more training data. Thus, future projects might consider this approach to gain strongly labeled data for the whole corpus and make use of the additional laughter occurrences contained in the invalid segments. 
+
+\subsection{Division of sounds}
+In addition to the obvious class division between laughter and non-laughter, we can divide segments into smaller subclasses. This becomes useful when evaluating classification (see \autoref{cha:experiments}).
+One subclass encompasses invalid segments mentioned in \autoref{subsec:filter-laughter}. 
+Further, we can separate speech, noise and silence which yields four different types of non-laughter. 
+To summarise there are five subclasses:
+\begin{enumerate}
+    \item \textbf{laughter}: segments only containing laughter
+    \item \textbf{non-laughter}
+    \begin{enumerate}
+        \item \textit{speech}: segments only containing speech
+        \item \textit{invalid}: segments where laughter occurs next to other sounds (see \autoref{sec:preprocessing})
+        \item \textit{noise}: segments containing vocal-sound like coughing, non-vocal sounds like chair squeaks or a mixture of sounds and speech in one segment
+        \item \textit{silence}: segments for which no transcription exists
+    \end{enumerate}
+\end{enumerate}
+Note that these subdivisions of \textbf{non-laughter} are not classified by the model. The model is a binary classifier. The distinction within the non-laughter class is merely used for evaluation.
+Thus, the confusion-matrices in \autoref{sec:exp1-res} are technically not full confusion matrices but only the half where segments were misclassified.  
+
+\begin{table}[h!]
+\begin{tabular}{c|c|l}
+     subclass & number of segments & total duration \\
+     \hline
+     laughter & 8415 & 3.9 h \\ 
+     invalid & 3765 & 3.7 h \\
+     speech & 98418 & 64.1 h \\
+     noise & 18224 & 10.9 h \\
+     silence & 97431 & 681.9 h 
+\end{tabular}
+\centering
+\caption{Occurrences and total duration of each subclass}
+\label{table:segment-types}
+\end{table}
 
 \subsection{First evaluation}
 In contrast to some existing research \citep{kennedy2004laughter, knox2006automatic} which only used a subset of the ICSI corpus we used the whole dataset for evaluation. We ran the pre-trained detection model by Gillick et al. with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
@@ -345,14 +391,19 @@ Experimenting with different shapes is important to investigate its impact on th
 
 \chapter{ML Pipeline}
 
-
+\begin{figure}
+    \centering
+    \includegraphics[width=15cm]{imgs/diagrams/Pipeline.drawio.png}
+    \caption{Data Pipeline}
+    \label{fig:data-pipeline}
+\end{figure}
 
 \chapter{Experiments} \label{cha:experiments}
 
 \section{Experiment 1}
 
 \section{Experiment 2a} \label{exp:2}
-This set of experiments evaluates the effect of the structure of training data on the final model performance. Structure here refers to two things: 
+This set of experiments evaluates the effect of the structure of training data on the final model performance. Structure here has two dimensions: 
 \begin{enumerate}
     \item class balance between laughter and non-laughter samples
     \item diversity of non-laughter samples 
@@ -360,8 +411,7 @@ This set of experiments evaluates the effect of the structure of training data o
 
 
 The second factor is class diversity. Even though laughter detection is a binary classification problem there are lots of types of non-laughter, the most obvious distinction being speech and silence. Having a good representation of this diversity of non-laughter segments is essential for a good performance of the model.
-In our evaluation we distinguish five different kinds of non-laughter:
-speech, silence, vocal-sounds, non-vocal-sounds, invalid segments. 
+
 
 \subsection{Method}
 \subsubsection{Experiment 2A}
@@ -374,13 +424,44 @@ To select non-laughter segments across a variety of meetings the following selec
 For each laughter segment a non-laughter segment of the same duration was sampled from the same meeting. It is possible that the sample if from a different speaker, the channel within that meeting is chosen at random.
 If the laughter segment was longer than one second, both laughter and non-laughter segments were truncated to a random one second region of their segment. 
 If the segment was shorter than one second, it was stored as is and padded during feature computation.
-All these segments were stored in a table as shown in \ref{table:data-df}.
+All these segments were stored in a table as shown in \autoref{table:data-df}.
 The code creating this table can be found in \verb|create_data_df.py|. 
 
-For each segment in this table an Fbank feature representation of shape 100x40 was created (\ref{fig:fbank-sample}). 100 stands for 100 samples, each of length 10ms. 40 stands for the number of Fbank-filters. These dimensions were chosen as they are a standard in the ASR community.
+For each segment in this table an Fbank feature representation of shape 100x40 was created (\autoref{fig:fbank-sample}). 100 stands for 100 samples, each of length 10ms. 40 stands for the number of Fbank-filters. These dimensions were chosen as they are a standard in the ASR community.
 The \texttt{demo-notebook} on google collab linked from the \coderepo shows a simplified version of how \verb|compute_features.py| computes features. 
 The main difference is that the provided example loads the audio file directly into a Lhotse Cut whereas \verb|compute_features.py| loads already computed feature representation of the whole meeting and only selects a the requested subset. In practice this is a lot faster for computing large amounts of features.
 
+
+\subsection{Results} \label{sec:exp1-res}
+\begin{figure}
+\begin{tabular}{cc}
+\hspace*{-2cm}                                                           
+\subfloat[1-to-1]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/1_to_1.png}} &
+\hspace*{-1cm}                                                           
+\subfloat[1-to-10]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/1_to_10.png}}\\ 
+\hspace*{-2cm}                                                           
+\subfloat[1-to-20]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/1_to_20.png}} &
+\hspace*{-1cm}                                                           
+\end{tabular}
+\caption{Comparing different class balances with random sampling for non-laughter segments}
+\label{fig:conf-matrix-rand}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width = 3.8in]{imgs/prec-recall/random/dev_compare_class_balance_dev_set.png}
+    \caption{Precision-Recall-Curve for randomly selected non-laughter segments}
+    \label{fig:prec-recall-rand}
+\end{figure}
+
+% \begin{tabular}{c|c|c|c}
+%     threshold & 1-to-1 & 1-to-10 & 1-to-20 \\
+%     0.1 & () & () & () \\
+%     0.3 & () & () & () \\ 
+%     0.5 & () & () & () \\
+%     0.7 & () & () & () \\
+%     0.9 & () & () & () \\
+% \end{tabular}} \\
 \subsubsection{Experiment 2B}
 The second set of experiments investigated the impact of more balanced non-laughter segments. The general selection and feature computation process was similar. The only difference is that non-laughter segments weren't chosen at random but a fixed percentage of non-laughter segments was assigned to the three types of non-laughter - speech, noise and silence.
 The ratio between laughter and non-laughter segments was set to 1-to-20 for all these experiments. The reason for this is that a larger amount of non-laughter segments seemed more promising to allow conclusions about its structure. 
@@ -429,29 +510,30 @@ Another issue I ran into was that that the precision for threshold 1 wasn't 100\
 The model sometimes yields probabilities smaller than 0 and larger than 1. The overhead was usually smaller than 0.02. I did not spent time on finding the exact reason for this bug but capped the output 0 and 1, respectively.
 This happens when evaluating the original model and newly trained ones.
 
-\chapter{Lessons Learned}
+\chapter{Laughter detection in real-time} \label{cha:real-time}
+Due to time constraints this chapter only contains theoretical considerations and pointers for future work. 
+For detecting laughter in video meetings it is essential for the model to work in real-time. Real-time here means low latency and low prediction time. 
+High retrieval accuracy becomes useless if a detected laughter is only fed back to the audio stream after a few seconds.
 
-\section{Use of published code}
-In hindsight, I would be more careful in choosing the codebase I base my work on.
-Working with sparsely documented code that doesn't adhere to certain standards (e.g. for pytorch training) slowed down my working progress. 
-Missing experience in the field and the paper's publication at Interspeech 2021 made me think that it was a good codebase to work with.
-Only during retraining the model and working more closely with the codebase I realised certain bugs and issues with the original code, including:
+There are five factors that influence the real-time nature of our model:
 \begin{enumerate}
-    \item unnecessary long training code (\ref{sec:retraining})
-    \item lots of unused function
-    \item a bug that the model outputs probabilities out of bounds ($<0$ or $>1$) (\ref{sec:experiments})
-    \item sub-optimal code like recreation of a large object inside a for-loop even though it's independent of it
-    \item mistakes in use of python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
+    \item computational power of the end-user's device
+    \item model' complexity
+    \item models' window-size
+    \item model's minimum length parameter 
+    \item programming language
 \end{enumerate}
 
-\chapter{Other}
-
-The computations for ML training and evaluation were run on a slurm cluster of the university \citep{yoo2003slurm, tange2011gnu}.
-
-The 72 meetings were split into training, development and test set to minimise speaker overlap. The partitioning follows the structure from \citeauthor{renals2014neural}. It uses meetings \texttt{(Bmr021, Bns001)} as development set and meetings \texttt{(Bmr013, Bmr018, Bmr021)} as test set.
+The programming language will become important when such a model is integrated with a video call system. Since the work in this thesis does not cover this part of the project, the discussion about the programming language is left for future work.
 
 
-\section{Practicality}
+
+
+
+
+
+
+\chapter{Practicality}
 In this section I will talk about the practicality of a laughter recognition feature integrated in a video-call system. 
 This section is split into two parts: 
 \begin{enumerate}
@@ -459,7 +541,7 @@ This section is split into two parts:
     \item Alternative solutions to using a machine learning approach 
 \end{enumerate}
 
-\subsection{General practicality} \label{sec:general-pract}
+\section{General practicality} \label{sec:general-pract}
 Even though users will be able to opt out of using this feature, it is important to think about privacy. If most users do not feel comfortable using such a system, it will significantly affect its practicality.  
 The audio of every meeting participant will be constantly analysed. Even if the system promised to discard all audio immediately, users might feel uncomfortable using such a system. False positives in particular are a problem. If the system detects something as laughter and feeds it into the audio stream it is irreversible. If the false positive is a sensitive conversation with a friend, the cost of this issue is huge. 
 The extent of this issue can be limited by tuning the model threshold in such a way that the False positive rate is minimised. Nevertheless, the use case outlined above will always remain possible. 
@@ -468,8 +550,8 @@ Another general problem is missing detection of laughter sentiment. There is lau
 For a machine learning model to pick up the sentiment conveyed by a laughter occurrence is a completely different task. Even if this succeeded to a certain degree, false positives would be an issue again. 
 
 
-\subsection{Alternatives}
-Considering the privacy concerns mentioned in section \ref{sec:general-pract}, we can think about alternative sensory data. 
+\section{Alternatives}
+Considering the privacy concerns mentioned in \autoref{sec:general-pract}, we can think about alternative sensory data. 
 Constantly analysing video input will likely yield similar discomfort for participants. Further, video inputs are often turned off during larger video conferences.
 Consentino et al. \citep{cosentino2016quantitative}  also mention the privacy implications of video and audio inputs.
 Thus, they suggest the use of individual wearable sensors to address these concerns. For our project this approach wasn't feasible due to the lack of available sensory data.
@@ -477,7 +559,27 @@ It is also impractical to deploy such a system on a large scale. Participants jo
 
 During a presentation another student suggested an interesting idea. He suggested to constantly analyse all audio inputs of the meeting without looking for laughter specifically. Considering that usually only one person is speaking, audio activity on lots of inputs synchronously suggests some common activity, e.g. laughter or applause. Trying to find identify patterns like this is an interesting alternative worth thinking about. 
 
+\chapter{Lessons Learned}
 
+\section{Use of published code}
+In hindsight, I would be more careful in choosing the codebase I base my work on.
+Working with sparsely documented code that doesn't adhere to certain standards (e.g. for pytorch training) slowed down my working progress. 
+Missing experience in the field and the paper's publication at Interspeech 2021 made me think that it was a good codebase to work with.
+Only during retraining the model and working more closely with the codebase I realised certain bugs and issues with the original code, including:
+\begin{enumerate}
+    \item unnecessary long training code (\autoref{sec:retraining})
+    \item lots of unused function
+    \item a bug that the model outputs probabilities out of bounds ($<0$ or $>1$) (\autoref{sec:experiments})
+    \item sub-optimal code like recreation of a large object inside a for-loop even though it's independent of it
+    \item mistakes in use of python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
+\end{enumerate}
+
+
+\chapter{Other}
+
+The computations for ML training and evaluation were run on a slurm cluster of the university \citep{yoo2003slurm, tange2011gnu}.
+
+The 72 meetings were split into training, development and test set to minimise speaker overlap. The partitioning follows the structure from \citeauthor{renals2014neural}. It uses meetings \texttt{(Bmr021, Bns001)} as development set and meetings \texttt{(Bmr013, Bmr018, Bmr021)} as test set.
 
 \bibliographystyle{plainnat}
 \bibliography{mybibfile}
