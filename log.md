@@ -1967,3 +1967,54 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
         - because you are missing out on some
         - trying openclosed interval (because it solves the Zaunpfahl problem)
           - decided to use that, mention why in the thesis
+
+# 14.03.22
+
+- continued writing on the experiments chapter
+- started a demo jupyter notebook to go with the thesis to help explain my process
+
+# 20.03.22
+
+- trying to redo inital eval with original model
+
+  - comparing the code
+    - keeping the new version of save_instances() seems possible
+
+- the lower or equal to zero seems to be a problem with my newly trained models only
+
+  - the original model doesn't seem to have this problem
+  - tested on the same small 10s segment
+  - this line is the problem: `# probs = laugh_segmenter.lowpass(probs)`
+    - but it's only a problem for newly trained models
+    - this stackoverflow post has some insight about this: https://stackoverflow.com/questions/50742920/filter-gives-negative-values-scipy-filter
+      - possibly I just don't need this filter with my model
+        - why did they implement it in the first place? idk
+
+- original code downsamples all audio to 8000 by default (happens in SwithBoadLaughterInferenceDataset)
+
+  - this is not ideal because one looses lots of data right?
+
+- running initial evaluation again on with 8000 sr and fixed-over-underflow probabilities
+
+- the structured training data has exactly the same length as the normal 1-to-20 training data
+  - namely: 169.429 samples for train-set
+
+# 21.03.22
+
+- for overfitting
+
+  - created feats for one channel in one meeting (chan0 in Bmr021)
+    - all 1s segments that overlap with some laughter are counted as laughter
+  - since Bmr021 is in 'dev' split only `dev_cutset_with_feats.jsonl` was created
+    - just copied that to `train_cutset_with_feats.jsonl` to use that as training data
+      - thus, training and dev data are the same for this experiement
+        - should become evident in the metrics plot
+
+- the structured training data with only 10% silence yielded very low results
+
+  - is it because silence is often misclassified as laughter (-> see conf matrix)
+    - so we need more silence data for training?
+
+- when trying to overfit one meeting it needed 4000 batches until the recall started to rise
+  - the quota was 27 laughter segments (1s) in 2211
+    - quota of: ~1.22%
