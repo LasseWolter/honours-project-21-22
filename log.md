@@ -1849,7 +1849,7 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
 
 - recreated features for 1_to_1 mapping and running the training for that using 100x40 features
 
-- oder book: elements of style to improve bachelor thesis writing
+- ordered book: elements of style to improve bachelor thesis writing
 
 - we can do the confusion matrix only one way
 
@@ -1982,6 +1982,8 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
 
 - the lower or equal to zero seems to be a problem with my newly trained models only
 
+  - actually not -> it also happens with the old evaluation
+
   - the original model doesn't seem to have this problem
   - tested on the same small 10s segment
   - this line is the problem: `# probs = laugh_segmenter.lowpass(probs)`
@@ -2016,5 +2018,28 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
     - so we need more silence data for training?
 
 - when trying to overfit one meeting it needed 4000 batches until the recall started to rise
+
   - the quota was 27 laughter segments (1s) in 2211
     - quota of: ~1.22%
+
+- 100.000 steps means 100.000 batches!
+
+  - that means it's very likely that I need to train for longer
+    - another 10epochs per experiments seems sensible
+
+- created old_feats to not copy over all feats all the time
+
+  - need to move over feats that I want to use to the correct `feats` folder
+
+- had a bug in the train_laugh_job.sh script which copied over the whole speech data for no reason...
+
+- run dev-eval on specific node
+  `sbatch --array=1-25%10 -w landonia09 cluster_scripts/eval_laugh_job_dev.sh cluster_scripts/eval_dev_exp.txt`
+
+- looking at the newly done inital evaluation the recall for very low thresholds is still increadibly low.
+
+  - threshold:0/min-len:0 has a recall of only 36 percent?!
+
+- are there possibly lots of audio channels that haven't been evaluated during the new eval?
+
+- created features for 1-to-200 but not training because it has 1.6M samples in train_df
