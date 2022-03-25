@@ -1,0 +1,8 @@
+For the first version, I didn't make use of the supervisions in the manifest but created them manually 
+for each segment. (TODO: add example of supervision segment)
+The reason for this is that I already had an existing dataframe with laughter and speech segments and a code that generates variants of such dataframes.
+The generated dataframe contained all information needed for a supervision segment, the channel, the start and end time of a segment as well as its label. 
+I used the label in each row in the dataframe to create a custom supervision segment stating if this segment was laughter or not. 
+This way I could simply adapt a voice activity detector sample already provided by Lhotse. This way I didn't have to work with the raw transcriptions in the supervision segments whose additional information isn't needed if I'm just working with binary labels. 
+For future use and trying alternative audio segmentation - e.g. segments containing laughter and speech - it would be better to compute the supervision segments from the original manifest.  
+
