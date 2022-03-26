@@ -2043,3 +2043,24 @@ simple_job.sh runs activates a conda env and then calls the command in the passe
 - are there possibly lots of audio channels that haven't been evaluated during the new eval?
 
 - created features for 1-to-200 but not training because it has 1.6M samples in train_df
+
+**Silence code removed from the demo notebook** (just for reference)
+
+```
+import analysis.preprocess as prep
+import portion as P
+from analysis.utils import p_len
+silence_segs = 0
+silence_duration = 0.0
+for meeting_id in prep.silence_index.keys():
+    for part_id in prep.silence_index[meeting_id].keys():
+        el = prep.silence_index[meeting_id].get(part_id, P.empty())
+        if(type(el)!= P.interval.Interval):
+            continue
+        silence_segs += len(el) # count number of elements in conjunction
+        silence_duration = p_len(el)  # get duration of whole conjuction
+
+print(f'There are {silence_segs} silence segments')
+dur_in_h = silence_duration/3600
+print(f'Silence {silence_duration}s\n{dur_in_h}h')
+```
