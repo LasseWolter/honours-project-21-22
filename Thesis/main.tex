@@ -454,7 +454,7 @@ Regardless of missing access to such a machine finding a solution that requires 
 
 The first version of this DataLoader resulted in slow training. The model trained around 30 batches of audio in two hours, each consisting of 32 audio tracks. 
 With training samples of one second each, this equates to one sample every eight seconds.
-This training performance on a GPU machine was significantly slower than the inference performance on a CPU-only machine (\autoref{tab:rtf}).
+This training performance on a GPU machine was significantly worse than the inference performance on a CPU-only machine (\autoref{tab:rtf}).
 
 The GPU was starved most of the time because the data-loading was the bottleneck. In contrast to inference, where an audio track is loaded at the beginning, training required the DataLoader to load many one-second segments from different offsets.
 Without any pre-loading in place, one disk access per segment was required. 
@@ -497,17 +497,18 @@ These \textit{recipes} are python scripts that create \textit{manifests}.
 \textit{Manifests} are representations of the entire corpus only containing meta data of the recordings as well as the corresponding supervisions, i.e. transcriptions.
 Using those manifests Lhotse creates samples - called \textit{Cuts} in Lhotse - without loading audio or transcript data into memory. 
 
-Due to Lhotse being in development I made some adjustments. The recipe for the ICSI corpus was not part of the latest release \textit{v0.12} which meant that I had to work with the development version. 
-I fixed some bugs in the ICSI recipe. 
+Due to Lhotse being in development I made some adjustments. The \textit{recipe} for the ICSI corpus was not part of the latest release \textit{v0.12} which meant that I had to work with the development version. 
+I fixed some bugs in the ICSI \textit{recipe}. 
 I ran into some other issues with Lhotse and decided to debug some of them, whereas some of the debugging was not strictly necessary for my project. 
 Nevertheless, I decided to spent the time on this because I wanted to contribute to this open source project which has the potential to be useful in the field of audio and speech processing in the future. A list of my contributions, containing links to the corresponding pull requests can be found in \autoref{app:lhotse-contrib}.
 
 \subsection{Data pipeline} \label{sec:ml-data-pipeline}
 
 \autoref{fig:data-pipeline} shows the data pipeline.
-Initially, Lhotse's ICSI-recipe takes the raw data and creates a manifest representing the ICSI corpus (\autoref{sec:lhotse}).
+Initially, Lhotse's \textit{ICSI-recipe} takes the raw data and creates a manifest representing the ICSI corpus (\autoref{sec:lhotse}).
 Besides this manifest creation there are two main functions in the data pipeline: \verb|create_data_df| and \verb|compute_features|. 
 \verb|compute_features| has two parts.
+
 The first part of \verb|compute_features| uses the ICSI-manifest to create a feature representation of all audio tracks in the corpus. Following standards in the ASR community, mel spectrogram features of shape 100x40 are used (\autoref{fig:feature-sample}). The impact of different feature representations is further discussed in \autoref{cha:real-time}. 
 Manifest creation and feature computation for the whole corpus, marked in blue, only need to happen once.
 Note that if the feature representation is changed, this part of \verb|compute_features| needs to be run again to update the features of the whole corpus.
@@ -536,7 +537,7 @@ These sets are loaded during training time which means that no data-loading or f
 \href{https://github.com/LasseWolter/laughter-detection-icsi/blob/main/Demo.ipynb}{This jupyter notebook} demonstrates a simplified version of how \verb|compute_features.py| computes features. 
 The main difference is that the provided example loads the audio file directly into a Lhotse Cut whereas \verb|compute_features.py| loads already computed feature representation of the whole meeting and only selects the requested subset. In practice, this is a lot faster for computing large amounts of features.
 
-I did not make use of the automatically created supervisions by the ICSI recipe because I already created the \verb|create_data_df| function at an earlier stage and considered reusing it the easier approach.
+I did not make use of the automatically created supervisions by the \textit{ICSI-recipe} because I already created the \verb|create_data_df| function at an earlier stage and considered reusing it the easier approach.
 The generated dataframes contained all information needed for a supervision segment: the channel, the start and end time of a segment as well as its label. 
 I adapted a pytorch Dataset\footnote{Dataset here does not refer to actual data. It refers to one of the two main pytorch primitives for data handling: \href{https://pytorch.org/tutorials/beginner/basics/data_tutorial.html}{Datasets}} for \href{https://lhotse.readthedocs.io/en/latest/datasets.html#lhotse.dataset.vad.VadDataset}{voice activity detection} already provided by Lhotse.
 For future work using the supervision segments provided by Lhotse can simplify the pipeline even further by making the \verb|create_data_df| function obsolete. 
@@ -546,8 +547,8 @@ Given the data-pipeline outlined in \autoref{sec:ml-data-pipeline} the actual tr
 These features were loaded into the modified VAD Dataset which I called LAD: laugh activity detection.
 During training time, data is extracted from this dataset using the SimpleCutSampler provided by Lhotse. 
 This new approach can process 44000 batches in 2 hours compared to the 30 batches of my initial training approach which allows for high training speed without having to load all the raw audio into memory.
-To allow for director comparisons, I used the same ResNet architecture as \citet{gillick2021robust}.
-The performance of this model trained on different subsets of the ICSI corpus is investigated in the next section.
+To allow for comparisons, I used the same ResNet architecture as \citet{gillick2021robust}.
+The performance of this model trained on different su   bsets of the ICSI corpus is investigated in the next section.
 
 \chapter{Investigating the impact of training data on model performance} \label{cha:experiments}
 Representative training data is essential for machine learning. Training on the whole ICSI corpus would take a long time and was not feasible for my project.
@@ -564,17 +565,21 @@ All evaluations in this section are done on the development set of the ICSI corp
 
 \section{Experiment 1 - Class balance} \label{sec:exp-1}
 In the first set of experiments, different ratios between laughter and non-laughter segments in the training data were evaluated. 
-The non-laughter segments were selected on a random basis from the remaining audio tracks after subtracting the laughter and invalid regions (\autoref{table:segment-types}). 
 I tried three different ratios between laughter and non-laughter segments: 1-to-1, 1-to-10 and 1-to-20.
 All samples had a duration of one second and no subsampling or feature augmentation was applied during training.
+The ratio of non-laughter subclasses (\ref{table:segment-types}) was not enforced. This characteristic is investigated in \autoref{sec:exp2}.
+
+% The non-laughter segments were selected on a random basis from the remaining audio tracks after subtracting the laughter and invalid regions (\autoref{table:segment-types}). 
 
 \subsection{Method}
-To select non-laughter segments across a variety of meetings \verb|create_data_df| uses the following selection process.
-For each laughter segment, a non-laughter segment of the same duration is sampled from the same meeting. The sampled channel within that meeting is chosen at random.
+To select non-laughter segments across a variety of meetings \verb|create_data_df| uses the following selection process. The sampled channel within that meeting is chosen at random.
+For each laughter segment, a channel within the same meeting is selected at random.
+A non-laughter segment of the same duration as the laughter segment is sampled from this channel.
 If the laughter segment is longer than one second, both laughter and non-laughter segments are truncated to a random one-second region of their segment. 
-If the segment is shorter than one second, it is stored unmodified and padded during feature computation.
+If the segment is shorter than one second, it is stored unmodified and padded to one second length during feature computation.
 All these segments are stored in a table as explained in \autoref{sec:ml-data-pipeline}.
 
+In contrast to random sampling across all meeting, this approach guarantees that the training data holds non-laughter segments from all meetings containing laughter. 
 \subsection{Results} \label{sec:exp1-res}
 
 \begin{figure}[h!]
@@ -584,7 +589,7 @@ All these segments are stored in a table as explained in \autoref{sec:ml-data-pi
     \label{fig:prec-recall-rand}
 \end{figure}
 
-\autoref{fig:prec-recall-rand} shows the performance of in comparison to the baseline, which is the evaluation on the pre-trained model from \autoref{cha:model-evaluation}. The data points displayed are precision and recall for 21 evenly space thresholds from 0 to 1. All models trained on the ICSI corpus outperform the baseline. The differences between the three new models are subtle. It is not possible to identify a best performing model since different models obtain the highest precision for different recalls.
+\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline, which is the evaluation on the pre-trained model from \autoref{cha:model-evaluation}. The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1. All models trained on the ICSI corpus outperform the baseline. The differences between the three new models are subtle. It is not possible to identify a best performing model since different models obtain the highest precision for different recalls.
 
 \autoref{fig:conf-matrix-rand} shows a confusion matrix for different thresholds to deepen the understanding of the used classification. 
 A row full of zeros indicates no laughter predictions for this threshold.
@@ -616,7 +621,7 @@ However, we conclude that the models trained on the ICSI dataset perform signifi
 Another inisght is deduced from the confusion matrices. Whereas the baseline has an even split between speech and silence, the three newly trained models rarely misclassify speech. 
 The non-transcribed regions are the main source of misclassification. This raises the same question as in the initial evaluation. Why is the model not able to confidently separate laughter from silence?
 
-\section{Experiment 2 - Non-laughter diversity}
+\section{Experiment 2 - Non-laughter diversity} \label{sec:exp2}
 The second set of experiments investigates the impact of the different types of non-laughter on the model performance. 
 Thus, the number of non-laughter segments was fixed to 20. 20 was chosen to maximise the amount of non-laughter segments and be able to use the 1-to-20 results from \auotref{sec:exp-1} as a baseline.
 The general selection and feature computation process was similar, but non-laughter segments were not chosen at random. A fixed percentage of non-laughter segments was assigned to each of the three types of non-laughter: speech, noise and silence.
@@ -682,7 +687,7 @@ The confusion matrices in \autoref{fig:conf-matrix-struc} do not add much to the
 \section{Silence segments}
 Both, the initial evaluation (\autoref{cha:model-evaluation}) and the experiments (\autoref{cha:experiments}) raise questions about the silence segments in the corpus. Thus, I decided to manually analyse some audio tracks for abnormities. This is a crude analysis to come up with a hypothesis for the large amount of retrieved silence segments.
 
-I randomly selected 5 of the 468 audio tracks and plotted their audio-wave (\autoref{fig:rand-audio-track}). The selected tracks are plotted in this order:
+I randomly selected five of the 468 audio tracks and plotted their audio-wave (\autoref{fig:rand-audio-track}). The selected tracks are plotted in this order:
 \begin{enumerate}
     \item Bmr027: chan5
     \item Bdb001: chan4
@@ -694,7 +699,7 @@ I randomly selected 5 of the 468 audio tracks and plotted their audio-wave (\aut
 \begin{figure}[h!]
     \centering
     \includegraphics[width=14cm]{imgs/plotted_audio_waves.png}
-    \caption{Audio waves of 5 random audio tracks from the ICSI corpus}
+    \caption{Audio waves of five random audio tracks from the ICSI corpus}
     \label{fig:rand-audio-track}
 \end{figure}
 Depending on the activity and looking at the corresponding transcript I listened to segments of the recordings that were supposed to be silent. In all cases, except for \verb|Bmr027:chan5|, I was able to clearly hear the other participants speaking. I could understand and follow the conversation by just listening to the recording of the close-distance microphone of a single participant. 
@@ -837,10 +842,10 @@ Some parts of the code, especially \verb|train.py|, still contain large parts of
 \section{Lhotse contributions} \label{app:lhotse-contrib}
 Pull Requests in chronological order 
 \begin{enumerate}
-    \item minor documentation fix in ICSI recipe: \href{https://github.com/lhotse-speech/lhotse/pull/544}{PR 1}
-    \item added missing microphone channels to ICSI recipe: \href{https://github.com/lhotse-speech/lhotse/pull/555}{PR 2}
+    \item minor documentation fix in \textit{ICSI-recipe}: \href{https://github.com/lhotse-speech/lhotse/pull/544}{PR 1}
+    \item added missing microphone channels to \textit{ICSI-recipe}: \href{https://github.com/lhotse-speech/lhotse/pull/555}{PR 2}
     \item added warning for certain case of feature computation: \href{https://github.com/lhotse-speech/lhotse/pull/561}{PR 3}
-    \item improved ICSI recipe download structure: \href{https://github.com/lhotse-speech/lhotse/pull/583}{PR 4} and \href{https://github.com/lhotse-speech/lhotse/pull/592}{PR 5}
+    \item improved \textit{ICSI-recipe} download structure: \href{https://github.com/lhotse-speech/lhotse/pull/583}{PR 4} and \href{https://github.com/lhotse-speech/lhotse/pull/592}{PR 5}
 \end{enumerate}
 %
 % Markers do not have to consider appendices. Make sure that your contributions
