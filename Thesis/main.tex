@@ -24,7 +24,7 @@
 
 \begin{document}
 \begin{preliminary}
-\title{A Zoom filter for applause and laughter}
+\title{Laughter Detection on the ICSI Corpus}
 
 \author{Lasse Wolter}
 
@@ -80,31 +80,53 @@
 % The table of contents.
 % \end{itemize}
 
-\chapter{Introduction}
+\chapter{Introduction} \label{sec:intro}
+
+The initial title of the project was \textbf{A Zoom filter for applause and laughter}. The idea of this project was to create a third option for video-meeting participants. In addition to \texttt{mute} and \texttt{unmute}, a new option called \texttt{filtered} should be added.
+In \texttt{filtered}-mode, a user is automatically unmuted when laughter or applause is detected. 
+The motivation behind this feature is a more engaging speaker experience in virtual conferences. The project's supervisor is regularly involved in such conferences and wished that reactions like laughter and applause were be audible to him.
+
+To achieve the original goal a real-time machine learning model detecting laughter and applause is required.  
+This project narrows the scope to a machine learning model for laughter detection. Real-time constraints are considered theoretically, adapting the model implementation for real-time usage is left for future work.
+Thus, the project was renamed to \textbf{A machine learning model for laughter detection}.
+Since this narrowed scope was only set throughout the project, the beginning of the thesis briefly covers some aspects of applause detection. 
+
+Due to poor results of the final model, this thesis outlines the process I have taken and states my final hypothesis about the results: 
+
+\textit{"A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants."}
+
+Future work should investigate this hypothesis and work on improving the model performance.
+One of the main achievements of this project is the code I produced. 
+It contains a data pipeline and an evaluation pipeline which are publicly available for future work. 
+
+The thesis starts off with a review of existing approaches about laughter and applause detection (\autoref{cha:bg}). It also introduces some evaluation metrics used and gives a more detailed view of the model by \citet{gillick2021robust} which my work is based on. \autoref{cha:model-evaluation} evaluates the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard \citep{switchboard-corpus} corpus, on the ICSI corpus\citep{morgan2001meeting}. The evaluation was revised throughout the project. This chapter provides a comparison of these revisions and an analysis of the overall poor performance of the model. This analysis was made at the time of evaluation and does not include my final insights about the corpus.
+
+Due to the poor performance described in \autoref{cha:model-evaluation}, I retrained the model on the ICSI corpus. \autoref{cha:retraining} outlines how I first failed to use the existing training code from \citet{gillick2021robust} and then adapted it using \texttt{Lhotse} \citep{zelasko2021lhotse}, a new audio processing library, that I ended up contributing to.
+
+\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance stays unusable which is why \autoref{sec:silence-regions} includes some manual investigation of the corpus data, which, in hindsight, should have been conducted earlier. 
 
 
-The main achievements of this project are:
+To summarise the work of this project, the main achievements are:
 \begin{enumerate}
-  \item Evaluation of existing laughter detection model on the whole ICSI meeting corpus (\autoref{cha:model-evaluation})
-  \item Creation of a machine learning pipeline for laughter recognition using the ICSI meeting corpus, consisting of two parts:
-  \begin{enumerate}
-      \item a data pipeline: transforming the raw data into features for model training (\autoref{sec:ml-data-pipeline})
-      \item an evaluation pipeline: evaluating model outputs and visualisation of results
-  \end{enumerate}
-  \item Investigation of impact of training data on model performance (\autoref{cha:experiments})
+  \item Evaluation of an existing laughter detection model on the whole ICSI meeting corpus (\autoref{cha:model-evaluation})
+  \item Creation of a machine learning pipeline for training and evaluating laughter recognition on the ICSI meeting corpus (\autoref{cha:retraining})
+  \begin{itemize}
+      \item This code is publicly available for future work (\coderepo)
+  \end{itemize}
+  \item Investigation of model performance with varying training data (\autoref{cha:experiments})
 \end{enumerate}
 
-Throughout the report I regularly mention discussions. These refer to the biweekly meetings with my first and second supervisor. The meetings consisted of a short presentation by myself and a discussion about intermediate results and next steps. Details about each of these meetings can be found as part of \href{https://github.com/LasseWolter/honours-project-21-22/tree/main/Meeting_Notes}{this github repository} which contains slides, research done, general notes and some initial code snippets I worked on. 
+Throughout the report I regularly mention discussions. These refer to the biweekly meetings with my first and second supervisor. I prepared a set of slides for each meeting which are part of \href{https://github.com/LasseWolter/honours-project-21-22/tree/main/Meeting_Notes}{this github repository} which contains slides, background research, general notes and some initial code snippets I worked on. 
 The final laughter recognition codebase is published \href{https://github.com/LasseWolter/laughter-detection-icsi}{here}.
 
 \chapter{Applause and Laughter Detection} \label{cha:bg}
-Automatic applause and laughter detection isn't a new idea. Nevertheless, the research in these two areas is usually done separately. There are a few papers that cover both, one of the most popular ones being from Cai et al. \citep{cai2003highlight} who used sound effect detection - which included laughter and applause - for video summarisation and highlight extraction.
+Automatic applause and laughter detection isn't a new idea. Nevertheless, the research in these two areas is usually done separately. There are a few papers that cover both, one of the most popular ones being from \citet{cai2003highlight} who used sound effect detection - which included laughter and applause - for video summarisation and highlight extraction.
 Apart from this and a few other papers most research only covers one of the two domains, either applause or laughter. Thus, the review covers them in separate sections. A third section for evaluation metrics was added to introduce some of the core metrics used in this field. 
 
 \section{Laughter Detection} \label{sec:bg-laughter}
 The investigation of laughter's acoustic features reaches back three decades \citep{bickley1992acoustic}.
 In the early 2000s, the first attempts of laughter detection in conversational speech classified presegmented audio data \citep{kennedy2004laughter, truong2005automatic}. These models could only state whether laughter occurred within a given segment. The determination of segment boundaries of laughter events was not considered. 
-Corpora used in these papers include the development data from the 2004 Spring NIST Rich Transcription Evaluation \citep{ldcnistcorpus}, the Dutch CGN corpus \citep{oostdijk2000spoken} as well as the ICSI Meeting Recorder corpus \citep{morgan2001meeting}. 
+Corpora used in these papers include the development data from the 2004 Spring NIST Rich Transcription Evaluation \citep{nist-recordings}, the Dutch CGN corpus \citep{oostdijk2000spoken} as well as the ICSI Meeting Recorder corpus \citep{morgan2001meeting}. 
 
 Two examples of such classification of presegmented audio data are \citet{kennedy2004laughter} and \citet{truong2005automatic}. 
 Even though both of these models classified presegmented audio there were some significant differences. 
@@ -116,7 +138,7 @@ Secondly, there was a difference between the best performing features and predic
 \citet{kennedy2004laughter} got the best results using Mel Frequency Cepstral Coefficients (MFCCs) as features and a Support Vector Machine (SVM) for decision making. 
 In contrast, \citet{truong2005automatic} used Perceptual Linear Prediction (PLP) features with Gaussian Mixture Models (GMM) for classification. 
 
-Truong and Leeuwen continued their research \citep{truong2007automatic} and stated that spectral features alone (such as PLP and MFCCs) can be used to discriminate between laughter and speech but a significant improvement can be achieved when using prosodic features - features relating to rhythm and intonation.
+\citet{truong2007automatic} continued their research and stated that spectral features alone (such as PLP and MFCCs) can be used to discriminate between laughter and speech but a significant improvement can be achieved when using prosodic features - features relating to rhythm and intonation.
 
 In 2006, \citet{knox2006automatic} were the first to do laughter recognition without the need for presegmented audio data.  
 Their goal was to obtain accurate interval boundaries of laughter segments.
@@ -125,7 +147,7 @@ When \citet{knox2006automatic} first experimented with SVMs similar to \citet{ke
 This is because aggregate statistics need to be calculated and stored for each frame of training data.  
 On the contrary, a neural network trained with features from a context window can directly use the features of each frame without aggregating them.  
 
-To obtain frame-level training labels for the ICSI dataset \citet{knox2006automatic} first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries could not be identified in those segments. 
+To obtain frame-level training labels for the ICSI dataset, \citet{knox2006automatic} first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries could not be identified in those segments. 
 The remaining audio data could be accurately separated into laughter and non-laughter segments which were then divided into 10ms frames and labeled accordingly.
 
 The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and 37 after the frame (\autoref{fig:knox_window}).
@@ -134,7 +156,7 @@ The features investigated by Knox and Mirghafori are MFCCs, AC PEAK, F0 and RMS 
 They first trained four separate neural networks each one taking one of the mentioned features as input.
 Afterwards, they combined the different models by using their output as input for another, smaller neural network.
 The best results were obtained by combining the outputs of three NN-systems which used delta MFCCs, AC PEAK and F0 as features, respectively.
-By training and evaluating separate neural networks for each type of feature first, Knox and Mirghafori observed that MFCCs have the most discriminative power which aligns with prior research by Kennedy and Ellis \citep{kennedy2004laughter}.
+By training and evaluating separate neural networks for each type of feature first, Knox and Mirghafori observed that MFCCs have the most discriminative power which aligns with prior research by \citet{kennedy2004laughter}.
 
 \begin{figure}[htp]
     \centering
@@ -143,12 +165,12 @@ By training and evaluating separate neural networks for each type of feature fir
     \label{fig:knox_window}
 \end{figure}
 
-A survey from 2016 \citep{cosentino2016quantitative} investigates research on laughter and laughter detection in different fields up to that time.
+A survey from \citet{cosentino2016quantitative} investigates research on laughter and laughter detection in different fields up to that time.
 This survey covers different detection methods using visual, acoustic and sensory data.
 \citet{cosentino2016quantitative} found that using solely acoustic features best performance is obtained by using MFCCs and PLPs as features and combining the resulting classifier with ones that also use prosodic features.
 This aligns with findings from prior research \citep{truong2007automatic, knox2006automatic}.
 
-More recent research by Gillick et al. \citep{gillick2021robust} finds that features learned from spectrograms using deep convolutional networks outperform previous approaches based on MFCCs.
+More recent research by \citet{gillick2021robust} finds that features learned from spectrograms using deep convolutional networks outperform previous approaches based on MFCCs.
 They hypothesised that models using MFCCs are more prone to pick up surface level characteristics of sound and thus, will be more sensitive to variations like background noise.
 \citet{gillick2021robust} expected that features learned using a CNN are more representative of the actual laughter and thus, more robust to different environments. 
 To test this hypothesis they trained three different models: a baseline feed-forward neural network with MFCC features from their existing research \citep{ryokai2018capturing}, a ResNet-18 \citep{he2016deep} model working directly on spectrogram data and the same ResNet model using augmented features. Augmentations applied include pitch-shifting, time-stretching, reverberation and SpecAugment \citep{park2019specaugment}. SpecAugment is a simple method to augment spectrograms by time warping, frequency masking and time masking. \autoref{fig:spec-augment} shows that frequency and time masking is done by blocking out certain spectrogram regions, vertically or horizontally. 
@@ -160,10 +182,16 @@ To test this hypothesis they trained three different models: a baseline feed-for
     \label{fig:spec-augment}
 \end{figure}
 
-\citet{gillick2021robust} used two corpora: Switchboard \citep{switchboard-corpus} and AudioSet \citep{googleaudioset}.
+\citet{gillick2021robust} used two corpora: the Switchboard corpus \citep{switchboard-corpus} and AudioSet \citep{googleaudioset}.
 In contrast to prior work, they also evaluated the models on the corpus that it was not trained on.
-This mismatch between training and testing data resembles the difference between clean audio and real-world test data.
-Their results (\autoref{fig:gillick-results}) show that the baseline model using MFCC features is outperformed by the ResNet architecture in every metric for every evaluation, except the recall for the model trained on AudioSet and evaluated on the Switchboard test data. 
+This mismatch between training and testing data tries to resemble the difference between clean audio and real-world test data.
+
+Their results (\autoref{fig:gillick-results}) mention strongly and weakly labeled data.
+Weakly labeled means that only the presence or absence of an event is given, whereas strongly labeled data states precise boundaries.
+AudioSet \citep{googleaudioset} is a weakly labeled corpus consisting of ten second segments sampled from YouTube videos. Each segment has one or more annotations like \texttt{laughter} or \texttt{wind}, which state that these sounds are present in the given segment. Since segments are sampled from a range of YouTube videos, domains in this corpus vary greatly.
+The Switchboard dataset is a strongly labeled corpus consisting of telephone conversations between two individuals. Compared to AudioSet, the domain is homogeneous across all recordings and a transcription file provides precise boundaries for audio events.
+
+\autoref{fig:gillick-results} shows that in all evaluations the baseline model using MFCC features and a feed-forward neural network is outperformed by the ResNet architecture in every metric, except the recall for the model trained on AudioSet and evaluated on the Switchboard test data. 
 Gillick et al. conclude that their ResNet-based model provides a robust, state-of-the-art laughter-detection algorithm that mitigates some of the problems of noisy real-world environments. This is one of the reasons why it is used as a basis for this project.
 
 \begin{figure}[h!]
@@ -174,7 +202,7 @@ Gillick et al. conclude that their ResNet-based model provides a robust, state-o
 \end{figure}
 
 \section{Applause}
-The following review is less exhaustive because we decided to focus on laughter detection for now. Applause detection is a possible extension of the project. 
+The following review is less exhaustive because this thesis focuses on laughter detection. Applause detection is a possible extension of the project to meet the original goal mentioned in \autoref{sec:intro}. 
 More information on this decision can be found (\autoref{sec:model-and-data}).
 
 As mentioned at the beginning of this chapter, in 2003 Cai et al. \citep{cai2003highlight} worked on the detection of sound events, including applause.
@@ -182,7 +210,7 @@ They used perceptual features and MFFCs as features, Hidden Markov Models (HMM) 
 Cai et al. evaluated their system on a testing set consisting of 2 hours of video material from different programs.
 For applause specifically, they achieved a precision of 87.37\% and a recall of 92.00\%.
 
-In contrast, Uhle \citep{uhle2011applause} used MFCCs and low-level descriptors (LLD) to represent sound and passed these features to an MLP or an SVM for classification.
+In contrast, Uhle \citep{uhle2011applause} used MFCCs and low-level descriptors (LLD) to represent sound and passed these features to an Multi-Layer-Perceptron(MLP) or an SVM for classification.
 The difference between the MLP and SVM classifier was rather small.
 Uhle worked with a relatively small dataset consisting of 210 segments of 9-30s length. This equates to a total length between 31.5 min and 105 min.
 On a rather small test (10\% of this dataset) Uhle achieved an accuracy of 95\% with a precision of 96.51\% and recall of 97.65\%.
@@ -245,10 +273,10 @@ Assume we have two vectors $P$ and $Y$ of length $m$. For each of the $m$ sample
 Given this, the model's Binary Cross Entropy Loss is given by:
 $$ L(P,Y) = \sum_{n=1}^{m}  -{(y*\log(p) + (1 - y)*\log(1 - p))}$$
 
-To understand the meaning of this equation we look at a single sample with predicted probability \texttt{p} and a true class value of \texttt{y}. Its Binary Entropy Loss is given by: 
+To understand the meaning of this equation we look at a single sample with predicted probability $p$ and a true class value of $y$. Its Binary Entropy Loss is given by: 
 $$ L(p,y) = -{(y*\log(p) + (1 - y)*\log(1 - p))} $$
 We know that one of the terms $y$ and $(1-y)$ will always be zero.
-Thus, we are left with the negative log of the probability that the sample belongs to the true class, e.g. a sample with $p=0.8$ is predicted to be laughter with an 80\% chance and non-laughter with a 20\% chance. Negative log ensures that $L(x,y) > 1  \forall x $. 
+Thus, we are left with the negative log of the probability that the sample belongs to the true class, e.g. a sample with $p=0.8$ is predicted to be laughter with an 80\% chance and non-laughter with a 20\% chance. Negative log ensures that $L(p,y) > 1  \textrm{ for all } p $. 
 Due to the logarithmic nature of this loss-function confidently misclassified examples (e.g. $p=0.1$) are punished more heavily than unconfidently misclassified examples (e.g. $p=0.4$).
 
 To summarise, the Binary Cross Entropy Loss captures how far off the predictions of the model are from the true values. It sums negative log probabilities of belonging to the true class and punishes confidently misclassified samples more heavily.
@@ -256,7 +284,7 @@ To summarise, the Binary Cross Entropy Loss captures how far off the predictions
 \subsection{Confusion Matrix} \label{sec:conf-matrix}
 A confusion matrix is a good way to identify misclassifications. In a multi-class problem, it shows the true label on one axis and the predicted label on the other. It can either show the actual counts of predictions or normalised values between 0 and 1. \autoref{fig:example-conf-matrix} shows a normalised confusion matrix for a classification problem with three classes.
 For laughter recognition we only have two classes. Instead of plotting a 2x2 confusion matrix, evaluations in this thesis use a different approach.
-Since non-laughter segments can be split into subclasses (\autoref{table:segment-types}), we plot the percentage of misclassified laughter samples for each of these classes. 
+Since non-laughter segments can be split into subclasses (as we will see in \autoref{table:segment-types}), we plot the percentage of misclassified laughter samples for each of these classes. 
 Each row in \autoref{fig:example-conf-matrix} represents the model outputs for a certain threshold and shows the percentage of laughter samples classified as laughter, speech, silence and noise, respectively. Thus, the sum of all values in a single row adds up to one. 
 Note that we cannot get the same diagram non-laughter segments because the model is a binary classifier. It only predicts laughter and non-laughter but none of the subclasses. 
 
@@ -298,14 +326,14 @@ Lastly, I used the ICSI-transcriptions to divide non-laughter segments into subc
 \subsection{Filter out laughter only segments} \label{subsec:filter-laughter}
 ICSI transcriptions are split into segments denoted by a start and end time.
 Consequently laughter segments co-occurring to speech in one segment cannot be precisely identified.
-Such laughter transcriptions are also called weakly labeled. Weakly labeled means that only the presence or absence of an event is given, whereas strongly labeled data states precise boundaries.
+As mentioned in \autoref{sec:bg-laughter} such data is called weakly labeled.
 Strongly labeled data is key for this project because our model should identify laughter segments in a continuous audio stream.
 Filtering out strongly labeled laughter segments resembles Knox and Mirghafori's approach to obtain frame-level training data \citep{knox2006automatic} (\autoref{sec:bg-laughter}). 
 All weakly labeled segments containing laughter are categorised as invalid and disregarded from the evaluation, a total of 3765 segments.
 The remaining 8415 laughter segments have a total duration of 3.9h. \autoref{table:segment-types} shows how this compares to the fraction of other types of audio in the ICSI corpus.
 
 Alternatively, I could have created an ASR model to align weakly-labeled laughter events with their audio counterpart. 
-I did not follow this approach for two reasons: it would have been more time consuming and the amount of data achieved with the prior approach was sufficient. 
+I did not follow this approach due to lack of experience with ASR, which meant that creating such a model would have been time-consuming. I considered the 3.9h of pure laughter as sufficient for this project and decided to dedicate my time to other parts of the project.
 In general, more training data is preferable. Thus, future projects might consider this approach to gain strongly labeled data for the whole corpus and make use of the additional laughter occurrences contained in the invalid segments. 
 
 \begin{table}[h!]
@@ -324,7 +352,7 @@ In general, more training data is preferable. Thus, future projects might consid
 \end{table}
 
 \subsection{Subclasses of non-laughter}
-In addition to the obvious class division between laughter and non-laughter, we can divide segments into smaller subclasses. This becomes useful when evaluating classification (see \autoref{cha:experiments}).
+In addition to the obvious class division between laughter and non-laughter, we can divide segments into smaller subclasses. This becomes useful when evaluating classification (as we will see in \autoref{cha:experiments}).
 For non-laughter segments we can distinguish between speech, invalid segments (as in \autoref{subsec:filter-laughter}), noise and silence.
 To summarise, there are five subclasses:
 \begin{enumerate}
@@ -342,10 +370,59 @@ Thus, the confusion-matrices in \autoref{sec:exp1-res} are only for laughter mis
 A breakdown of the amount of each subclass is shown in \autoref{table:segment-types}.
 
 
-\section{First evaluation}
+\section{Evaluating Gillick et al's model on the ICSI corpus}
 In contrast to some existing research \citep{kennedy2004laughter, knox2006automatic} which only used a subset of the ICSI corpus, I evaluated the whole ICSI dataset.
-I ran the pre-trained detection model by Gillick et al. with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
-Results of three different evaluation algorithms are displayed in \autoref{tab:initial-eval}.
+I ran the pre-trained detection model by \citet{gillick2021robust} with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
+Over the course of this project, I corrected the evaluation two times.
+The following sections compare the results of these evaluations and provides some analysis on the poor performance of the model.
+
+\subsection{Comparing initial and corrected evaluations}
+In the initial evaluation (\autoref{tab:initial-eval}), the maximum recall achieved was 31.53\%. I expected that a low threshold like 0.2 would yield low precision. Getting such a low recall, however, was surprising. 
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+    & \multicolumn{2}{|c|}{initial eval} \\ 
+    \hline 
+    threshold & precision & recall \\
+    \hline
+        0.2 &  14.88\% & 31.53\% \\ 
+        0.4 &  33.26\% & 17.85\% \\
+        0.6 &  49.81\% & 8.05\%  \\
+        0.8 &  63.08\% & 3.01\%  \\
+     \hline
+    \end{tabular}
+    \caption{Initial evaluation on 468 audio tracks for different thresholds.}
+    \label{tab:initial-eval}
+\end{table}
+
+
+
+After some discussion, I realised that, even though I filtered out invalid laughter segments from the raw ICSI data as described in \autoref{subsec:filter-laughter}, I did not exclude them from the predictions before evaluation. 
+This meant that the model could predict a laughter occurrence correctly but the evaluation method would consider it as false because this laughter occurrence was discarded during preprocessing.
+This discrepancy in preprocessing was easily fixed and improved the precision significantly (\autoref{tab:second-eval}). Nevertheless, the recall was not affected as much. 
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    & \multicolumn{2}{|c|}{initial eval} & \multicolumn{2}{|c|}{considering invalid segs} \\
+    \hline 
+    threshold & precision & recall & precision & recall \\
+    \hline
+        0.2 &  14.88\% & 31.53\% & 20.02\% & 37.21\%\\ 
+        0.4 &  33.26\% & 17.85\% & 48.39\% & 20.74\%\\ 
+        0.6 &  49.81\% & 8.05\% & 73.68\% & 9.14\%  \\ 
+        0.8 &  63.08\% & 3.01\% & 91.44\% & 3.33\%  \\ 
+     \hline
+    \end{tabular}
+    \caption{Corrected evaluation considering invalid segments compared with initial evaluation (\autoref{tab:initial-eval}).}
+    \label{tab:second-eval}
+\end{table}
+
+Lastly, the final evaluation (\autoref{tab:final-eval}) includes two significant changes: altering the model to remove a filter and introducing a weighted average, as we now explain. 
+The evaluation code used by Gillick et al. sometimes yielded probabilities smaller than 0 and larger than 1. 
+This bug was caused by a low-pass filter implemented in \verb|laugh_segmenter.py|. I did not investigate this further because neither the code nor the paper stated why this filter was necessary. Thus, I removed it, which fixed the issue.
 
 \begin{table}[h!]
     \centering
@@ -361,24 +438,20 @@ Results of three different evaluation algorithms are displayed in \autoref{tab:i
         0.8 &  63.08\% & 3.01\% & 91.44\% & 3.33\%    & 84.53\% & 4.76\% \\
      \hline
     \end{tabular}
-    \caption{Initial and corrected evaluation on 468 audio tracks}
-    \label{tab:initial-eval}
+    \caption{Final evaluation on 468 audio tracks, compared to the initial(\autoref{tab:initial-eval}) and corrected evaluation (\autoref{tab:second-eval}).}
+    \label{tab:final-eval}
 \end{table}
 
-
-In the initial evaluation, the maximum recall achieved was 31.53\%. We expected that a low threshold like 0.2 would yield low precision. Getting such a low recall, however, was surprising. 
-After some discussion, I realised that the invalid laughter segments were not excluded from the predictions. This meant that the model could classify a laughter occurrence correctly but the evaluation method would consider it as false because this laughter occurrence was discarded during preprocessing. This discrepancy in preprocessing was easily fixed and improved the precision significantly (\autoref{tab:initial-eval}). Nevertheless, the recall was not affected as much. 
-Lastly, the third column of \autoref{tab:initial-eval} shows the final metrics. 
-These final metrics include two significant changes: altering the model to remove a filter and introducing a weighted average, as we now explain. 
-
-The evaluation code used by Gillick et al. sometimes yielded probabilities smaller than 0 and larger than 1. 
-This bug was caused by a low-pass filter implemented in \verb|laugh_segmenter.py|. I did not investigate this further because neither the code nor the paper stated why this filter was necessary. Thus, I removed it. which fixed the issue.
-
-I also realised that the use of a weighted average has a significant impact on the evaluation. The first two evaluations in \autoref{tab:initial-eval} are calculated by averaging the precision and recall of each meeting.
-These results can be misleading because some meetings contain significantly more laughter occurrences than others, also due to the different lengths of the meetings. \autoref{fig:transc-laughter-distribution} shows that the total duration of laughter occurrences ranges from $<20s$ to $>950s=15min$.
+Further, introducing a weighted average had a significant impact on the evaluation. The first two evaluations in \autoref{tab:initial-eval} are calculated by averaging the precision and recall of each meeting.
+These results can be misleading because meetings vary in duration and some contain significantly more laughter occurrences than others.
+\autoref{fig:transc-laughter-distribution} shows that the total duration of laughter occurrences ranges from $<20s$ to $>950s=15min$.
 For our use case, it makes sense to take the weighted average because we are interested in the total duration of correctly and incorrectly predicted laughter events, the artificial unit of meetings is an unimportant distinction to us.
 
-Thus, the third evaluation shown in \autoref{tab:initial-eval} should be considered correct and is the one referred to in the rest of this thesis.
+To conclude, the final evaluation shown in \autoref{tab:final-eval} should be considered correct and is used as a baseline for further experiments (as we will see in \autoref{cha:experiments}).
+
+
+
+\subsection{Analysing poor model performance}
 
 \begin{figure}
     \centering
@@ -386,6 +459,8 @@ Thus, the third evaluation shown in \autoref{tab:initial-eval} should be conside
     \caption{Distribution of transcribed laughter duration per meeting [in s]; bin-width=20s}
     \label{fig:transc-laughter-distribution}
 \end{figure}
+
+
 
 To get a better understanding of the performance \autoref{tab:practical-example} shows what the evaluation metrics would mean in a real system. We assume a meeting that lasts 1 hour and contains a total duration of 4 minutes of laughter. 
 Using any of the investigated thresholds would yield an unusable system.
@@ -415,7 +490,7 @@ Further, the Switchboard dataset has one audio track containing the audio from b
 \begin{figure}[h!]
     \centering
     \includegraphics[width=8cm]{imgs/conf_matrix/init_eval_all.png}
-    \caption{Confusion matrix for initial evaluation}
+    \caption{Confusion matrix for initial evaluation.  Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold.}
     \label{fig:initial-conf-matrix}
 \end{figure}
 
@@ -425,7 +500,7 @@ In response to this finding, I decided to retrain the model on the ICSI corpus.
 
 
 \chapter{Training Laughter Detection on the ICSI Corpus} \label{cha:retraining}
-\section{Gillick et al's training code} 
+\section{Adapting Gillick et al's training code} 
 The first approach was to adapt Gillick et al.'s published code \citep{gillick-codebase}. 
 Parts of it were cumbersome and disregarded current standards of PyTorch programs, e.g. they used a manual batch counter for training steps instead of using epochs.  
 
@@ -445,7 +520,7 @@ This dataframe and the hash-map are the inputs for a PyTorch Dataset. This datas
 \begin{figure}
     \centering
     \includegraphics[width=14cm]{imgs/diagrams/Gillick_et_al_data_pipeline.png}
-    \caption{Gillick et al.'s data pipeline}
+    \caption{Data pipeline used by \citet{gillick2021robust}. I created this pipeline based on Gillick et al's code \citep{gillick-codebase}. This diagram was not part of the original paper.}
     \label{fig:gillick-data-pipeline}
 \end{figure}
 
@@ -455,11 +530,11 @@ The following estimates show the difference in storage space needed to preload t
 
 The Switchboard corpus consists of 260 hours of raw audio sampled at 8khz which can be estimated as:
 
-\[ \frac{260\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 8000\;\textrm{samples per second} \cdot 2\;\textrm{bytes}}{1024^3} \approx 13.95 GB \]
+$$ \frac{260\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 8000\;\textrm{samples per second} \cdot 2\;\textrm{bytes}}{1024^3} \approx 13.95 GB $$  
 
 The ICSI corpus contains 72hours of meeting speech with an average of six participants per meeting. Thus, there are 72*6=432 hours of audio sampled at 16khz:
 
-\[ \frac{432\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 16000 \;\textrm{samples per seconds} \cdot 2bytes}{1024^3} \approx 46.35 GB \]
+$$ \frac{432\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 16000 \;\textrm{samples per seconds} \cdot 2bytes}{1024^3} \approx 46.35 GB $$
 
 Using a machine with sufficient RAM would allow loading the whole audio data into memory. 
 Regardless of missing access to such a machine finding a solution that requires less RAM is desirable. Thus, I decided to rewrite the DataLoader from scratch. 
@@ -601,7 +676,7 @@ In contrast to random sampling across all meeting, this approach guarantees that
     \label{fig:prec-recall-rand}
 \end{figure}
 
-\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline, which is the evaluation on the pre-trained model from \autoref{cha:model-evaluation}. The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1. All models trained on the ICSI corpus outperform the baseline. The differences between the three new models are subtle. It is not possible to identify a best performing model since different models obtain the highest precision for different recalls.
+\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline, which is the evaluation on the pre-trained model from \autoref{cha:model-evaluation}. The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1. All models trained on the ICSI corpus outperform the baseline. There is little differences between the three new models. It is not possible to identify a best performing model since different models obtain the highest precision for different recalls.
 
 \autoref{fig:conf-matrix-rand} shows a confusion matrix for different thresholds to deepen the understanding of the used classification. 
 A row full of zeros indicates no laughter predictions for this threshold.
@@ -695,8 +770,8 @@ This is not a definitive conclusion but merely a result of this small set of exp
 The confusion matrices in \autoref{fig:conf-matrix-struc} do not add much to the insights from experiment 1. The higher number of misclassified speech segments in \texttt{model-c} should be noted but cannot be put into context with other observations.
 
 
-\section{Silence segments}
-Both, the initial evaluation (\autoref{cha:model-evaluation}) and the experiments (\autoref{cha:experiments}) raise questions about the silence segments in the corpus. Thus, I decided to manually analyse some audio tracks for abnormities. This is a crude analysis to come up with a hypothesis for the large amount of retrieved silence segments.
+\section{Investigating non-transcribed regions in the ICSI corpus} \label{sec:silence-regions}
+Both, the initial evaluation (\autoref{cha:model-evaluation}) and the experiments (\autoref{cha:experiments}) raised the question, why the model is not able to separate laughter from silence segments in the corpus. Thus, I decided to manually analyse some audio tracks for abnormalities. This is a crude analysis to come up with a hypothesis for the large amount of retrieved silence segments.
 
 I randomly selected five of the 468 audio tracks and plotted their audio-wave (\autoref{fig:rand-audio-track}). The selected tracks are plotted in this order:
 \begin{enumerate}
@@ -741,7 +816,6 @@ Other approaches are possible and should be investigated by future work.
 Due to time constraints this chapter only contains theoretical considerations and pointers for future work. 
 For detecting laughter in video meetings the model needs to work in real-time and with low computational cost. Real-time here means low latency.
 High retrieval accuracy becomes useless if detected laughter is only fed back to the audio stream after a few seconds.
-Further, we have to keep in mind that a video meeting application is used on end-user devices with limited computing power. 
 
 \begin{table}[]
     \hspace{-2cm}
@@ -767,29 +841,30 @@ Further, we have to keep in mind that a video meeting application is used on end
 
 There are five factors that influence the real-time nature of the model:
 \begin{enumerate}
+    \item architecture: client- vs server-side implementation
     \item programming language
-    \item computational power of the end user's device
+    \item computational power 
     \item model's complexity
     \item model's window-size
     \item minimum length of retrieved laughter segment
 \end{enumerate}
 
-The programming language will become important when such a model is integrated with a video call system. The programming language used for evaluations throughout this thesis is Python. For implementation in a video call system other languages are possible. 
-Java Script could be used if the detection happens on the client side. Python or other alternatives could be used if the detection happens on the server side.
-Since the work in this thesis does not cover this part of the project, the discussion about the programming language is left for future work.
 
+A detection algorithm could either be implemented on client side, e.g. using JavaScript, or on the server side, e.g. using Python. 
+This design decision influences the programming language used and the computational power available to the detection algorithm. If the detection runs on the client-side, the computational power is limited by the user's end-device. In contrast, the computational power on the server-side is almost unlimited. Nevertheless, a low computational footprint is desirable because server costs grow with increasing computational power required.
+Since this project does not cover the integration within a video call system, the discussion about programming languages and architectural decisions between client- and server-side is left for future work.
 
-The limited computational power of the end user's device cannot be directly influenced. It is mentioned in this context because it impacts latency. This impact can be minimised by reducing the model's complexity.
-The model presented by Gillick et al. which is used in this thesis, a ResNet architecture with 18 layers, is not computationally efficient. There is research investigating the reduction of the computational footprint with minimal impact on performance \cite{sorensen2020depthwise}. Future work should review such literature and see how it can be applied to this project. 
+Assuming a fixed amount of computational power, reducing the model's complexity improves computational efficiency and thus, latency.
+The model presented by \citet{gillick2021robust} which is used in this thesis, a ResNet architecture with 18 layers, is not computationally efficient. There is research investigating the reduction of the computational footprint with minimal impact on performance \cite{sorensen2020depthwise}. Future work should review such literature and see how it can be applied to this project. 
 
 The feature representation is another important design decision that affects the latency.
 The experiments in \autoref{cha:experiments} all use mel spectrogram-features of shape 100x40, which means 100 samples and 40 filters. 
-Since our model uses 100 samples per feature we have a window-size of 100, which equals 1s.
+Since our model uses 100 samples per feature we have a window-size of 100, which equals one second.
 Assuming splitting this window in the middle, similar to \autoref{fig:knox_window}, this meant around 0.5s before and 0.5s after the considered frame. This is an unacceptable latency.
-There are two possible solutions: reducing the window-size, which means losing context information, or using an uneven split, e.g. three-fourths before the frame and one fourth after. 
+There are two possible solutions: reducing the window-size, which causes loss of context information, or using an uneven split, e.g. three-fourths before the frame and one fourth after. 
 Both of these options should be investigated by future work.
 
-The last factor mentioned is the minimum length. This is a parameter used by Gillick et al's model. It prevents the retrieval of a few milliseconds which are classified as laughter. For a real-time model this will be done at the cost of latency. If a minimum length is specified the model needs to wait at least that amount of time before a laughter occurrence is approved. Thus, the minimum latency is the duration of the minimum length itself.
+The last factor mentioned is the minimum length, which is an inference parameter used by the model from \citet{gillick2021robust}. It prevents the retrieval of a few milliseconds which are classified as laughter. For a real-time model this will be done at the cost of latency. If a minimum length is specified the model needs to wait at least that amount of time before a laughter occurrence is approved. Thus, the minimum latency is the duration of the minimum length itself.
 Future work should investigate if a minimum length parameter is needed at all or if a smarter use of the context window can avoid this additional parameter.
 
 Thus, assuming a minimum length $m$ and a window-size $w$ a lower bound of a model's latency is given by: $m + \frac{1}{2}w$.
