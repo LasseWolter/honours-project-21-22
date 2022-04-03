@@ -20,11 +20,12 @@
 \def\subsectionautorefname{Section}
 \def\subfigureautorefname{Figure}
 \def\tableautorefname{Table}
+
 \newcommand{\coderepo}{\href{https://github.com/LasseWolter/laughter-detection-icsi}{codebase} }
 
 \begin{document}
 \begin{preliminary}
-\title{Laughter Detection on the ICSI Corpus}
+\title{A machine learning model for laughter detection}
 
 \author{Lasse Wolter}
 
@@ -82,30 +83,23 @@
 
 \chapter{Introduction} \label{sec:intro}
 
-The initial title of the project was \textbf{A Zoom filter for applause and laughter}. The idea of this project was to create a third option for video-meeting participants. In addition to \texttt{mute} and \texttt{unmute}, a new option called \texttt{filtered} should be added.
+The initial title of the project was \textit{A Zoom filter for applause and laughter}. The idea of this project was to create a third option for video-meeting participants. In addition to \texttt{mute} and \texttt{unmute}, a new option called \texttt{filtered} should be added.
 In \texttt{filtered}-mode, a user is automatically unmuted when laughter or applause is detected. 
 The motivation behind this feature is a more engaging speaker experience in virtual conferences. The project's supervisor is regularly involved in such conferences and wishes that reactions like laughter and applause are audible to him.
 
 To achieve the original goal a real-time machine learning model detecting laughter and applause is required.  
 This project narrows the scope to a machine learning model for laughter detection. Real-time constraints are considered theoretically; adapting the model implementation for real-time usage is left for future work.
-The project was renamed to \textbf{A machine learning model for laughter detection}, as the focus of the project was set on laughter detection; the beginning of the thesis briefly covers some aspects of applause detection. 
+The project was renamed to \textit{A machine learning model for laughter detection}, as the focus of the project was set on laughter detection; the beginning of the thesis briefly covers some aspects of applause detection. 
 
-Due to poor results of the final model, this thesis outlines the process I have taken and states my final hypothesis about the results: 
+Due to poor results of the final model, this thesis outlines the process I have taken, issues I faced and states my final hypothesis about the results: 
 
-\textit{"A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants."}
+{\parindent0.5cm
+\parskip1ex
+\everypar{\hangindent3em}
+\textit{``A significant number of non-transcribed regions in the ICSI corpus are}  \par
+\textit{not actually silence; they are quieter recordings of speech by other participants."} \par}
 
-Future work should investigate this hypothesis and work on improving the model performance.
-One of the main achievements of this project is the code I produced. 
-It contains a data pipeline and an evaluation pipeline for laughter detection on the ICSI corpus \citep{morgan2001meeting}, which are publicly available for future work. 
-
-The thesis starts off with a review of existing approaches about laughter and applause detection (\autoref{cha:bg}). It introduces some evaluation metrics used and gives a more detailed view of the model introduced by \citet{gillick2021robust} which is the foundation for my work. \autoref{cha:model-evaluation} evaluates the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus \citep{switchboard-corpus}, on the ICSI corpus\citep{morgan2001meeting}. The evaluation was revised throughout the project. This chapter provides a comparison of these revisions and an analysis of the overall poor performance of the model. This analysis was made at the time of evaluation and does not include my final insights about the corpus.
-
-Due to the poor performance described in \autoref{cha:model-evaluation}, I retrained the model on the ICSI corpus. \autoref{cha:retraining} outlines how I first failed to use the existing training code from \citet{gillick2021robust} and then adapted it using \texttt{Lhotse} \citep{zelasko2021lhotse}, a new audio processing library, which I ended up contributing to \autoref{app:lhotse-contrib}.
-
-\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance remains unusable. Therefore, \autoref{sec:silence-regions} includes some manual investigation of the corpus data. In hindsight, these experiments should have been conducted earlier. 
-
-
-To summarise the work of this project, the main achievements are:
+The main achievements of this project are:
 \begin{enumerate}
   \item Evaluation of an existing laughter detection model on the whole ICSI meeting corpus (\autoref{cha:model-evaluation})
   \item Creation of a machine learning pipeline for training and evaluating laughter recognition on the ICSI meeting corpus (\autoref{cha:retraining})
@@ -113,10 +107,19 @@ To summarise the work of this project, the main achievements are:
       \item This code is publicly available for future work (\coderepo)
   \end{itemize}
   \item Investigation of model performance with varying training data (\autoref{cha:experiments})
+  \begin{itemize}
+      \item Includes the process of coming up with my final hypothesis 
+  \end{itemize}
 \end{enumerate}
 
-% Throughout the report I regularly mention discussions. These refer to the biweekly meetings with my first and second supervisor. There is  \href{https://github.com/LasseWolter/honours-project-21-22/tree/main/Meeting_Notes}{a github repository} which contains slides, background research, general notes and some initial code snippets I worked on within the project. 
-% The final laughter recognition codebase is published \href{https://github.com/LasseWolter/laughter-detection-icsi}{here}.
+
+The thesis starts off with a review of existing approaches about laughter and applause detection (\autoref{cha:bg}). It introduces some evaluation metrics used and gives a more detailed view of the model introduced by \citet{gillick2021robust} which is the foundation for my work. \autoref{cha:model-evaluation} evaluates the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus \citep{switchboard-corpus}, on the ICSI corpus\citep{morgan2001meeting}. The evaluation was revised throughout the project. This chapter provides a comparison of these revisions and an analysis of the overall poor performance of the model. This analysis was made at the time of evaluation and does not include my final insights about the corpus.
+
+Due to the poor performance described in \autoref{cha:model-evaluation}, I retrained the model on the ICSI corpus. \autoref{cha:retraining} outlines how I first failed to use the existing training code from \citet{gillick2021robust} and then adapted it using \texttt{Lhotse} \citep{zelasko2021lhotse}, a new audio processing library, which I ended up contributing to \autoref{app:lhotse-contrib}.
+
+\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance remains unusable. Therefore, \autoref{sec:silence-regions} includes some manual investigation of the corpus data. In hindsight, these experiments should have been conducted earlier. 
+
+Lastly, \autoref{cha:practicality} investigates the practicality of the \texttt{filtered} option using laughter detection within a video call system; this includes real-time and privacy considerations as well as alternative solutions. The chapter concludes with suggestions for future work and a latency estimate of the model used in this thesis for future reference. 
 
 Throughout the report I regularly mention discussions. These refer to the biweekly meetings with my first and second supervisor, where I presented my progress. For each meeting I prepared a set of slides which are available at \href{https://github.com/LasseWolter/honours-project-21-22/tree/main/Meeting_Notes}{this github repository}.
 The final laughter recognition codebase is published \href{https://github.com/LasseWolter/laughter-detection-icsi}{here}.
@@ -134,11 +137,12 @@ Corpora used in these papers include the development data from the 2004 Spring N
 Two examples of such classification of presegmented audio data are \citet{kennedy2004laughter} and \citet{truong2005automatic}. 
 Even though both of these models classified presegmented audio there were some significant differences. 
 Firstly, the definition of laughter and the motivation behind the research differed.
-While Kennedy and Ellis define laughter events as 'points in the meeting where more than one person laughs', Truong and Van Leeuwen considered one person laughing as a laughter event.
-Kennedy and Ellis did not specify a particular motivation whereas Truong and Van Leeuwen's long-term goal was the investigation of 'paralinguistic events' - laughter being one of them - to classify the speaker's emotional state.   
+While \citet{kennedy2004laughter} define laughter events as 'points in the meeting where more than one person laughs', \citet{truong2005automatic} considered one person laughing as a laughter event.
+\citet{kennedy2004laughter} did not specify a particular motivation whereas \citet{truong2005automatic} stated the long-term goal of investigating 'paralinguistic events' - laughter being one of them - to classify the speaker's emotional state.   
 
 Secondly, there was a difference between the best performing features and predictors.  
-\citet{kennedy2004laughter} got the best results using Mel Frequency Cepstral Coefficients (MFCCs) as features and a Support Vector Machine (SVM) for decision making. 
+Features tried include Mel Frequency Cepstral Coefficients (MFCCs), delta MFCCs (MFCC derivatives), spatial cues, modulation spectrum features and Perceptual Linear Prediction(PLP) features. 
+\citet{kennedy2004laughter} got the best results using MFCCs as features and a Support Vector Machine (SVM) for decision making.
 In contrast, \citet{truong2005automatic} used Perceptual Linear Prediction (PLP) features with Gaussian Mixture Models (GMM) for classification. 
 
 \citet{truong2007automatic} continued their research and stated that spectral features alone (such as PLP and MFCCs) can be used to discriminate between laughter and speech but a significant improvement can be achieved when using prosodic features - features relating to rhythm and intonation.
@@ -150,8 +154,8 @@ When \citet{knox2006automatic} first experimented with SVMs similar to \citet{ke
 This is because aggregate statistics need to be calculated and stored for each frame of training data.  
 On the contrary, a neural network trained with features from a context window can directly use the features of each frame without aggregating them.  
 
-To obtain frame-level training labels for the ICSI dataset, \citet{knox2006automatic} first removed all segments that contained both speech and laughter under a single start and end time because the laughter specific interval boundaries could not be identified in those segments. 
-The remaining audio data could be accurately separated into laughter and non-laughter segments which were then divided into 10ms frames and labeled accordingly.
+To obtain frame-level training labels for the ICSI dataset, \citet{knox2006automatic} first removed all segments that contained both speech and laughter within one transcription segment, because the segment boundaries of such laughter occurrences could not be identified. 
+The remaining audio data could be accurately separated into laughter and non-laughter segments based on the ICSI transcriptions. Each of these segments was divided into non-overlapping 10ms frames and labeled accordingly.
 
 The model was trained to classify each 10ms frame using a window of 75 frames around the target frame - 37 before and 37 after the frame (\autoref{fig:knox_window}).
 This way an accurate prediction of laughter boundaries of up to 10ms was possible. 
@@ -482,8 +486,8 @@ In response to this finding, I decided to retrain the model on the ICSI corpus.
 
 \chapter{Training Laughter Detection on the ICSI Corpus} \label{cha:retraining}
 \section{Adapting Gillick et al's training code} 
-The first approach was to adapt Gillick et al.'s published code \citep{gillick-codebase}. 
-Parts of it were cumbersome and disregarded current standards of PyTorch programs, e.g. they used a manual batch counter for training steps instead of using epochs.  
+The first approach was to adapt Gillick et al.'s published code \citep{gillick-codebase}, which used PyTorch \citep{pytorch2017automatic}, an open-source machine learning framework for python.
+Parts of the code were cumbersome and disregarded current standards of PyTorch programs, e.g. they used a manual batch counter for training steps instead of using epochs.  
 
 Despite these concerns, I decided to adapt their existing code for two reasons.
 Firstly, developing the whole framework from scratch would have been time consuming and slightly precarius as I had never worked on a machine learning project of this scale.
@@ -825,7 +829,7 @@ High retrieval accuracy becomes useless if detected laughter is only fed back to
 
 There are five factors that influence the real-time nature of the model:
 \begin{enumerate}
-    \item architecture: client- vs server-side implementation
+    \item architecture: client- vs. server-side implementation
     \item programming language
     \item computational power 
     \item model's complexity
@@ -851,18 +855,18 @@ Both of these options should be investigated by future work.
 The last factor mentioned is the minimum length, which is an inference parameter used by the model from \citet{gillick2021robust}. It prevents the retrieval of a few milliseconds which are classified as laughter. For a real-time model this will be done at the cost of latency. If a minimum length is specified the model needs to wait at least that amount of time before a laughter occurrence is approved. Thus, the minimum latency is the duration of the minimum length itself.
 Future work should investigate if a minimum length parameter is needed at all or if a smarter use of the context window can avoid this additional parameter.
 
-Thus, assuming a minimum length $m$ and a window-size $w$ a lower bound of a model's latency is given by: $m + \frac{1}{2}w$.
+Thus, assuming a minimum length $m$ and a window-size $w$ a lower bound of model's latency is given by: $m + \frac{1}{2}w$.
 
-To conclude this section, I provide a baseline (\auotref{tab:rtf}) for future work that estimates the latency of the model from \citet{gillick2021robust} by computing the real-time-factor(RTF). 
+To conclude this section, I provide a baseline (\autoref{tab:rtf}) for future work that estimates the latency of the model from \citet{gillick2021robust} by computing the real-time-factor(RTF). 
 The model evaluated uses a window size of one second. 
 The RTF is calculated as: 
 $$ RTF = \frac{time\ to\ process\ a\ segment}{duration\ of\ the\ segment} $$
 
-It should be noted that the minimum length parameter mentioned before does not impact the RTF. 
+It should be noted that this is an optimistic estimate because the RTF is calculated for longer segments.
 Since the minimum length is a post-filter applied on the model output, for longer segments the overhead presented for a real-time model does not apply. 
 
 
-\chapter{Practicality of laughter recognition in video meetings}
+\chapter{Practicality of laughter recognition in video meetings} \label{cha:practicality}
 In this section I will talk about the practicality of a laughter recognition feature integrated in a video-call system. 
 This section is split into two parts: 
 \begin{enumerate}
