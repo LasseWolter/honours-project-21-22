@@ -634,7 +634,7 @@ These features were loaded into the modified VAD Dataset which I called LAD: lau
 During training time, data is extracted from this dataset using the SimpleCutSampler provided by Lhotse. 
 This new approach can process 44000 batches in 2 hours compared to the 30 batches of my initial training approach which allows for high training speed without having to load all the raw audio into memory.
 To allow for direct comparisons, I used the same ResNet architecture as \citet{gillick2021robust}.
-The performance of this model trained on different su   bsets of the ICSI corpus is investigated in the next section.
+The performance of this model trained on different subsets of the ICSI corpus is investigated in the next section.
 
 \chapter{Investigating the impact of training data on model performance} \label{cha:experiments}
 Representative training data is essential for machine learning. Training on the whole ICSI corpus would take a long time and was not feasible for my project.
@@ -717,11 +717,11 @@ The general selection and feature computation process was similar, but non-laugh
     \centering
     \begin{tabular}{|c|c|c|c|c|}
         \hline
-        model & laughter & speech & silence & noise \\
+        model & speech & silence & noise \\
         \hline
-        a & 1 & 14 & 2 & 4 \\
-        b & 1 &  2 & 14 & 4\\
-        c & 2 & 4  & 14 & 2\\ 
+        a &  70\% & 10\% & 20\% \\
+        b &  10\%  & 70\% &  20\%\\
+        c &  20\%  & 70\% & 10\% \\ 
         \hline
     \end{tabular}
     \caption{Percentages of non-laughter subclasses for experiment 2.}
