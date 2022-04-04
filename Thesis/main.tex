@@ -23,6 +23,8 @@
 
 \newcommand{\coderepo}{\href{https://github.com/LasseWolter/laughter-detection-icsi}{codebase} }
 
+\newcommand{\confmatrixcaption}{Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold (see \autoref{sec:conf-matrix}).}
+
 \begin{document}
 \begin{preliminary}
 \title{A machine learning model for laughter detection}
@@ -93,11 +95,7 @@ The project was renamed to \textit{A machine learning model for laughter detecti
 
 Due to poor results of the final model, this thesis outlines the process I have taken, issues I faced and states my final hypothesis about the results: 
 
-{\parindent0.5cm
-\parskip1ex
-\everypar{\hangindent3em}
-\textit{``A significant number of non-transcribed regions in the ICSI corpus are}  \par
-\textit{not actually silence; they are quieter recordings of speech by other participants."} \par}
+\textit{``A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants."}
 
 The main achievements of this project are:
 \begin{enumerate}
@@ -475,7 +473,7 @@ Further, the Switchboard dataset has one audio track containing the audio from b
 \begin{figure}[h!]
     \centering
     \includegraphics[width=8cm]{imgs/conf_matrix/init_eval_all.png}
-    \caption{Confusion matrix for initial evaluation.  Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold.}
+    \caption{Confusion matrix from final evaluation (\autoref{tab:final-eval}), evaluated on the whole ICSI corpus. \confmatrixcaption}
     \label{fig:initial-conf-matrix}
 \end{figure}
 
@@ -656,8 +654,8 @@ In contrast to random sampling across all meeting, this approach guarantees that
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width = 3.8in]{imgs/prec-recall/random/dev_compare_class_balance_dev_set.png}
-    \caption{Precision-Recall-Curve for different ratios between laughter and non-laughter based on 21 evenly spaced thresholds from 0 to 1. Baseline is given by the model from \citet{gillick2021robust} evaluated on the development set (note that this is different from \autoref{fig:initial-conf-matrix} which was evaluated on the whole ICSI corpus).}
+    \includegraphics[width = 3.8in]{imgs/prec-recall/exp1-random/dev_compare_class_balance_dev_set.png}
+    \caption{Precision-Recall-Curve for different ratios between laughter and non-laughter based on 21 evenly spaced thresholds from 0 to 1. Baseline is given by the model from \citet{gillick2021robust} evaluated on the development set (note: \autoref{fig:initial-conf-matrix} was evaluated on the whole ICSI corpus).}
     \label{fig:prec-recall-rand}
 \end{figure}
 
@@ -675,15 +673,15 @@ Most misclassifications are in silence regions, regions that have no transcripti
 \begin{figure}[h!]
 \begin{tabular}{cc}
 \hspace*{-2cm}                                                           
-\subfloat[1-to-1]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/1_to_1_random.png}} &
+\subfloat[1-to-1]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_1_random.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[1-to-10]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/1_to_10_random.png}}\\ 
+\subfloat[1-to-10]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_10_random.png}}\\ 
 \hspace*{-2cm}                                                           
-\subfloat[1-to-20]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/1_to_20_random.png}} &
+\subfloat[1-to-20]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_20_random.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[baseline]{\includegraphics[width = 3.5in]{imgs/conf_matrix/random/baseline.png}}\\ 
+\subfloat[baseline]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/baseline.png}}\\ 
 \end{tabular}
-\caption{Confusion matrices for different ratios between laughter and non-laughter. Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold.}
+\caption{Confusion matrices for different ratios between laughter and non-laughter. \confmatrixcaption. Baseline is given by the model from \citet{gillick2021robust} evaluated on the development set (note: \autoref{fig:initial-conf-matrix} was evaluated on the whole ICSI corpus).}
 \label{fig:conf-matrix-rand}
 \end{figure}
 
@@ -720,8 +718,8 @@ The segment selection and feature computation process was similar, but non-laugh
 \subsection{Results}
 \begin{figure}[h!]
     \centering
-    \includegraphics[width = 3.8in]{imgs/prec-recall/structured/dev_compare_class_balance_dev_set.png}
-    \caption{Precision-Recall-Curve for different splits of non-laughter subclasses}
+    \includegraphics[width = 3.8in]{imgs/prec-recall/exp2-structured/dev_compare_class_balance_dev_set.png}
+    \caption{Precision-Recall-Curve for different splits of non-laughter subclasses as shown in \autoref{tab:exp-2-subclass-split}. Baseline taken from experiment one (\autoref{sec:exp-1}) where non-laughter segments were sampled randomly.}
     \label{fig:prec-recall-struc}
 \end{figure}
 
@@ -729,15 +727,15 @@ The segment selection and feature computation process was similar, but non-laugh
 \begin{figure}[h!]
 \begin{tabular}{cc}
 \hspace*{-2cm}                                                           
-\subfloat[model-a]{\includegraphics[width = 3.5in]{imgs/conf_matrix/structured/exp-a.png}} &
+\subfloat[model-a]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-a.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[model-b]{\includegraphics[width = 3.5in]{imgs/conf_matrix/structured/exp-b.png}}\\ 
+\subfloat[model-b]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-b.png}}\\ 
 \hspace*{-2cm}                                                           
-\subfloat[model-c]{\includegraphics[width = 3.5in]{imgs/conf_matrix/structured/exp-c.png}} &
+\subfloat[model-c]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-c.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[baseline]{\includegraphics[width = 3.5in]{imgs/conf_matrix/structured/1_to_20_random.png}}\\ 
+\subfloat[baseline]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/1_to_20_random.png}}\\ 
 \end{tabular}
-\caption{Confusion matrices for different splits of non-laughter types:  \autoref{tab:exp-2-subclass-split}. Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold.}
+\caption{Confusion matrices for different splits of non-laughter types as shown in \autoref{tab:exp-2-subclass-split}. \confmatrixcaption}
 \label{fig:conf-matrix-struc}
 \end{figure}
 
