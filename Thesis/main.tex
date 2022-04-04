@@ -27,7 +27,7 @@
 
 \begin{document}
 \begin{preliminary}
-\title{A machine learning model for laughter detection}
+\title{A Machine Learning Model for Laughter Detection}
 
 \author{Lasse Wolter}
 
@@ -496,7 +496,7 @@ Secondly, slightly adjusting the code allows for an comparison between the origi
 Firstly, all audio tracks are preloaded into memory, serialised and stored as a hash-map. Every time the model is trained the hash-map is loaded into memory to minimise disk accesses which slow down the training. 
 Secondly, Gillick et al. filter out all laughter segments and store them in a table as shown in \autoref{fig:gillick-data-pipeline}.
 They add the same amount of non-laughter segments to this dataframe. 
-Note that tables are also referred to as dataframes in this thesis; this term originates from the commonly used data-analysis python library \href{https://pandas.pydata.org/}{pandas}.
+Note that tables are also referred to as dataframes in this thesis; this term originates from the commonly used data-analysis python library pandas \citep{jeff_reback_2021_5574486}.
 Each segment is stored with its start-time, duration, subsample start-time, subsample duration, audio path and label where 1 means laughter and 0 means non-laughter. 
 This dataframe and the hash-map are the inputs for a PyTorch Dataset. This dataset defines the data structure for the PyTorch DataLoader which is used to sample batches during training.
 
@@ -526,10 +526,11 @@ The first version of this DataLoader resulted in slow training. The model traine
 With training samples of one second each, this equates to one sample every eight seconds.
 This training performance on a GPU machine was significantly worse than the inference performance on a CPU-only machine (\autoref{tab:rtf}).
 
-The GPU was starved most of the time because the data-loading was the bottleneck. In contrast to inference, where an audio track is loaded at the beginning, training required the DataLoader to load many one-second segments from different offsets.
-Without any pre-loading in place, one disk access per segment was required. 
-In addition, loading data from large offsets is significantly slower in librosa. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which this sample is located (\autoref{tab:librosa-loading-times}). 
-This is especially problematic because the ICIS's average meeting length of 58 minutes \citep{icsi-ldc} is significantly longer than the 6.5 minutes for Switchboard recordings \citep{switchboard-ldc}.
+The GPU was not used most of the time because the data-loading was the bottleneck. In contrast to inference, where an audio track is loaded at the beginning, training required the DataLoader to load many one-second segments from different. 
+Without any pre-loading in place, the segments were loaded on-the-fly, requiring one disk access per one-second segment. This meant the GPU was starved, i.e. waited for input most of the time. 
+In addition, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which this sample is located. 
+This is especially problematic because ICIS's average meeting length of 58 minutes \citep{icsi-ldc} is significantly longer than the 6.5 minutes for Switchboard recordings \citep{switchboard-ldc}.
+I later realised that this problem only arose because ICSI audio-files are stored as \verb|.sph|-files. Converting all files to \verb|.wav|-files could have solved this issue, but the main bottleneck would have persisted, namely the large number of disk accesses due to on-the-fly data-loading.
 
 \begin{table}[h!]
     \centering
@@ -545,7 +546,7 @@ This is especially problematic because the ICIS's average meeting length of 58 m
     5000 & 3.26 & 97.65 & 30 \\
     \hline
     \end{tabular}
-    \caption{Using Librosa to load a one-second segment from different offsets of an \textit{.sph-file}. Channel loaded: \texttt{Btr002:chan3}. Duration: 5318s. Test code: \href{https://github.com/LasseWolter/laughter-detection-icsi/tree/main/misc_scripts}{naive librosa-test}.}
+    \caption{Using librosa \citep{mcfee2015librosa} to load a one-second segment from different offsets of an audio-file. Channel loaded: \texttt{Btr002:chan3}. Duration: 5318s. Test code: \href{https://github.com/LasseWolter/laughter-detection-icsi/tree/main/misc_scripts}{naive librosa-test}.}
     \label{tab:librosa-loading-times}
 \end{table}
 
