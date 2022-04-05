@@ -90,12 +90,12 @@ In \texttt{filtered}-mode, a user is automatically unmuted when laughter or appl
 The motivation behind this feature is a more engaging speaker experience in virtual conferences. The project's supervisor is regularly involved in such conferences and wishes that reactions like laughter and applause were audible to him.
 
 To achieve the original goal, a real-time machine learning model detecting laughter and applause is required.  
-This project narrows the scope to a machine learning model for laughter detection. Real-time constraints are considered theoretically but adapting the model implementation for real-time usage is left for future work.
+This project narrows the scope to a machine learning model for laughter detection. Real-time constraints are considered theoretically (\autoref{sec:real-time}) but adapting the model implementation for real-time usage is left for future work.
 The project was renamed to \textit{A machine learning model for laughter detection} as the focus of the project was set on laughter detection; the beginning of the thesis briefly covers some aspects of applause detection. 
 
 Due to poor results of the final model, this thesis outlines the process I have taken, issues I faced and states my final hypothesis about the results: 
 
-\textit{``A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants."}
+\textit{``A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants. Thus, the assumption that non-transcribed regions and laughter can be easily distinguished is wrong."}
 
 The main achievements of this project are:
 \begin{enumerate}
@@ -111,15 +111,15 @@ The main achievements of this project are:
 \end{enumerate}
 
 
-The thesis starts off with a review of existing approaches about laughter and applause detection (\autoref{cha:bg}). It introduces some evaluation metrics used and gives a more detailed view of the model introduced by \citet{gillick2021robust} which is the foundation for my work. \autoref{cha:model-evaluation} evaluates the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus \citep{switchboard-corpus}, on the ICSI corpus \citep{morgan2001meeting}. The evaluation was revised throughout the project. This chapter provides a comparison of these revisions and an analysis of the overall poor performance of the model, which was made at the time of evaluation and does not include my final insights about the corpus.
+The thesis starts off with a review of existing approaches about laughter and applause detection (\autoref{cha:bg}). It introduces some evaluation metrics used and gives a more detailed view of the model introduced by \citet{gillick2021robust} which is the foundation for my work. \autoref{cha:model-evaluation} takes the best model from \citet{gillick2021robust}, trained on the Switchboard corpus \citep{switchboard-corpus}, and evaluates it on the ICSI corpus \citep{morgan2001meeting}. The evaluation was revised throughout the project. \autoref{cha:model-evaluation} includes a comparison of these revisions and an analysis of the overall poor performance of the model, which was made at the time of evaluation and does not include my final insights about the corpus.
 
 Due to the poor performance described in \autoref{cha:model-evaluation}, I retrained the model on the ICSI corpus. \autoref{cha:retraining} outlines how I first failed to use the existing training code from \citet{gillick2021robust} and then adapted it using \texttt{Lhotse} \citep{zelasko2021lhotse}, a new audio processing library, which I ended up contributing to \autoref{app:lhotse-contrib}.
 
-\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance remains unusable. Therefore, \autoref{sec:silence-regions} includes some manual investigation of the corpus data. In hindsight, these experiments should have been conducted earlier. 
+\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance remains unusable for integration in a video call system. Therefore, \autoref{sec:silence-regions} includes some manual investigation of the corpus data. In hindsight, these experiments should have been conducted earlier. 
 
 Lastly, \autoref{cha:practicality} investigates the practicality of the \texttt{filtered} option using laughter detection within a video call system; this includes real-time and privacy considerations as well as alternative solutions. The chapter concludes with suggestions for future work and a latency estimate of the model used in this thesis for future reference. 
 
-Throughout the report I regularly mention discussions. These refer to the biweekly meetings with my first and second supervisor, where I presented my progress. For each meeting I prepared a set of slides which are available at \href{https://github.com/LasseWolter/honours-project-21-22/tree/main/Meeting_Notes}{this github repository}.
+Throughout the report I regularly mention discussions. These refer to the biweekly meetings with my first and second supervisor, where I presented my progress. For each meeting I prepared a set of slides which are available at \href{https://github.com/LasseWolter/honours-project-21-22/tree/main/Meeting_Notes}{this public github repository}.
 The final laughter recognition codebase is published \href{https://github.com/LasseWolter/laughter-detection-icsi}{here}.
 
 
@@ -622,8 +622,8 @@ The performance of this model trained on different subsets of the ICSI corpus is
 
 \chapter{Investigating the Impact of Training Data on Model Performance} \label{cha:experiments}
 Representative training data is essential for machine learning. Training on the whole ICSI corpus would take a long time and was not feasible for my project.
-Thus, the following experiments investigate how the selection of a corpus-subset impacts the model's performance. 
-Due to significant time spent on task already outlined in the thesis, I did not have the time to do an exhaustive grid search. Hence, the results of these experiments should be considered as pointers for future research, not an optimal solution.
+Thus, the following experiments investigate how the selection of a corpus-subset for training impacts the model's performance. 
+Due to significant time spent on task already outlined in the thesis, the following experiments do not include exhaustive grid searches. Hence, the results of these experiments should be considered as pointers for future research, not an optimal solution.
 
 The structure of training data was investigated in two dimensions: 
 \begin{enumerate}
@@ -634,66 +634,73 @@ The structure of training data was investigated in two dimensions:
 All evaluations in this section are done on the development set of the ICSI corpus as defined in \autoref{sec:preprocessing}.
 
 \section{Experiment 1 - Class Balance} \label{sec:exp-1}
-In the first set of experiments, different ratios between laughter and non-laughter segments in the training data were evaluated. 
-I tried three different ratios between laughter and non-laughter segments: 1-to-1, 1-to-10 and 1-to-20.
-All samples had a duration of one second and no subsampling or feature augmentation was applied during training.
-The non-laughter segments were at random from all non-laughter segments, without considering the subclass. 
-A fixed distribution between these subclasses is investigated in \autoref{sec:exp2}.
+In the first set of experiments evaluates different ratios between laughter and non-laughter segments in the training data.
+Three different ratios between laughter and non-laughter segments are compared with the pre-trained model by \citet{gillick2021robust}: 1-to-1, 1-to-10 and 1-to-20.
+The sample duration is one second, as also used by \citet{gillick2021robust}. The feature shape differs from the pre-trained model. \citet{gillick2021robust} use mel spectrograms of shape 44x128 whereas the newly trained models uses a shape of 100x44.
+Further, neither subsampling nor feature augmentation was applied during training which helped \citet{gillick2021robust} to achieve minor performance improvements.
+I initially planned to investigate these three dimensions further: feature shape, subsampling and feature augmentation. 
+Due to time constraint I did not conduct such experiments, which leaves this task for future work. 
+
+The non-laughter segments are sampled at random from all non-laughter segments, without considering the subclass. 
+\autoref{sec:exp2} investigates a fixed distribution between these subclasses. 
 
 % The non-laughter segments were selected on a random basis from the remaining audio tracks after subtracting the laughter and invalid regions (\autoref{table:segment-types}). 
 
 \subsection{Method}
-To select non-laughter segments across a variety of meetings \verb|create_data_df| uses the following selection process.
+To select non-laughter segments across a variety of meetings, \verb|create_data_df| uses the following selection process.
 For each laughter segment, a channel within the same meeting is selected at random.
 A non-laughter segment of the same duration as the laughter segment is sampled from this channel.
 If the laughter segment is longer than one second, both laughter and non-laughter segments are truncated to a random one-second region of their segment. 
 If the segment is shorter than one second, it is stored unmodified and padded to one second length during feature computation.
 All these segments are stored in a table as explained in \autoref{sec:ml-data-pipeline}.
-
 In contrast to random sampling across all meeting, this approach guarantees that the training data holds non-laughter segments from all meetings containing laughter. 
+
 \subsection{Results} \label{sec:exp1-res}
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width = 3.8in]{imgs/prec-recall/exp1-random/dev_compare_class_balance_dev_set.png}
-    \caption{Precision-Recall-Curve for different ratios between laughter and non-laughter based on 21 evenly spaced thresholds from 0 to 1. Baseline is given by the model from \citet{gillick2021robust} evaluated on the development set (note: the evaluation in \autoref{fig:initial-conf-matrix} used the whole ICSI corpus).}
+    \caption{Precision-Recall-Curve for different ratios between laughter and non-laughter based on 21 evenly spaced thresholds from 0 to 1.  The baseline, given by the model from \citet{gillick2021robust} evaluated the development set, only has four data points for thresholds [0.2,0.4,0.6,0.8], because it uses the initial evaluation from \autoref{cha:model-evaluation}.}
     \label{fig:prec-recall-rand}
 \end{figure}
 
-\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline, which is the evaluation on the pre-trained model from \autoref{cha:model-evaluation}.
+\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline, the pre-trained model by \citet{gillick2021robust} evaluated on the development set.
 The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1.
 All models trained on the ICSI corpus outperform the baseline.
-There is little differences between the three new models.
-It is not possible to identify a best performing model since different models obtain the highest precision for different recalls.
+Overall there is little differences between the three new models, but for $mathtt{recall} > 0.3$ the 1-to-20 model performs best. 
 
-\autoref{fig:conf-matrix-rand} shows a confusion matrix for different thresholds to deepen the understanding of the used classification. 
-A row full of zeros indicates no laughter predictions for this threshold.
-Most misclassifications are in silence regions, regions that have no transcription. Other than that we note that the outcomes for 1-to-1 and 1-to-10 ratios are quite similar whereas 1-to-20 diverges from the two. Disregarding the thresholds and considering only classification accuracies, the confusions of 1-to-20 are similar to the other two: e.g. threshold 0.3 for 1-to-20 and 0.6 for 1-to-1 and 1-to-10.
+\autoref{fig:conf-matrix-rand} shows a confusion matrix for different thresholds to deepen the understanding of the misclassified laughter samples. Note that the baseline is not same confusion matrix as \autoref{fig:initial-conf-matrix} because this time we only evaluate on the development set.
+For all newly trained models most misclassifications are in silence regions, regions that have no transcription. 
+In contrast, the baseline classifies more laughter samples as speech than silence. Generally, we note that there is only a small amount of samples located in noise regions, the baseline has almost none.
+The 1-to-20 model has the least speech samples across all thresholds, except for threshold 0.8 where the baseline has 100\% precision, i.e. all predicted laughter samples are indeed laughter samples.
 
 
 \begin{figure}[h!]
 \begin{tabular}{cc}
 \hspace*{-2cm}                                                           
-\subfloat[1-to-1]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_1_random.png}} &
+\subfloat[1-to-20]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_20_random.png}} &
 \hspace*{-1cm}                                                           
 \subfloat[1-to-10]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_10_random.png}}\\ 
 \hspace*{-2cm}                                                           
-\subfloat[1-to-20]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_20_random.png}} &
+\subfloat[1-to-1]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/1_to_1_random.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[baseline]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/baseline.png}}\\ 
+\subfloat[baseline-gillick]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp1-random/baseline.png}}\\ 
 \end{tabular}
-\caption{Confusion matrices for different ratios between laughter and non-laughter. \confmatrixcaption. Baseline is given by the model from \citet{gillick2021robust} evaluated on the development set (note: \autoref{fig:initial-conf-matrix} was evaluated on the whole ICSI corpus).}
+\caption{Confusion matrices for different ratios between laughter and non-laughter. \confmatrixcaption Baseline is given by the model from \citet{gillick2021robust} evaluated on the development set (note: \autoref{fig:initial-conf-matrix} was evaluated on the whole ICSI corpus).}
 \label{fig:conf-matrix-rand}
 \end{figure}
 
 \subsection{Analysis} 
 The purpose of the experiment was to investigate different class balances. 
-The precision-recall curve (\autoref{fig:prec-recall-struc}) does not give much insight into this, as all models show a similar performance.
+The precision-recall curve (\autoref{fig:prec-recall-struc}) suggests that the 1-to-20 ratio gives the best performance, even though put into context, the performance is still poor. 
 All three models trained on the ICSI perform significantly better than the baseline from \citet{gillick2021robust} which was trained on the Switchboard dataset (as in \autoref{cha:model-evaluation}).
 This behaviour is expected and aligns with findings from \citet{gillick2021robust} (\autoref{fig:gillick-results}). A model evaluated on the same dataset it was trained on performs better than a model trained on a different dataset. 
 
-Another insight is deduced from the confusion matrices. Whereas the baseline has an even split between speech and silence, the three newly trained models rarely misclassify speech. 
-The non-transcribed regions are the main source of misclassification. This raises the same question as in the initial evaluation. Why is the model not able to confidently separate laughter from silence?
+Another insight is deduced from the confusion matrices. Whereas the baseline has more misclassified speech than silence segments, the three newly trained models misclassify speech less often. 
+In contrast, the newly trained models often misclassify silence regions, regions with no transcription, as laughter.
+Evaluating the pre-trained model by \citet{gillick2021robust} on the whole ICSI corpus (\autoref{cha:model-evaluation}) showed a non negligible amount of misclassifications in silence regions. 
+These newly trained models make this problem even more apparent and raise the question, why the model is not able to confidently separate laughter from silence.
+Lastly, the 100\% precision of the pre-trained model for a threshold of 0.8 should be seen in context. A precision of 100\% alone does not mean a good model performance as described in \autoref{sec:acc-prec-rec}. Looking at \autoref{fig:prec-recall-rand}, this threshold corresponds to the light blue data point in the top left corner. This shows that this threshold is close to one extreme of the precision recall curve where precision is 100\% and recall is 0\%. Future work could investigate why the pre-trained model already reaches this extreme at a threshold of 0.8, but compared to other future tasks I consider this as less important.
 
 \section{Experiment 2 - Non-laughter Diversity} \label{sec:exp2}
 The second set of experiments investigates the impact of the different types of non-laughter on the model performance. 
