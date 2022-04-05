@@ -857,28 +857,6 @@ Future work should investigate if a minimum length parameter is needed at all or
 
 Thus, assuming a minimum length $m$ and a window-size $w$ a lower bound of model's latency is given by: $m + \frac{1}{2}w$.
 
-
-
-\section{Practicality Issues and Privacy} \label{sec:general-pract}
-Even though users will be able to opt-out of using this feature, it is important to think about privacy. If most users do not feel comfortable using such a system, it will significantly affect its practicality.  
-The audio of every meeting participant will be constantly analysed. Even if the system promised to discard all audio immediately, users might feel uncomfortable using such a system. False positives in particular are a problem. If the system detects something as laughter and feeds it into the audio stream it is irreversible. If the false positive is a sensitive conversation with a friend, the cost of this issue is huge. 
-The extent of this issue can be limited by tuning the model threshold in such a way that the False positive rate is minimised. Nevertheless, the use case outlined above will always remain possible. 
-
-Another general problem is the missing detection of laughter sentiment. There is laughter in response to a joke which will be pleasing to the speaker. In contrast, laughter that makes fun of the speaker might seriously affect the speaker's confidence. I talked to a member of staff from the university who told me that she would be afraid of using such a system for this reason. 
-For a machine learning model to pick up the sentiment conveyed by a laughter occurrence is a completely different task. Even if this succeeded to a certain degree, false positives would be an issue again. 
-
-
-\section{Alternatives to a Machine Learning Model}
-Considering the privacy concerns mentioned in \autoref{sec:general-pract}, we can think about alternative sensory data. 
-Constantly analysing video input will likely yield similar discomfort for participants. Further, video inputs are often turned off during larger video conferences.
-\citet{cosentino2016quantitative}  also mention the privacy implications of video and audio inputs.
-Thus, they suggest the use of individual wearable sensors to address these concerns. For our project this approach wasn't feasible due to the lack of available sensory data.
-It is also impractical to deploy such a system on a large scale. Participants join video conferences from everywhere around the world, where wearable sensors are not available to them. Lastly, it is debatable if a wearable sensor brings more comfort to participants than being listened to all the time. 
-
-During a presentation another student suggested an interesting idea. He suggested constantly analysing all audio inputs of the meeting without looking for laughter specifically. Considering that usually only one person is speaking, audio activity on lots of inputs synchronously suggests some common activity, e.g. laughter or applause. Trying to find identify patterns like this is an interesting alternative worth thinking about. 
-
-\chapter{Conclusion and Future Work}
-
 \begin{table}[h!]
     \hspace{-2cm}
     \begin{tabular}{|c|c|c|c|c|c|c|}
@@ -900,22 +878,57 @@ During a presentation another student suggested an interesting idea. He suggeste
     \label{tab:rtf}
 \end{table}
 
-To \autoref{tab:rtf} provides a baseline for future work that estimates the latency of the model from \citet{gillick2021robust} by computing the real-time-factor(RTF). 
+\autoref{tab:rtf} provides a baseline for future work that estimates the latency of the model from \citet{gillick2021robust} using a window size of one second. This latency is expected to be similar for the models trained in \autoref{cha:experiments} because all models use the same ResNet architecture and same window size as used by \citet{gillick2021robust}. 
 The model evaluated uses a window size of one second. 
-The RTF is calculated as: 
+The latency is estimated by the real-time-factor(RTF), which is calculated as: 
 $$ RTF = \frac{time\ to\ process\ a\ segment}{duration\ of\ the\ segment} $$
 
 It should be noted that this is an optimistic estimate because the RTF is calculated for longer segments.
 Since the minimum length is a post-filter applied on the model output, for longer segments the overhead presented for a real-time model (\autoref{sec:real-time}) does not apply. 
 
-The majority of my work has been the creation of a data and evaluation pipeline to work with laughter in the ICSI corpus \citep{morgan2001meeting}. 
-Thus, continued experimentation with different machine learning models, different parameters and class balances can build upon my insights and make use of my \coderepo.
+
+
+\section{Practicality Issues and Privacy} \label{sec:general-pract}
+Even though users will be able to opt-out of using this feature, it is important to think about privacy. If most users do not feel comfortable using such a system, it will significantly affect its practicality.  
+The audio of every meeting participant will be constantly analysed. Even if the system promised to discard all audio immediately, users might feel uncomfortable using such a system. False positives in particular are a problem. If the system detects something as laughter and feeds it into the audio stream it is irreversible. If the false positive is a sensitive conversation with a friend, the cost of this issue is huge. 
+The extent of this issue can be limited by tuning the model threshold in such a way that the False positive rate is minimised. Nevertheless, the use case outlined above will always remain possible. 
+
+Another general problem is the missing detection of laughter sentiment. There is laughter in response to a joke which will be pleasing to the speaker. In contrast, laughter that makes fun of the speaker might seriously affect the speaker's confidence. I talked to a member of staff from the university who told me that she would be afraid of using such a system for this reason. 
+For a machine learning model to pick up the sentiment conveyed by a laughter occurrence is a completely different task. Even if this succeeded to a certain degree, false positives would still be an issue.
+
+
+\section{Alternatives to a Machine Learning Model}
+Considering the privacy concerns mentioned in \autoref{sec:general-pract}, we can think about alternative sensory data. 
+Constantly analysing video input will likely yield similar discomfort for participants. Further, video inputs are often turned off during larger video conferences.
+\citet{cosentino2016quantitative}  also mention the privacy implications of video and audio inputs.
+Thus, they suggest the use of individual wearable sensors to address these concerns. For our project this approach wasn't feasible due to the lack of available sensory data.
+It is also impractical to deploy such a system on a large scale. Participants join video conferences from everywhere around the world, where wearable sensors are not available to them. Lastly, it is debatable if a wearable sensor brings more comfort to participants than being listened to all the time. 
+
+During a presentation another student suggested an interesting idea. He suggested constantly analysing all audio inputs of the meeting without looking for laughter specifically. Considering that usually only one person is speaking, audio activity on lots of inputs synchronously suggests some common activity, e.g. laughter or applause. Trying to find identify patterns like this is an interesting alternative worth thinking about. 
+
+\chapter{Conclusion and Future Work}
+This original goal of the project was to create a filter for laughter and applause within a video call system. This goal was not achieved but the project provides the foundation for laughter recognition component of such a system.
+Even though the current performance is not sufficient, the insights about the ICSI corpus, the process of training such a model and the published code (TODO cite) will benefit future work.
+The final hypothesis resulting from my initial evaluation (\autoref{cha:model-evaluation}) and the experiments conducted (\autoref{cha:experiments}) is:
+
+\textit{``A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants. Thus, the assumption that non-transcribed regions and laughter can be easily distinguished is wrong."}
+
+Since laughter recognition is a small research area, the insights from this thesis might also be valuable for the laughter recognition research in general. 
+Existing research \citep{kennedy2004laughter,knox2006automatic, truong2005automatic} only used parts of the ICSI corpus for training and evaluation and did not include the non-transcribed regions. 
+This thesis makes use of the whole ICSI corpus and includes non-transcribed regions in the evaluations, which turned out to be a problem as described in \autoref{sec:silence-regions}. Nevertheless, using the whole audio tracks, instead of disconnected laughter and non-laughter samples, best resembles the use case of laughter detection as part of a video call system. 
+Thus, future work needs to investigate how to tackle this issue.
+\autoref{sec:silence-regions} provides two suggestions for future work: only using tracks that actually contain silence or applying more advanced preprocessing. 
+
+Another main achievement is the creation of a data and evaluation pipeline to work with laughter in the ICSI corpus \citep{morgan2001meeting}. 
+Continued experimentation with different machine learning models, different parameters and class balances can build upon my insights and make use of my \coderepo.
 This extends beyond the purpose of the project of a laughter recognition system for video meetings but can be useful for further research in the broader area of laughter detection in general. 
 As mentioned in \autoref{cha:bg}, lots of papers didn't publish their code.
 Thus, especially people with little experience in this field can benefit from my existing code. 
 For such broader usage of my code some refactoring and the creation of proper documentation would be necessary.
 Some parts of the code, especially \verb|train.py|, still contain large parts of Gillick et al.'s code that I criticised as not adhering to common PyTorch standards. 
 
+
+Lastly, making the model work in real-time is another important part for the continuation of this project. \autoref{sec:real-time} provided some theoretical considerations as well as a baseline for future work.
 
 % \chapter{Lessons Learned}
 
