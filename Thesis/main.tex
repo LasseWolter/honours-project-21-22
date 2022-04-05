@@ -23,7 +23,7 @@
 
 \newcommand{\coderepo}{\href{https://github.com/LasseWolter/laughter-detection-icsi}{codebase}}
 
-\newcommand{\confmatrixcaption}{Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold (see \autoref{sec:conf-matrix}).}
+\newcommand{\confmatrixcaption}{Each row shows the percentage of laughter segments classified as a certain subclass for a given threshold (see \autoref{sec:conf-matrix}). }
 
 \begin{document}
 \begin{preliminary}
@@ -274,7 +274,7 @@ To conclude, for our use case reporting precision and recall across a range of t
 A confusion matrix is a good way to identify misclassifications. In a multi-class problem, it shows the true label on one axis and the predicted label on the other. It can either show the actual counts of predictions or normalised values between 0 and 1. \autoref{fig:example-conf-matrix} shows a normalised confusion matrix for a classification problem with three classes.
 For laughter recognition we only have two classes. Instead of plotting a 2x2 confusion matrix, evaluations in this thesis use a different approach.
 Since non-laughter segments can be split into subclasses (as we will see in \autoref{table:segment-types}), we plot the percentage of misclassified laughter samples for each of these classes. 
-Each row in \autoref{fig:example-conf-matrix} represents the model outputs for a certain threshold and shows the percentage of laughter samples classified as laughter, speech, silence and noise, respectively. Thus, the sum of all values in a single row is one. 
+Each row in \autoref{fig:example-conf-matrix} represents the model outputs for a certain threshold and shows the percentage of true laughter samples classified as laughter, speech, silence and noise, respectively. Thus, the sum of all values in a single row is one and the the column of laughter is the precision of the model at this threshold.
 Note that we cannot get the same diagram for non-laughter segments because the model is a binary classifier. It only predicts laughter and non-laughter but none of the subclasses. 
 
 
@@ -634,7 +634,7 @@ The structure of training data was investigated in two dimensions:
 All evaluations in this section are done on the development set of the ICSI corpus as defined in \autoref{sec:preprocessing}.
 
 \section{Experiment 1 - Class Balance} \label{sec:exp-1}
-In the first set of experiments evaluates different ratios between laughter and non-laughter segments in the training data.
+The first set of experiments evaluates different ratios between laughter and non-laughter segments in the training data.
 Three different ratios between laughter and non-laughter segments are compared with the pre-trained model by \citet{gillick2021robust}: 1-to-1, 1-to-10 and 1-to-20.
 The sample duration is one second, as also used by \citet{gillick2021robust}. The feature shape differs from the pre-trained model. \citet{gillick2021robust} use mel spectrograms of shape 44x128 whereas the newly trained models uses a shape of 100x44.
 Further, neither subsampling nor feature augmentation was applied during training which helped \citet{gillick2021robust} to achieve minor performance improvements.
@@ -647,12 +647,12 @@ The non-laughter segments are sampled at random from all non-laughter segments, 
 % The non-laughter segments were selected on a random basis from the remaining audio tracks after subtracting the laughter and invalid regions (\autoref{table:segment-types}). 
 
 \subsection{Method}
-To select non-laughter segments across a variety of meetings, \verb|create_data_df| uses the following selection process.
+To select non-laughter segments across a variety of meetings, \verb|create_data_df| (\autoref{fig:data-pipeline}) uses the following selection process.
 For each laughter segment, a channel within the same meeting is selected at random.
 A non-laughter segment of the same duration as the laughter segment is sampled from this channel.
 If the laughter segment is longer than one second, both laughter and non-laughter segments are truncated to a random one-second region of their segment. 
 If the segment is shorter than one second, it is stored unmodified and padded to one second length during feature computation.
-All these segments are stored in a table as explained in \autoref{sec:ml-data-pipeline}.
+All these segments are stored in a dataframe as explained in \autoref{sec:ml-data-pipeline}.
 In contrast to random sampling across all meeting, this approach guarantees that the training data holds non-laughter segments from all meetings containing laughter. 
 
 \subsection{Results} \label{sec:exp1-res}
@@ -664,16 +664,10 @@ In contrast to random sampling across all meeting, this approach guarantees that
     \label{fig:prec-recall-rand}
 \end{figure}
 
-\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline, the pre-trained model by \citet{gillick2021robust} evaluated on the development set.
-The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1.
+\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline given by the pre-trained model by \citet{gillick2021robust} evaluated on the development set.
+The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1. For the baseline, there are only four data points, because the data is taken from the evaluation presented in \autoref{cha:model-evaluation}.
 All models trained on the ICSI corpus outperform the baseline.
-Overall there is little differences between the three new models, but for $mathtt{recall} > 0.3$ the 1-to-20 model performs best. 
-
-\autoref{fig:conf-matrix-rand} shows a confusion matrix for different thresholds to deepen the understanding of the misclassified laughter samples. Note that the baseline is not same confusion matrix as \autoref{fig:initial-conf-matrix} because this time we only evaluate on the development set.
-For all newly trained models most misclassifications are in silence regions, regions that have no transcription. 
-In contrast, the baseline classifies more laughter samples as speech than silence. Generally, we note that there is only a small amount of samples located in noise regions, the baseline has almost none.
-The 1-to-20 model has the least speech samples across all thresholds, except for threshold 0.8 where the baseline has 100\% precision, i.e. all predicted laughter samples are indeed laughter samples.
-
+Overall there is little differences between the three new models, but for $\mathtt{recall} > 0.3$ the 1-to-20 model performs best. 
 
 \begin{figure}[h!]
 \begin{tabular}{cc}
@@ -690,22 +684,30 @@ The 1-to-20 model has the least speech samples across all thresholds, except for
 \label{fig:conf-matrix-rand}
 \end{figure}
 
+\autoref{fig:conf-matrix-rand} shows a confusion matrices for different thresholds to deepen the understanding of the misclassified laughter samples. Note that the baseline is not same confusion matrix as \autoref{fig:initial-conf-matrix} because this time we only evaluate on the development set.
+For all newly trained models most misclassifications are in silence regions, regions that have no transcription. 
+In contrast, the baseline classifies more laughter samples as speech than silence. Generally, we note that there is only a small amount of samples located in noise regions, the baseline has almost none.
+The 1-to-20 model has the least speech samples across all thresholds, except for threshold 0.8 where the baseline has 100\% precision, i.e. all predicted laughter samples are indeed laughter samples.
+
+
+
 \subsection{Analysis} 
 The purpose of the experiment was to investigate different class balances. 
-The precision-recall curve (\autoref{fig:prec-recall-struc}) suggests that the 1-to-20 ratio gives the best performance, even though put into context, the performance is still poor. 
+The precision-recall curve (\autoref{fig:prec-recall-struc}) suggests that the 1-to-20 ratio gives the best performance. Nevertheless, for integrating such a model in a video call system, the performance is still poor. 
 All three models trained on the ICSI perform significantly better than the baseline from \citet{gillick2021robust} which was trained on the Switchboard dataset (as in \autoref{cha:model-evaluation}).
 This behaviour is expected and aligns with findings from \citet{gillick2021robust} (\autoref{fig:gillick-results}). A model evaluated on the same dataset it was trained on performs better than a model trained on a different dataset. 
 
 Another insight is deduced from the confusion matrices. Whereas the baseline has more misclassified speech than silence segments, the three newly trained models misclassify speech less often. 
-In contrast, the newly trained models often misclassify silence regions, regions with no transcription, as laughter.
+In contrast, the newly trained models often misclassify laughter as silence, regions with no transcription.
 Evaluating the pre-trained model by \citet{gillick2021robust} on the whole ICSI corpus (\autoref{cha:model-evaluation}) showed a non negligible amount of misclassifications in silence regions. 
-These newly trained models make this problem even more apparent and raise the question, why the model is not able to confidently separate laughter from silence.
+These newly trained models make this problem even more apparent and raise the question, why the model is not able to confidently separate laughter from silence. \autoref{sec:silence-regions} will investigate this further.
+
 Lastly, the 100\% precision of the pre-trained model for a threshold of 0.8 should be seen in context. A precision of 100\% alone does not mean a good model performance as described in \autoref{sec:acc-prec-rec}. Looking at \autoref{fig:prec-recall-rand}, this threshold corresponds to the light blue data point in the top left corner. This shows that this threshold is close to one extreme of the precision recall curve where precision is 100\% and recall is 0\%. Future work could investigate why the pre-trained model already reaches this extreme at a threshold of 0.8, but compared to other future tasks I consider this as less important.
 
 \section{Experiment 2 - Non-laughter Diversity} \label{sec:exp2}
-The second set of experiments investigates the impact of the different types of non-laughter on the model performance. 
-Thus, the ratio of non-laughter segments was fixed to 1-to-20. The ratio 1-to-20 was chosen to maximise the amount of non-laughter segments and be able to use one of models from \autoref{sec:exp-1} as a baseline.
-The segment selection and feature computation process was similar, but non-laughter segments were not chosen at random. A fixed percentage of non-laughter segments was assigned to each of the three types of non-laughter: speech, noise and silence.
+The second set of experiments investigates the impact of the amount of the different types of non-laughter on the model performance. 
+The ratio of non-laughter segments is fixed to 1-to-20. The ratio 1-to-20 is chosen to maximise the amount of non-laughter segments and be able to use one of models from \autoref{sec:exp-1} as a baseline.
+The segment selection and feature computation process is similar to \autoref{sec:exp-1}, but non-laughter segments were not chosen at random. A fixed percentage of non-laughter segments was assigned to each of the three types of non-laughter: speech, noise and silence.
 \autoref{tab:exp-2-subclass-split} shows the different percentages tried.
 
 \begin{table}[h!]
@@ -732,37 +734,40 @@ The segment selection and feature computation process was similar, but non-laugh
 \end{figure}
 
 
+
+
+Looking at the precision-recall curve in \autoref{fig:prec-recall-struc}, we see that \texttt{model-a} performs worse than the baseline across all thresholds. \texttt{model-c} performs similar to the baseline with worse performance in the area of $\mathtt{recall} > 0.6$. \texttt{model-b} performs similar to \texttt{model-c}, but slightly worse.
+We note that the majority of data points for \texttt{model-b} and \texttt{model-c} are condensed in the area of $0.3 < \mathtt{recall} < 0.7$ and $0.2 < \mathtt{precision} < 0.65$. For \texttt{model-c} most data points lie in the area of $0.4 < \mathtt{recall} < 0.75$ and $0.1 < \mathtt{precision} < 0.4$.
+
 \begin{figure}[h!]
 \begin{tabular}{cc}
 \hspace*{-2cm}                                                           
-\subfloat[model-a]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-a.png}} &
+\subfloat[model-a: 70sp, 10sil, 20noi]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-a.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[model-b]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-b.png}}\\ 
+\subfloat[model-b: 10sp, 10sil, 20noi]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-b.png}}\\ 
 \hspace*{-2cm}                                                           
-\subfloat[model-c]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-c.png}} &
+\subfloat[model-c: 20sp, 70sil, 10noi]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/model-c.png}} &
 \hspace*{-1cm}                                                           
-\subfloat[baseline]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/1_to_20_random.png}}\\ 
+\subfloat[baseline: 1-to-20 model from \autoref{sec:exp-1}]{\includegraphics[width = 3.5in]{imgs/conf_matrix/exp2-structured/1_to_20_random.png}}\\ 
 \end{tabular}
-\caption{Confusion matrices for different splits of non-laughter types as shown in \autoref{tab:exp-2-subclass-split}. \confmatrixcaption}
+\caption{Confusion matrices for different splits of non-laughter types as shown in \autoref{tab:exp-2-subclass-split}. \confmatrixcaption Splits shown as percentages, where sp=speech, sil=silence, noi=noise.}
 \label{fig:conf-matrix-struc}
 \end{figure}
 
-Looking at the precision-recall curve in \autoref{fig:prec-recall-struc}, we see that \texttt{model-a} performs worse than the baseline. \texttt{model-c} performs similar to the baseline with worse performance in the area of $recall > 60\%$. \texttt{model-b} performs slightly better for the area $0.3<recall<0.6$, but worse for recalls higher than this.
-We note that the majority of data points for \texttt{model-b} and \texttt{model-c} are condensed in the area of $0.3 < recall < 0.7$ and $0.1 < precision < 0.6$.
-
 \autoref{fig:conf-matrix-struc} compares the confusion matrices. The general structure is similar to the matrices in \autoref{fig:conf-matrix-rand}.
 Most of the misclassifications are silence segments. 
-The proximity of adjacent data points visible in the precision-recall curve becomes evident in the matrices as well. Laughter percentages for the displayed thresholds are low. 
-Further, the bright colours in the speech column matrix for \texttt{model-a} show that it retrieves a lot of speech samples. 
-Lastly, we can see that \texttt{model-c} has slightly more speech misclassifications than the other three models.
+The small number of data points in higher precision regions of the precision-recall curve (\autoref{fig:prec-recall-struc}) becomes evident in the matrices as well. As described in \autoref{sec:conf-matrix}, the laughter percentage in the confusion matrix is equal to the precision. Thus, of the newly trained models for a threshold of 0.8 is low.
+Lastly, we can see that \texttt{model-c} classifies more laughter segments as silence than as laughter.
 
 
 \subsection{Analysis}
-The goal of these experiments was to analyse the impact of diversity within the non-laughter segments. Using only a few silence segments decreases model performance significantly.
-The impact of slightly changing amounts of noise, speech and laughter but keeping the number of silence segments constant yielded a small performance impact. 
-Thus, only considering this set of experiments, changing the number of silence segments in the non-laughter class has the most impact. 
-This is not a definitive conclusion but merely a result of this small set of experiments. 
-The confusion matrices in \autoref{fig:conf-matrix-struc} do not add much to the insights from experiment 1 (\autoref{sec:exp-1}). The higher number of misclassified speech segments in \texttt{model-c} should be noted but cannot be put into context with other observations.
+The goal of these experiments was to analyse the impact of diversity within the non-laughter segments. As shown by \texttt{model-a}, using a small amount silence segments decreases model performance significantly. It causes the model to classify more silence segments as laughter than true laughter segments. This is a major flaw in this model and suggests that this subset of the ICSI corpus is not representative of its entirety. 
+
+Keeping the number of silence segments constant and slightly increasing the number of speech segments yielded a small performance impact, as shown by \texttt{model-b} and \texttt{model-c}.
+
+Thus, for this experiment, changing the number of silence segments in the non-laughter class has the biggest discriminative power. This is surprising, because intuitively one expects that silence should not have a lot of variety and thus, increasing the number of training samples should not have a big impact. Possible reasons for this are investigated in the following section.
+
+Lastly, the low precision values for a threshold of 0.8 compared to the baseline, do not mean that the new models in this experiments perform worse. As mentioned before, thresholds are variable and we should always consider the whole precision-recall curve. Nevertheless, it is interesting to note that changing the type of non-laughter segments seems to impact the way thresholds partition the model performance. This fact should be investigated further by future work.
 
 \section{Investigating Non-transcribed Regions in the ICSI Corpus} \label{sec:silence-regions}
 Both, the initial evaluation (\autoref{cha:model-evaluation}) and the experiments (\autoref{cha:experiments}) raised the question, why the model is not able to separate laughter from silence segments in the corpus. Thus, I decided to manually analyse some audio tracks for abnormalities. This is a crude analysis to come up with a hypothesis for the large amount of retrieved silence segments.
