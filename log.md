@@ -1299,8 +1299,6 @@ ValueError: lilcom: Lilcom-compressed data must begin with L
           - but that's also not what we want
           - I want a MonoCut that has the length 1.0s and the whole computed features (with padding) and the correct recording attached to it...
 
-![padded_cut](./log_imgs/padded_cut.png)
-
 - manually setting the rec_id to `None` if the Cut is padded doesn't work either
 
   - feature computation succeds but when you try to reload the data from disk it fails, saying:
