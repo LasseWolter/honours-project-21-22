@@ -115,7 +115,7 @@ The thesis starts off with a review of existing approaches about laughter and ap
 
 Due to the poor performance described in \autoref{cha:model-evaluation}, I retrained the model on the ICSI corpus. \autoref{cha:retraining} outlines how I first failed to use the existing training code from \citet{gillick2021robust} and then adapted it using \texttt{Lhotse} \citep{zelasko2021lhotse}, a new audio processing library, which I ended up contributing to \autoref{app:lhotse-contrib}.
 
-\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pre-trained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance remains unusable for integration in a video call system. Therefore, \autoref{sec:silence-regions} includes some manual investigation of the corpus data. In hindsight, these experiments should have been conducted earlier. 
+\autoref{cha:experiments} presents experiments investigating the impact of training data on the model output. It also compares the newly trained models with the original model evaluated in \autoref{cha:model-evaluation}. We find that models retrained on the ICSI corpus perform significantly better than the pretrained model by \citet{gillick2021robust}, trained on the Switchboard corpus. Nevertheless, the model performance remains unusable for integration in a video call system. Therefore, \autoref{sec:silence-regions} includes some manual investigation of the corpus data. In hindsight, these experiments should have been conducted earlier. 
 
 Lastly, \autoref{cha:practicality} investigates the practicality of the \texttt{filtered} option using laughter detection within a video call system; this includes real-time and privacy considerations as well as alternative solutions. The chapter concludes with suggestions for future work and a latency estimate of the model used in this thesis for future reference. 
 
@@ -355,7 +355,7 @@ A breakdown of the amount of each subclass is shown in \autoref{table:segment-ty
 
 \section{Evaluating Gillick et al's Model on the ICSI Corpus}
 In contrast to some existing research \citep{kennedy2004laughter, knox2006automatic} which only used a subset of the ICSI corpus, I evaluated the whole ICSI dataset.
-I ran the pre-trained detection model by \citet{gillick2021robust} with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
+I ran the pretrained detection model by \citet{gillick2021robust} with four different thresholds for each channel of the 75 meetings - a total of 468 audio tracks. 
 Over the course of this project, I corrected the evaluation two times.
 The following sections compare the results of these evaluations and provide some analysis on the poor performance of the model.
 
@@ -467,7 +467,7 @@ On the other hand, choosing a high threshold, e.g. 0.8, yields very high precisi
 \end{table}
 
 
-A possible reason for such a bad performance on the ICSI corpus is a data mismatch between training and evaluation data. The pre-trained model by \citet{gillick2021robust} was trained on the Switchboard corpus \citep{switchboard-corpus}. The Switchboard corpus records telephone conversations between two participants at a sample rate of 8000hz. The ICSI corpus records meeting speech of multiple participants at a sample rate of 16000hz. For prediction, all audio tracks are down-sampled to 8000hz which results in losing lots of the original data. 
+A possible reason for such a bad performance on the ICSI corpus is a data mismatch between training and evaluation data. The pretrained model by \citet{gillick2021robust} was trained on the Switchboard corpus \citep{switchboard-corpus}. The Switchboard corpus records telephone conversations between two participants at a sample rate of 8000hz. The ICSI corpus records meeting speech of multiple participants at a sample rate of 16000hz. For prediction, all audio tracks are down-sampled to 8000hz which results in losing lots of the original data. 
 Further, the Switchboard dataset has one audio track containing the audio from both participants whereas the ICSI corpus has separate audio tracks for each participant. Thus, especially the long periods of silence on each individual channel are new to the model. 
 
 \begin{figure}[h!]
@@ -477,15 +477,15 @@ Further, the Switchboard dataset has one audio track containing the audio from b
     \label{fig:initial-conf-matrix}
 \end{figure}
 
-Looking at the confusion matrix in (\autoref{fig:initial-conf-matrix}) we notice that misclassifications are almost evenly split between silence and speech regions. This is surprising because I expected silence to be easier to distinguish from laughter than speech.
-Further evaluation and insights also referring back to this initial evaluation can be found in \autoref{cha:experiments}.
+Looking at the confusion matrix in (\autoref{fig:initial-conf-matrix}) we notice that the misclassifications are almost evenly split between silence and speech regions. This is surprising because I expected silence to be easier to distinguish from laughter than speech.
+We will see further investigations of these silence regions in autoref{cha:experiments}.
 In response to this finding, I decided to retrain the model on the ICSI corpus. 
 
 
 \chapter{Training Laughter Detection on the ICSI Corpus} \label{cha:retraining}
-\section{Adapting Gillick et al's Training Code} 
-The first approach was to adapt the published code by \citet{gillick-codebase}, which used PyTorch \citep{pytorch2017automatic}, an open-source machine learning framework for python.
-Parts of the code were cumbersome and disregarded current standards of PyTorch programs, e.g. they used a manual batch counter for training steps instead of using epochs.  
+\section{Adapting Gillick et al.'s Training Code} 
+The first approach was to adapt the published code by \citet{gillick-codebase}, which used PyTorch \citep{pytorch2017automatic}, an open-source machine learning framework for Python.
+Parts of the code were cumbersome and disregarded the standards of PyTorch programs, e.g. they used a manual batch counter for training steps instead of using epochs.  
 
 Despite these concerns, I decided to adapt their existing code for two reasons.
 Firstly, developing the whole framework from scratch would have been time consuming and slightly precarious as I had never worked on a machine learning project of this scale.
@@ -493,12 +493,12 @@ Firstly, developing the whole framework from scratch would have been time consum
 Secondly, slightly adjusting the code allows for an comparison between the original and retrained model. 
 
 \autoref{fig:gillick-data-pipeline} shows the data pipeline used by \citet{gillick2021robust}. The raw inputs per conversation are one audio track and two transcription files. 
-Firstly, all audio tracks are preloaded into memory, serialised and stored as a hash-map. The keys of this hash-map are the audio-paths present in the dataframe shown in \autoref{fig:gillick-data-pipeline}, the values are the serialised audio tracks. Every time the model is trained the hash-map is loaded into memory to to quickly access the audio tracks. The size of this hash-map is investigated later in this section.
+Firstly, all audio tracks are preloaded into memory, serialised and stored as a hash map. The keys of this hash map are the audio paths present in the dataframe shown in \autoref{fig:gillick-data-pipeline}, the values are the serialised audio tracks. Every time the model is trained the hash-map is loaded into memory to to quickly access the audio tracks. The size of this hash-map is investigated later in this section.
 Secondly, \citet{gillick2021robust} filter out all laughter segments and store them in a table as shown in \autoref{fig:gillick-data-pipeline}.
 They add the same amount of non-laughter segments to this dataframe. 
-Note that tables are also referred to as dataframes in this thesis; this term originates from the commonly used data-analysis python library pandas \citep{jeff_reback_2021_5574486}.
-Each segment is stored with its start-time, duration, subsample start-time, subsample duration, audio path and label where 1 means laughter and 0 means non-laughter. 
-This dataframe and the hash-map are the inputs for a PyTorch Dataset. This dataset defines the data structure for the PyTorch DataLoader which is used to sample batches during training.
+Note that tables are also referred to as dataframes in this thesis; this term originates from the commonly used data analysis Python library pandas \citep{jeff_reback_2021_5574486}.
+Each segment is stored with its start time, duration, subsample start time, subsample duration, audio path and label, where 1 means laughter and 0 means non-laughter. 
+This dataframe and the hash map are the inputs for a PyTorch Dataset. This dataset defines the data structure for the PyTorch DataLoader which is used to sample batches during training.
 
 \begin{figure}
     \centering
@@ -507,11 +507,11 @@ This dataframe and the hash-map are the inputs for a PyTorch Dataset. This datas
     \label{fig:gillick-data-pipeline}
 \end{figure}
 
-Creating a hash-map with serialised audio data from the ICSI corpus failed due to missing memory. Since the ICSI corpus contains single audio tracks for each participant the total size is larger than the Switchboard dataset. In addition, the sample rate is twice as high. 
+Creating a hash map with serialised audio data from the ICSI corpus failed due to missing memory. Since the ICSI corpus contains single audio tracks for each participant the total size is larger than the Switchboard dataset. In addition, the sample rate is twice as high. 
 
-The following estimates show the difference in storage space needed to preload the whole ICSI/Switchboard corpus as .wav-files. We assume a bit rate of $16bits=2bytes$ per sample.
+The following estimates show the difference in the storage space needed to preload the whole ICSI/Switchboard corpus as .wav-files. We assume a bit rate of $16bits=2bytes$ per sample.
 
-The Switchboard corpus consists of 260 hours of raw audio sampled at 8khz which can be estimated as:
+The Switchboard corpus consists of 260 hours of raw audio sampled at 8khz, which can be estimated as:
 
 $$ \frac{260\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 8000\;\textrm{samples per second} \cdot 2\;\textrm{bytes}}{1024^3} \approx 13.95 GB $$  
 
@@ -520,21 +520,21 @@ The ICSI corpus contains 72hours of meeting speech with an average of six partic
 $$ \frac{432\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 16000 \;\textrm{samples per seconds} \cdot 2bytes}{1024^3} \approx 46.35 GB $$
 
 Using a machine with sufficient RAM would allow loading the whole audio data into memory. 
-Regardless of missing access to such a machine finding a solution that requires less RAM was desirable. Loading all raw audio into memory even though the model only needs the feature representation of short segments seemed like a waste of resources. Thus, I decided to adapt the data pipeline which turned out to be more difficult than expected and thus, took me 1.5 months. The following two sections line out the two different approaches I tried. 
+Regardless of missing access to such a machine, finding a solution that requires less RAM was desirable. Loading all raw audio into memory, even though the model only needs the feature representation of short segments, seemed like a waste of resources. Thus, I decided to adapt the data pipeline which turned out to be more difficult than expected and took me 1.5 months. The following two sections line out the two different approaches I tried. 
 
 \section{Rewriting the DataLoader from Scratch}
 
-The first approach was to amend the data-pipeline in \autoref{fig:gillick-data-pipeline} by removing the hash-map. Since the hash-map is one input to the Dataset, which is then used by the DataLoader, those two structures needed to be rewritten as well. 
+The first approach was to amend the data-pipeline in \autoref{fig:gillick-data-pipeline} by removing the hash map. Since the hash map is one input to the Dataset, which is then used by the DataLoader, those two structures had to be rewritten as well. 
 The adapted pipeline was slow and only allowed the model to train around 30 batches of audio in two hours, each consisting of 32 audio tracks. 
 With training samples of one second each, this equates to one sample every eight seconds.
-This training performance, measured on a GPU machine, was significantly worse than the evaluating the pre-trained model from \autoref{cha:model-evaluation} on a CPU-only machine. 
+This training performance, measured on a GPU machine, was significantly worse than evaluating the pretrained model from \autoref{cha:model-evaluation} on a CPU-only machine. 
 
-It turned out that the GPU was not used most of the time because the data-loading was the bottleneck. In contrast to inference, where a whole audio track is loaded once at the beginning, training required the DataLoader to load many one-second segments from different offsets. 
+It turned out that the GPU was not used most of the time because the data loading was the bottleneck. In contrast to inference, where a whole audio track is loaded once at the beginning, training required the DataLoader to load many one-second segments from different offsets. 
 Without any pre-loading in place, the segments were loaded on-the-fly, requiring one disk access per one-second segment. This meant the GPU was starved, i.e. waited for input most of the time. 
 
-In addition, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which a sample is located. 
+In addition, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular Python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which a sample is located. 
 This is especially problematic because ICIS's average meeting length of 58 minutes \citep{icsi-ldc} is significantly longer than the 6.5 minutes for Switchboard recordings \citep{switchboard-ldc}.
-I later realised that this problem only arose because ICSI audio-files are stored as \verb|.sph|-files. Converting all files to \verb|.wav|-files could have solved this issue, but the main bottleneck would have persisted: the large number of disk accesses due to on-the-fly data-loading.
+I later realised that this problem only arose because ICSI audio-files are stored as \verb|.sph|-files. Converting all files to \verb|.wav|-files could have solved this issue, but the main bottleneck would have persisted: the large number of disk accesses due to on-the-fly data loading.
 
 \begin{table}[h!]
     \centering
@@ -555,10 +555,10 @@ I later realised that this problem only arose because ICSI audio-files are store
 \end{table}
 
 
-My second supervisor suggested the use of Lhotse \citep{zelasko2021lhotse} to speed up the data-loading. Lhotse is a python library for speech and audio data preparation that is still in development but already usable for projects. The following section outlines this seconds approach of adapting the data pipeline.
+My second supervisor suggested the use of Lhotse \citep{zelasko2021lhotse} to speed up the data loading. Lhotse is a Python library for speech and audio data preparation that is still in development but already usable for projects. The following section outlines this seconds approach of adapting the data pipeline.
 
 \section{A Data Pipeline Using Lhotse}
-This section outlines how I used Lhotse to create a data pipeline with faster data-loading. Instead of trying to stick to the design by \citet{gillick2021robust} (\autoref{fig:data-pipeline}), I decided to combine the features provided by Lhotse with some of the code I had already written. 
+This section outlines how I used Lhotse to create a data pipeline with faster data loading. Instead of trying to stick to the design by \citet{gillick2021robust} (\autoref{fig:data-pipeline}), I decided to combine the features provided by Lhotse with some of the code I had already written. 
 In this section I first give a brief introduction into Lhotse and why it is suitable for our use case. Then I explain some necessary adjustments and finally present my data pipeline which is part of the published \coderepo.
 
 \subsection{Lhotse} \label{sec:lhotse}
@@ -569,8 +569,8 @@ Two main features make Lhotse suitable for my use case:
 \end{enumerate}
 
 Lhotse provides so-called \textit{recipes} which simplify working with popular corpora like the ICSI corpus.
-These \textit{recipes} are python scripts that create \textit{manifests}.
-\textit{Manifests} are representations of the entire corpus only containing meta data of the recordings as well as the corresponding supervisions, i.e. transcriptions.
+These \textit{recipes} are Python scripts that create \textit{manifests}.
+\textit{Manifests} are representations of the entire corpus only containing meta-data of the recordings as well as the corresponding supervisions, i.e., transcriptions.
 Using those manifests Lhotse creates samples - called \textit{Cuts} in Lhotse - without loading audio or transcript data into memory. 
 
 Due to Lhotse being in development I made some adjustments. The \textit{recipe} for the ICSI corpus was not part of the latest release \textit{v0.12} which meant that I had to work with the development version. 
@@ -597,10 +597,10 @@ Note that if the feature representation is changed, this part of \verb|compute_f
 \end{figure}
 
 The remaining parts, marked in orange, need to be run every time the model is trained on a new subset of the corpus.
-\verb|create_data_df| creates the three dataframes of the shape shown in \autoref{fig:gillick-data-pipeline}, one for each split.
-These dataframes are then input into the second part of the \verb|compute_features| function which take the feature representation of the whole corpus and extract the parts defined in the corresponding dataframe. This is guaranteed to be fast because no features are computed at this stage.
+\verb|create_data_df| creates three dataframes of the shape shown in \autoref{fig:gillick-data-pipeline}, one for each split.
+These dataframes are then input into the second part of the \verb|compute_features| function, which takes the feature representation of the whole corpus and extract the parts defined in the corresponding dataframe. This is guaranteed to be fast because no features are computed at this stage.
 We end up with three sets of features, one for each split. 
-These feature are loaded during training time which means that no raw audio or feature computation needs to happen during training itself.
+These feature are loaded during training time, which means that no raw audio or feature computation needs to happen during the training itself.
 
 \begin{figure}[h!]
     \centering
@@ -610,25 +610,27 @@ These feature are loaded during training time which means that no raw audio or f
 \end{figure}
 
 \href{https://github.com/LasseWolter/laughter-detection-icsi/blob/main/Demo.ipynb}{This jupyter notebook} demonstrates a simplified version of how \verb|compute_features.py| computes features. 
-The main difference is that the provided example loads the audio file directly into a Lhotse Cut whereas \verb|compute_features.py| loads already computed feature representation of the whole meeting and only selects the requested subset. In practice, this is a lot faster for computing large amounts of features.
+The main difference is that the provided example loads the audio file directly into a Lhotse \texttt{Cut}, whereas \verb|compute_features.py| loads already computed feature representation of the whole meeting and only selects the requested subset. In practice, this is a lot faster for computing large amounts of features.
 
-I did not make use of the automatically created supervisions by the \textit{ICSI-recipe} because I already created the \verb|create_data_df| function at an earlier stage and considered reusing it the easier approach.
+I did not use the automatically created supervisions by the \textit{ICSI-recipe} because I already created the \verb|create_data_df| function at an earlier stage and considered reusing it an easier approach.
 The generated dataframes contained all information needed for a supervision segment: the channel, the start and end time of a segment as well as its label. 
 I adapted a PyTorch Dataset\footnote{Dataset here does not refer to actual data. It refers to one of the two main PyTorch primitives for data handling: \href{https://PyTorch.org/tutorials/beginner/basics/data_tutorial.html}{Datasets}} for \href{https://lhotse.readthedocs.io/en/latest/datasets.html#lhotse.dataset.vad.VadDataset}{voice activity detection} already provided by Lhotse.
 For future work using the supervision segments provided by Lhotse can simplify the pipeline even further by making the \verb|create_data_df| function obsolete. 
+Nevertheless, the pipeline described in this section and published as part of the code (TODO: cite), can run on a machine with significanlty less RAM. 
+
 
 \section{Training}
-Given the data pipeline outlined in \autoref{sec:ml-data-pipeline} the actual training was straightforward. For each different subset of the corpus I needed to rerun the \verb|create_data_df| and \verb|compute_feature| functions to create the features. 
-These features were loaded into the modified VAD Dataset which I called LAD: laugh activity detection.
-During training time, data is extracted from this dataset using the texttt{SimpleCutSampler} provided by Lhotse. 
-This new approach can process 44000 batches in 2 hours compared to the 30 batches of my initial training approach which allows for high training speed without having to load all the raw audio into memory.
-To allow for direct comparisons, I used the same ResNet architecture as \citet{gillick2021robust}.
+Given the data pipeline outlined in \autoref{sec:ml-data-pipeline} the actual training was straightforward. For each different subset of the corpus, I needed to rerun the \verb|create_data_df| and \verb|compute_feature| functions to create the features. 
+These features were loaded into the modified VAD Dataset, which I called LAD: laugh activity detection.
+During training time, data is extracted from this dataset using the \texttt{SimpleCutSampler} provided by Lhotse. 
+This new approach can process 44000 batches in 2 hours compared to the 30 batches of my initial training approach which allows for high training speed without having to load all raw audio into memory.
+To allow for direct comparison, I used the same ResNet architecture as \citet{gillick2021robust}.
 The performance of this model trained on different subsets of the ICSI corpus is investigated in the next section.
 
 \chapter{Investigating the Impact of Training Data on Model Performance} \label{cha:experiments}
 Representative training data is essential for machine learning. Training on the whole ICSI corpus would take a long time and was not feasible for my project.
-Thus, the following experiments investigate how the selection of a corpus-subset for training impacts the model's performance. 
-Due to significant time spent on task already outlined in the thesis, the following experiments do not include exhaustive grid searches. Hence, the results of these experiments should be considered as pointers for future research, not an optimal solution.
+Thus, the following experiments investigate how the selection of a corpus subset for training impacts the model's performance. 
+Due to significant time spent on the tasks already outlined in the thesis, the following experiments do not include exhaustive grid searches. Hence, the results of these experiments should be considered as pointers for future research, not an optimal solution.
 
 The structure of training data was investigated in two dimensions: 
 \begin{enumerate}
@@ -640,8 +642,8 @@ All evaluations in this section are done on the development set of the ICSI corp
 
 \section{Experiment 1 - Class Balance} \label{sec:exp-1}
 The first set of experiments evaluates different ratios between laughter and non-laughter segments in the training data.
-Three different ratios between laughter and non-laughter segments are compared with the pre-trained model by \citet{gillick2021robust}: 1-to-1, 1-to-10 and 1-to-20.
-The sample duration is one second, as also used by \citet{gillick2021robust}. The feature shape differs from the pre-trained model. \citet{gillick2021robust} use mel spectrograms of shape 44x128 whereas the newly trained models uses a shape of 100x44.
+Three different ratios between laughter and non-laughter segments are compared with the pretrained model by \citet{gillick2021robust}: 1-to-1, 1-to-10, and 1-to-20.
+The sample duration is one second, as also used by \citet{gillick2021robust}. The feature shape differs from the pretrained model. \citet{gillick2021robust} use mel spectrograms of shape 44x128 whereas the newly trained models uses a shape of 100x40.
 Further, neither subsampling nor feature augmentation was applied during training which helped \citet{gillick2021robust} to achieve minor performance improvements.
 I initially planned to investigate these three dimensions further: feature shape, subsampling and feature augmentation. 
 Due to time constraint I did not conduct such experiments, which leaves this task for future work. 
@@ -658,7 +660,7 @@ A non-laughter segment of the same duration as the laughter segment is sampled f
 If the laughter segment is longer than one second, both laughter and non-laughter segments are truncated to a random one-second region of their segment. 
 If the segment is shorter than one second, it is stored unmodified and padded to one second length during feature computation.
 All these segments are stored in a dataframe as explained in \autoref{sec:ml-data-pipeline}.
-In contrast to random sampling across all meeting, this approach guarantees that the training data holds non-laughter segments from all meetings containing laughter. 
+In contrast to random sampling across all meetings, this approach guarantees that the training data holds non-laughter segments from all meetings containing laughter. 
 
 \subsection{Results} \label{sec:exp1-res}
 
@@ -669,7 +671,7 @@ In contrast to random sampling across all meeting, this approach guarantees that
     \label{fig:prec-recall-rand}
 \end{figure}
 
-\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline given by the pre-trained model by \citet{gillick2021robust} evaluated on the development set.
+\autoref{fig:prec-recall-rand} compares the performance of the newly trained models with the baseline given by the pretrained model by \citet{gillick2021robust} evaluated on the development set.
 The data points displayed in \autoref{fig:prec-recall-rand} are precision and recall for 21 evenly spaced thresholds from 0 to 1. For the baseline, there are only four data points, because the data is taken from the evaluation presented in \autoref{cha:model-evaluation}.
 All models trained on the ICSI corpus outperform the baseline.
 Overall there is little differences between the three new models, but for $\mathtt{recall} > 0.3$ the 1-to-20 model performs best. 
@@ -689,10 +691,10 @@ Overall there is little differences between the three new models, but for $\math
 \label{fig:conf-matrix-rand}
 \end{figure}
 
-\autoref{fig:conf-matrix-rand} shows a confusion matrices for different thresholds to deepen the understanding of the misclassified laughter samples. Note that the baseline is not same confusion matrix as \autoref{fig:initial-conf-matrix} because this time we only evaluate on the development set.
-For all newly trained models most misclassifications are in silence regions, regions that have no transcription. 
+\autoref{fig:conf-matrix-rand} shows a confusion matrices for different thresholds to deepen the understanding of the misclassified laughter samples. Note that the confusion matrix for the baseline is not the same as \autoref{fig:initial-conf-matrix}, because this time we only evaluate on the development set.
+For all newly trained models, most misclassifications are in silence regions, regions that have no transcription. 
 In contrast, the baseline classifies more laughter samples as speech than silence. Generally, we note that there is only a small amount of samples located in noise regions, the baseline has almost none.
-The 1-to-20 model has the least speech samples across all thresholds, except for threshold 0.8 where the baseline has 100\% precision, i.e. all predicted laughter samples are indeed laughter samples.
+The 1-to-20 model has the least speech samples across all thresholds, except for the threshold 0.8 where the baseline has 100\% precision, i.e., all predicted laughter samples are indeed laughter samples.
 
 
 
@@ -704,15 +706,15 @@ This behaviour is expected and aligns with findings from \citet{gillick2021robus
 
 Another insight is deduced from the confusion matrices. Whereas the baseline has more misclassified speech than silence segments, the three newly trained models misclassify speech less often. 
 In contrast, the newly trained models often misclassify laughter as silence, regions with no transcription.
-Evaluating the pre-trained model by \citet{gillick2021robust} on the whole ICSI corpus (\autoref{cha:model-evaluation}) showed a non negligible amount of misclassifications in silence regions. 
+Evaluating the pretrained model by \citet{gillick2021robust} on the whole ICSI corpus (\autoref{cha:model-evaluation}) showed a non negligible amount of misclassification in silence regions. 
 These newly trained models make this problem even more apparent and raise the question, why the model is not able to confidently separate laughter from silence. \autoref{sec:silence-regions} will investigate this further.
 
-Lastly, the 100\% precision of the pre-trained model for a threshold of 0.8 should be seen in context. A precision of 100\% alone does not mean a good model performance as described in \autoref{sec:acc-prec-rec}. Looking at \autoref{fig:prec-recall-rand}, this threshold corresponds to the light blue data point in the top left corner. This shows that this threshold is close to one extreme of the precision recall curve where precision is 100\% and recall is 0\%. Future work could investigate why the pre-trained model already reaches this extreme at a threshold of 0.8, but compared to other future tasks I consider this as less important.
+Lastly, the pretrained model's 100\% precision for a threshold of 0.8 does not necessarily indicate a good model performance, as explained in \autoref{sec:acc-prec-rec}. Looking at \autoref{fig:prec-recall-rand}, this threshold corresponds to the light blue data point in the top left corner. This shows that this threshold is close to one extreme of the precision recall curve where precision is 100\% and recall is 0\%. Future work could investigate why the pretrained model already reaches this extreme at a threshold of 0.8, but compared to other future tasks, I consider this as less important.
 
 \section{Experiment 2 - Non-laughter Diversity} \label{sec:exp2}
-The second set of experiments investigates the impact of the amount of the different types of non-laughter on the model performance. 
+The second set of experiments investigates the impact of the amount of different types of non-laughter on the model performance. 
 The ratio of non-laughter segments is fixed to 1-to-20. The ratio 1-to-20 is chosen to maximise the amount of non-laughter segments and be able to use one of models from \autoref{sec:exp-1} as a baseline.
-The segment selection and feature computation process is similar to \autoref{sec:exp-1}, but non-laughter segments were not chosen at random. A fixed percentage of non-laughter segments was assigned to each of the three types of non-laughter: speech, noise and silence.
+The segment selection and feature computation process is similar to \autoref{sec:exp-1}, but non-laughter segments were not chosen at random. A fixed percentage of non-laughter segments was assigned to each of the three types of non-laughter: speech, noise, and silence.
 \autoref{tab:exp-2-subclass-split} shows the different percentages tried.
 
 \begin{table}[h!]
@@ -912,24 +914,26 @@ It is also impractical to deploy such a system on a large scale. Participants jo
 During a presentation another student suggested an interesting idea. He suggested constantly analysing all audio inputs of the meeting without looking for laughter specifically. Considering that usually only one person is speaking, audio activity on lots of inputs synchronously suggests some common activity, e.g. laughter or applause. Trying to find identify patterns like this is an interesting alternative worth thinking about. 
 
 \chapter{Conclusion and Future Work}
-This original goal of the project was to create a filter for laughter and applause within a video call system. This goal was not achieved but the project provides the foundation for laughter recognition component of such a system.
-Even though the current performance is not sufficient, the insights about the ICSI corpus, the process of training such a model and the published code (TODO cite) will benefit future work.
+This original goal of the project was to create a filter for laughter and applause within a video call system. This goal was not achieved, but the project provides the foundation for the laughter recognition component of such a system.
+Even though the current performance is not sufficient, the insights about the ICSI corpus, the process of training such a model, and the published code (TODO cite) will benefit future work.
 The final hypothesis resulting from my initial evaluation (\autoref{cha:model-evaluation}) and the experiments conducted (\autoref{cha:experiments}) is:
 
 \textit{``A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants. Thus, the assumption that non-transcribed regions and laughter can be easily distinguished is wrong."}
 
-Since laughter recognition is a small research area, the insights from this thesis might also be valuable for the laughter recognition research in general. 
-Existing research \citep{kennedy2004laughter,knox2006automatic, truong2005automatic} only used parts of the ICSI corpus for training and evaluation and did not include the non-transcribed regions. 
-This thesis makes use of the whole ICSI corpus and includes non-transcribed regions in the evaluations, which turned out to be a problem as described in \autoref{sec:silence-regions}. Nevertheless, using the whole audio tracks, instead of disconnected laughter and non-laughter samples, best resembles the use case of laughter detection as part of a video call system. 
+Prior research \citep{kennedy2004laughter,knox2006automatic, truong2005automatic} only used parts of the ICSI corpus for training and evaluation and discarded non-transcribed regions during preprocessing.
+This thesis makes use of the whole ICSI corpus and includes non-transcribed regions in the evaluation. 
+Since laughter recognition is a small research area, with little published code available, the insights and published code (TODO cite) from this thesis can be valuable for general laughter recognition research and especially lower the barrier for novices in the field like myself.
+
+Even though including the non-transcribed regions in the evaluation turned out to be a problem, using the whole audio tracks, instead of disconnected laughter and non-laughter samples like prior research, best resembles the use case of laughter detection as part of a video call system. 
 Thus, future work needs to investigate how to tackle this issue.
-\autoref{sec:silence-regions} provides two suggestions for future work: only using tracks that actually contain silence or applying more advanced preprocessing. 
+\autoref{sec:silence-regions} proposes two approaches for this: only using tracks that actually contain silence or applying more advanced preprocessing. 
 
 Another main achievement is the creation of a data and evaluation pipeline to work with laughter in the ICSI corpus \citep{morgan2001meeting}. 
-Continued experimentation with different machine learning models, different parameters and class balances can build upon my insights and make use of my \coderepo.
+Future research can use the published code (TODO: cite) to continue the experiments from \autoref{cha:experiments}. A grid search for the variable parameters can be used to find the subset that best represents the entirety of the ICSI corpus. 
+
 This extends beyond the purpose of the project of a laughter recognition system for video meetings but can be useful for further research in the broader area of laughter detection in general. 
-As mentioned in \autoref{cha:bg}, lots of papers didn't publish their code.
-Thus, especially people with little experience in this field can benefit from my existing code. 
-For such broader usage of my code some refactoring and the creation of proper documentation would be necessary.
+As mentioned in \autoref{cha:bg}, lots of papers did not publish their code.
+For such broader usage of my code, some refactoring and the creation of proper documentation would be necessary.
 Some parts of the code, especially \verb|train.py|, still contain large parts of the code by \citet{gillick2021robust} that I criticised as cumbersome and not adhering to common PyTorch standards. 
 
 Lastly, making the model work in real-time is another important part for the continuation of this project. \autoref{sec:real-time} provided some theoretical considerations as well as a baseline for future work.
@@ -946,7 +950,7 @@ Lastly, making the model work in real-time is another important part for the con
 %     \item lots of unused function
 %     \item a bug that the model outputs probabilities out of bounds ($<0$ or $>1$) (\autoref{sec:experiments})
 %     \item sub-optimal code like recreation of a large object inside a for-loop even though it's independent of it
-%     \item mistakes in use of python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
+%     \item mistakes in use of Python operators like slicing - e.g. using \texttt{min} \texttt{np.min(probs[i:i+1])} even though this only returns 1 probability - end index is non-inclusive
 % \end{enumerate}
 
 % The bug with probabilities out of bounds was cause by a lowpass filter implemented in \verb|laugh_segmenter.py|. I did not investigate this further because neither the code nor the paper states why this filter is needed. Thus, I removed it.
