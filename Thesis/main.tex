@@ -301,7 +301,7 @@ The licence is \href{https://creativecommons.org/licenses/by/4.0/legalcode}{CC B
 
 
 \section{Preprocessing} \label{sec:preprocessing}
-Before the model by Gillick et al. can be evaluated on the ICSI corpus, some preprocessing of the corpus data was needed.
+Before the model by \citet{gillick2021robust} could be evaluated on the ICSI corpus, some preprocessing of the corpus data was needed.
 At first, the 72 meetings were split into training, development and test set to minimise speaker overlap. The partitioning follows the structure from \citet{renals2014neural}. It uses meetings \texttt{(Bmr021, Bns001)} as development set, meetings \texttt{(Bmr013, Bmr018, Bmr021)} as test set and the remaining 67 meetings as training set.
 After this, all laughter segments needed to be filtered out from the raw data to accurately determine correct classifications. 
 Lastly, I used the ICSI-transcriptions to divide non-laughter segments into subclasses to get a more rigorous analysis of misclassifications.
@@ -404,7 +404,7 @@ This discrepancy in preprocessing was easily fixed and improved the precision si
 \end{table}
 
 Lastly, the final evaluation (\autoref{tab:final-eval}) includes two significant changes: altering the model to remove a filter and introducing a weighted average, as we now explain. 
-The evaluation code used by Gillick et al. sometimes yielded probabilities smaller than 0 and larger than 1. 
+The evaluation code used by \citet{gillick2021robust} sometimes yielded probabilities smaller than 0 and larger than 1. 
 This bug was caused by a low-pass filter implemented in \verb|laugh_segmenter.py|. I did not investigate this further because neither the code nor the paper stated why this filter was necessary. I fixed the issue by removing the filter.
 
 \begin{table}[h!]
@@ -467,7 +467,7 @@ On the other hand, choosing a high threshold, e.g. 0.8, yields very high precisi
 \end{table}
 
 
-A possible reason for such a bad performance on the ICSI corpus is a data mismatch between training and evaluation data. The pre-trained model by Gillick et al. \citep{gillick2021robust} was trained on the Switchboard corpus \citep{switchboard-corpus}. The Switchboard corpus records telephone conversations between two participants at a sample rate of 8000hz. The ICSI corpus records meeting speech of multiple participants at a sample rate of 16000hz. For prediction, all audio tracks are down-sampled to 8000hz which results in losing lots of the original data. 
+A possible reason for such a bad performance on the ICSI corpus is a data mismatch between training and evaluation data. The pre-trained model by \citet{gillick2021robust} was trained on the Switchboard corpus \citep{switchboard-corpus}. The Switchboard corpus records telephone conversations between two participants at a sample rate of 8000hz. The ICSI corpus records meeting speech of multiple participants at a sample rate of 16000hz. For prediction, all audio tracks are down-sampled to 8000hz which results in losing lots of the original data. 
 Further, the Switchboard dataset has one audio track containing the audio from both participants whereas the ICSI corpus has separate audio tracks for each participant. Thus, especially the long periods of silence on each individual channel are new to the model. 
 
 \begin{figure}[h!]
@@ -484,17 +484,17 @@ In response to this finding, I decided to retrain the model on the ICSI corpus.
 
 \chapter{Training Laughter Detection on the ICSI Corpus} \label{cha:retraining}
 \section{Adapting Gillick et al's Training Code} 
-The first approach was to adapt Gillick et al.'s published code \citep{gillick-codebase}, which used PyTorch \citep{pytorch2017automatic}, an open-source machine learning framework for python.
+The first approach was to adapt the published code by \citet{gillick-codebase}, which used PyTorch \citep{pytorch2017automatic}, an open-source machine learning framework for python.
 Parts of the code were cumbersome and disregarded current standards of PyTorch programs, e.g. they used a manual batch counter for training steps instead of using epochs.  
 
 Despite these concerns, I decided to adapt their existing code for two reasons.
-Firstly, developing the whole framework from scratch would have been time consuming and slightly precarius as I had never worked on a machine learning project of this scale.
+Firstly, developing the whole framework from scratch would have been time consuming and slightly precarious as I had never worked on a machine learning project of this scale.
 %Thus, I considered it safer to use Gillick et al's code, as it is the foundation of a published paper from Interspeech 2021 \citep{gillick2021robust}. 
 Secondly, slightly adjusting the code allows for an comparison between the original and retrained model. 
 
-\autoref{fig:gillick-data-pipeline} shows the data-pipeline used by Gillick et al. The raw inputs per conversation are one audio track and two transcription files. 
-Firstly, all audio tracks are preloaded into memory, serialised and stored as a hash-map. Every time the model is trained the hash-map is loaded into memory to minimise disk accesses which slow down the training. 
-Secondly, Gillick et al. filter out all laughter segments and store them in a table as shown in \autoref{fig:gillick-data-pipeline}.
+\autoref{fig:gillick-data-pipeline} shows the data pipeline used by \citet{gillick2021robust}. The raw inputs per conversation are one audio track and two transcription files. 
+Firstly, all audio tracks are preloaded into memory, serialised and stored as a hash-map. The keys of this hash-map are the audio-paths present in the dataframe shown in \autoref{fig:gillick-data-pipeline}, the values are the serialised audio tracks. Every time the model is trained the hash-map is loaded into memory to to quickly access the audio tracks. The size of this hash-map is investigated later in this section.
+Secondly, \citet{gillick2021robust} filter out all laughter segments and store them in a table as shown in \autoref{fig:gillick-data-pipeline}.
 They add the same amount of non-laughter segments to this dataframe. 
 Note that tables are also referred to as dataframes in this thesis; this term originates from the commonly used data-analysis python library pandas \citep{jeff_reback_2021_5574486}.
 Each segment is stored with its start-time, duration, subsample start-time, subsample duration, audio path and label where 1 means laughter and 0 means non-laughter. 
@@ -520,17 +520,21 @@ The ICSI corpus contains 72hours of meeting speech with an average of six partic
 $$ \frac{432\;\textrm{hours} \cdot 3600\;\textrm{seconds} \cdot 16000 \;\textrm{samples per seconds} \cdot 2bytes}{1024^3} \approx 46.35 GB $$
 
 Using a machine with sufficient RAM would allow loading the whole audio data into memory. 
-Regardless of missing access to such a machine finding a solution that requires less RAM is desirable. Thus, I decided to rewrite the DataLoader from scratch. 
+Regardless of missing access to such a machine finding a solution that requires less RAM was desirable. Loading all raw audio into memory even though the model only needs the feature representation of short segments seemed like a waste of resources. Thus, I decided to adapt the data pipeline which turned out to be more difficult than expected and thus, took me 1.5 months. The following two sections line out the two different approaches I tried. 
 
-The first version of this DataLoader resulted in slow training. The model trained around 30 batches of audio in two hours, each consisting of 32 audio tracks. 
+\section{Rewriting the DataLoader from Scratch}
+
+The first approach was to amend the data-pipeline in \autoref{fig:gillick-data-pipeline} by removing the hash-map. Since the hash-map is one input to the Dataset, which is then used by the DataLoader, those two structures needed to be rewritten as well. 
+The adapted pipeline was slow and only allowed the model to train around 30 batches of audio in two hours, each consisting of 32 audio tracks. 
 With training samples of one second each, this equates to one sample every eight seconds.
-This training performance on a GPU machine was significantly worse than the inference performance on a CPU-only machine (\autoref{tab:rtf}).
+This training performance, measured on a GPU machine, was significantly worse than the evaluating the pre-trained model from \autoref{cha:model-evaluation} on a CPU-only machine. 
 
-The GPU was not used most of the time because the data-loading was the bottleneck. In contrast to inference, where an audio track is loaded at the beginning, training required the DataLoader to load many one-second segments from different. 
+It turned out that the GPU was not used most of the time because the data-loading was the bottleneck. In contrast to inference, where a whole audio track is loaded once at the beginning, training required the DataLoader to load many one-second segments from different offsets. 
 Without any pre-loading in place, the segments were loaded on-the-fly, requiring one disk access per one-second segment. This meant the GPU was starved, i.e. waited for input most of the time. 
-In addition, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which this sample is located. 
+
+In addition, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which a sample is located. 
 This is especially problematic because ICIS's average meeting length of 58 minutes \citep{icsi-ldc} is significantly longer than the 6.5 minutes for Switchboard recordings \citep{switchboard-ldc}.
-I later realised that this problem only arose because ICSI audio-files are stored as \verb|.sph|-files. Converting all files to \verb|.wav|-files could have solved this issue, but the main bottleneck would have persisted, namely the large number of disk accesses due to on-the-fly data-loading.
+I later realised that this problem only arose because ICSI audio-files are stored as \verb|.sph|-files. Converting all files to \verb|.wav|-files could have solved this issue, but the main bottleneck would have persisted: the large number of disk accesses due to on-the-fly data-loading.
 
 \begin{table}[h!]
     \centering
@@ -551,10 +555,11 @@ I later realised that this problem only arose because ICSI audio-files are store
 \end{table}
 
 
-My second supervisor suggested the use of Lhotse \citep{zelasko2021lhotse} to speed up the data-loading. Lhotse is a currently developed python library for speech and audio data preparation which is already usable.
+My second supervisor suggested the use of Lhotse \citep{zelasko2021lhotse} to speed up the data-loading. Lhotse is a python library for speech and audio data preparation that is still in development but already usable for projects. The following section outlines this seconds approach of adapting the data pipeline.
 
 \section{A Data Pipeline Using Lhotse}
-This section outlines how I used Lhotse to recreate the data pipeline to speed up data-loading. I first give a brief introduction into Lhotse and why it is suitable for our use case. Then I explain some necessary adjustments and finally present my data-pipeline which is part of the published \coderepo.
+This section outlines how I used Lhotse to create a data pipeline with faster data-loading. Instead of trying to stick to the design by \citet{gillick2021robust} (\autoref{fig:data-pipeline}), I decided to combine the features provided by Lhotse with some of the code I had already written. 
+In this section I first give a brief introduction into Lhotse and why it is suitable for our use case. Then I explain some necessary adjustments and finally present my data pipeline which is part of the published \coderepo.
 
 \subsection{Lhotse} \label{sec:lhotse}
 Two main features make Lhotse suitable for my use case:
@@ -613,7 +618,7 @@ I adapted a PyTorch Dataset\footnote{Dataset here does not refer to actual data.
 For future work using the supervision segments provided by Lhotse can simplify the pipeline even further by making the \verb|create_data_df| function obsolete. 
 
 \section{Training}
-Given the data-pipeline outlined in \autoref{sec:ml-data-pipeline} the actual training was straightforward. For each different subset of the corpus I needed to rerun the \verb|create_data_df| and \verb|compute_feature| functions to create the features. 
+Given the data pipeline outlined in \autoref{sec:ml-data-pipeline} the actual training was straightforward. For each different subset of the corpus I needed to rerun the \verb|create_data_df| and \verb|compute_feature| functions to create the features. 
 These features were loaded into the modified VAD Dataset which I called LAD: laugh activity detection.
 During training time, data is extracted from this dataset using the texttt{SimpleCutSampler} provided by Lhotse. 
 This new approach can process 44000 batches in 2 hours compared to the 30 batches of my initial training approach which allows for high training speed without having to load all the raw audio into memory.
@@ -925,8 +930,7 @@ This extends beyond the purpose of the project of a laughter recognition system 
 As mentioned in \autoref{cha:bg}, lots of papers didn't publish their code.
 Thus, especially people with little experience in this field can benefit from my existing code. 
 For such broader usage of my code some refactoring and the creation of proper documentation would be necessary.
-Some parts of the code, especially \verb|train.py|, still contain large parts of Gillick et al.'s code that I criticised as not adhering to common PyTorch standards. 
-
+Some parts of the code, especially \verb|train.py|, still contain large parts of the code by \citet{gillick2021robust} that I criticised as cumbersome and not adhering to common PyTorch standards. 
 
 Lastly, making the model work in real-time is another important part for the continuation of this project. \autoref{sec:real-time} provided some theoretical considerations as well as a baseline for future work.
 
