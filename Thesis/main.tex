@@ -250,9 +250,9 @@ $$Recall = \frac{TP}{TP+FN}$$
 For our use case, we are interested in continuous audio data, but all metrics presented above are calculated on discrete data points. We make use of segment-based metrics suggested by \citet{mesaros2016metrics} which split a continuous audio stream into fixed-sized segments (e.g. 10ms). These fixed-sized segments are treated as separate instances and build the base-unit for our evaluation. With 10ms segments, 1s laughter will become 100 units of laughter. Assuming that 0.6s are predicted correctly this would yield 60 $TP$ and 40 $FP$.
 \citet{gillick2021robust} used the same approach for their evaluations.
 
-Accuracy is a good metric if classes are balanced. In our use case, the two classes are highly imbalanced; laughter only occurs a few times in a long audio stream. If we choose a very high threshold the model predicts all segments as non-laughter. This leads to a large number of true negatives which skews the accuracy. This model with no skill gets high accuracy.
+Accuracy is a good metric if classes are balanced. In our use case, the two classes are highly imbalanced; laughter only occurs a few times in a long audio stream. If we choose a very high threshold the model predicts all segments as non-laughter. This leads to a large number of true negatives which skews the accuracy. This model with no skill achieves high accuracy.
 Considering the same example, the precision will be 100\% as well, but the recall will be 0\% because the model did not retrieve any laughter segments correctly. 
-The other extreme is given by a threshold of 1. The model will predict everything as laughter, which leads to a low accuracy and low precision because only the few seconds of laughter in the whole meeting are classified correctly. The recall will be 100\% because the model retrieved all laughter that occurs. 
+The other extreme is given by a threshold of 1. The model will predict everything as laughter, leading to low accuracy and low precision because only the few seconds of laughter in the whole meeting are classified correctly. The recall will be 100\% because the model retrieved all laughter that occurs. 
 To capture the range between these two extremes, a precision-recall curve is a useful tool. Precision recall curves plot the precision against the recall for a range of thresholds (e.g. \autoref{fig:example-prec-recall}). This provides a more detailed view of the model performance and answers questions like: "What is the precision of the model if we require a minimum recall of 80\%".
 To conclude, for our use case, reporting precision and recall across a range of thresholds is a more expressive metric than accuracy.
 
@@ -319,7 +319,7 @@ All weakly labeled segments containing laughter are categorised as invalid and d
 The remaining 8415 laughter segments have a total duration of 3.9h. \autoref{table:segment-types} shows how this compares to the fraction of other types of audio in the ICSI corpus.
 
 Alternatively, I could have created an ASR model to align weakly-labeled laughter events with their audio counterpart. 
-I did not follow this approach due to lack of experience with ASR, which meant that creating such a model would have been time consuming. I considered the 3.9h of pure laughter as sufficient for this project and decided to focus on other parts of the project.
+I did not follow this approach due to lack of experience with ASR, which meant that creating such a model would have been time-consuming. I considered the 3.9h of pure laughter as sufficient for this project and decided to focus on other parts of the project.
 In general, more training data is preferable. Thus, future projects might consider this approach to gain strongly labeled data for the whole corpus and make use of the additional laughter occurrences contained in the invalid segments. 
 
 \begin{table}[h!]
@@ -353,7 +353,7 @@ To summarise, there are five subclasses:
 \end{enumerate}
 Note that these subclasses of non-laughter are not classified by the model. The model is a binary classifier. The distinction within the non-laughter class is merely used for evaluation.
 Thus, the confusion-matrices in \autoref{sec:exp1-res} are only for laughter misclassifications as described in \autoref{sec:conf-matrix}.
-A breakdown of the amount of each subclass is shown in \autoref{table:segment-types}.
+The breakdown of the amount of each subclass is shown in \autoref{table:segment-types}.
 
 
 \section{Evaluating Gillick et al's Model on the ICSI Corpus}
@@ -384,7 +384,7 @@ In the initial evaluation (\autoref{tab:initial-eval}), the maximum recall achie
 
 After some discussion, I realised that, even though I filtered out invalid laughter segments from the raw ICSI data as described in \autoref{subsec:filter-laughter}, I did not exclude them from the predictions before evaluation. 
 This meant that the model could predict a laughter occurrence correctly but the evaluation method would consider it as false because this laughter occurrence was discarded during preprocessing.
-This discrepancy in preprocessing was easily fixed and improved the precision significantly (\autoref{tab:second-eval}). Nevertheless, the recall did not increase by much. 
+This discrepancy in preprocessing was easily fixed and improved the precision significantly (\autoref{tab:second-eval}). However, the recall did not increase by much. 
 
 \begin{table}[h!]
     \centering
@@ -534,7 +534,7 @@ GPUs are optimised for matrix computations, which are the basis of most machine 
 It turned out that the GPU was not used most of the time because the data loading was the bottleneck. In contrast to inference, where a whole audio track is loaded once at the beginning, training required the DataLoader to load many one-second segments from different offsets. 
 Without any preloading in place, the segments were loaded on-the-fly, requiring one disk access per one-second segment. This meant the GPU was starved, i.e. waited for input most of the time. 
 
-In addition, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular Python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which a sample is located. 
+Additionally, loading data from large offsets using the librosa library \citep{mcfee2015librosa}, a popular Python library for audio analysis, was significantly slower than loading data from the beginning of an audio file. A crude analysis (\autoref{tab:librosa-loading-times}) shows that the loading time grows with the offset at which a sample is located. 
 This is especially problematic because ICIS's average meeting length of 58 minutes \citep{icsi-ldc} is significantly longer than the 6.5 minutes for Switchboard recordings \citep{switchboard-ldc}.
 Later, I realised that this problem only arose because ICSI audio files are stored as \verb|.sph|-files. Converting all files to \verb|.wav|-files could have solved this issue, but the main bottleneck would have persisted: the large number of disk accesses due to on-the-fly data loading.
 
@@ -560,7 +560,7 @@ Later, I realised that this problem only arose because ICSI audio files are stor
 My second supervisor suggested the use of Lhotse \citep{zelasko2021lhotse} to speed up data loading. Lhotse is a Python library for speech and audio data preparation that is still in development. The following section outlines this seconds approach of adapting the data pipeline.
 
 \section{A Data Pipeline Using Lhotse}
-This section outlines how I used Lhotse to create a data pipeline with faster data loading. Instead of trying to stick to the design by \citet{gillick2021robust} (\autoref{fig:data-pipeline}), I decided to combine the features provided by Lhotse with some of the code that I had already written. 
+This section describes how I used Lhotse to create a data pipeline with faster data loading. Instead of trying to stick to the design of \citet{gillick2021robust} (\autoref{fig:data-pipeline}), I decided to combine the features provided by Lhotse with some of the code that I had already written. 
 In this section I first give a brief introduction into Lhotse and why it is suitable for our use case. Then I explain some necessary adjustments and finally present my data pipeline which is part of the published \coderepo.
 
 \subsection{Lhotse} \label{sec:lhotse}
@@ -577,7 +577,7 @@ These \textit{recipes} are Python scripts that create \textit{manifests}.
 Using those \textit{manifests} Lhotse can define audio samples - called \textit{Cuts} - solely based on metadata without loading raw audio or transcript data from disk. Actual data loading is done lazily, only when it is needed, e.g. during feature computation. 
 A list of such \textit{Cuts} is called \textit{CutSet} and is the third important data structure used in the data pipeline, in addition to pandas dataframes and Lhotse \textit{manifests}. 
 
-Due to Lhotse being in development, the \textit{recipe} for the ICSI corpus was not part of the latest release \textit{v0.12}. Hence, I had to work with the development version and needed to fix some bugs in the ICSI \textit{recipe}. 
+Due to Lhotse being in development, the \textit{recipe} for the ICSI corpus was not part of the latest release \textit{v0.12}. Hence, I had to work with the development version and had to fix some bugs in the ICSI \textit{recipe}. 
 I ran into some other issues with Lhotse and decided to debug some of them. Even though some of the debugging was not strictly necessary for my project, I decided to contribute to this open source project which has the potential to be useful in the field of audio and speech processing in the future. A list of my contributions, containing links to the corresponding pull requests, can be found in \autoref{app:lhotse-contrib}. All contributions have been accepted and are now part of the Lhotse library.
 
 \subsection{Data Pipeline} \label{sec:ml-data-pipeline}
@@ -601,7 +601,7 @@ Note that if the feature representation is changed,e.g., the dimensions of the s
 
 The remaining parts, marked in orange, need to be executed every time the model is trained on a new subset of the corpus.
 \verb|create_data_df| creates three dataframes of the shape shown in \autoref{fig:gillick-data-pipeline}, one for each split.
-These dataframes contain all information needed to create the final \textit{CutSets}, containg the features and the \textit{supervisions} for each sample of the training data.
+These dataframes contain all information needed to create the final \textit{CutSets}, which consists of the features and the \textit{supervisions} for each sample in the training data.
 \verb|compute_features| creates these \textit{CutSets} in two steps. For each row in the dataframe it takes the feature representation of the corresponding audio track from the corpus \textit{CutSet} (in blue) and extracts the part defined by subsample start and subsample duration, which are fields of the orange dataframe. Since \verb|compute_feautures| only extracts parts of already existing features and does not recompute anything, this is guaranteed to be fast.
 
 Then, \verb|compute_features| uses the label from this dataframe row to create a custom \textit{supervision segment} stating whether this sample is laughter or not. 
@@ -609,10 +609,10 @@ This \textit{supervision segment}, the feature representation and some other met
 By applying this process across all rows in the dataframe, we end up with three \textit{CutSets}, one for each split. 
 
 The following example demonstrates the improvements of this new data pipeline.
-A \textit{CutSet} with 170000 \textit{Cuts}, that we will see in \autoref{cha:experiments}, has the size of $1\;\mathtt{GB}$.
+A \textit{CutSet} with 170000 \textit{Cuts}, which we will see in \autoref{cha:experiments}, has the size of $1\;\mathtt{GB}$.
 The \textit{CutSets} containing the features for the whole corpus (blue in \autoref{fig:data-pipeline}) has a size of $21\;\mathtt{GB}$. 
-The sum of $22\;\mathtt{GB}$ would already be significantly smaller than the $46.35\;\mathtt{GB}$ estimated in \autoref{sec:adapting-gillick-training}. However, not all of these $22\;\mathtt{GB}$ need to reside in RAM during training. 
-Training succeeded on a machine with $8\;\mathtt{GB}$ RAM. It took 25minutes to train one epoch with a training set of 170000 one-second samples.
+The sum of $22\;\mathtt{GB}$ would already be significantly lower than the $46.35\;\mathtt{GB}$ estimated in \autoref{sec:adapting-gillick-training}. However, not all of these $22\;\mathtt{GB}$ need to reside in RAM during training. 
+Training succeeded on a GPU machine with $8\;\mathtt{GB}$ RAM. It took 25 minutes to train one epoch with a training set of 170000 one-second samples.
 This averages to around 113 samples per second. Compared to one sample every eight seconds in the first version of the data pipeline (\autoref{sec:first-data-pipeline}), this is a massive improvement.
 
 I can not explicitly quantify the memory requirement, as I do not fully understand all the internals of Lhotse, nor can I compare the training speed of my new pipeline to the one from \citet{gillick2021robust} because they did not report it.
@@ -631,8 +631,8 @@ Future work can further simplify the pipeline by using the \textit{supervision m
 \section{Training}
 Given the data pipeline outlined in \autoref{sec:ml-data-pipeline} the actual training was straightforward. For each different subset of the corpus, I needed to rerun the \verb|create_data_df| and \verb|compute_feature| functions to create the features. 
 
-I adapted a PyTorch Dataset for \href{https://lhotse.readthedocs.io/en/latest/datasets.html#lhotse.dataset.vad.VadDataset}{voice activity detection} already provided by Lhotse.
-The \textit{CutSets} were loaded into the modified VAD Dataset, which I called LAD: laugh activity detection.
+I adapted the PyTorch Dataset for voice activity detection (VAD) already provided by Lhotse.
+The \textit{CutSets} were loaded into this modified VAD Dataset, which I called LAD: laugh activity detection.
 During training time, data is extracted from this Dataset using the \texttt{SimpleCutSampler} provided by Lhotse. 
 To allow for direct comparison, I used the same ResNet architecture as \citet{gillick2021robust}.
 The performance of this model trained on different subsets of the ICSI corpus is investigated in the next section.
@@ -778,11 +778,11 @@ Lastly, we can see that \texttt{model-c} classifies more laughter segments as si
 
 
 \subsection{Analysis}
-The goal of these experiments was to analyse the impact of diversity within the non-laughter segments. As shown by \texttt{model-a}, using a small amount silence segments decreases model performance significantly. It causes the model to classify more silence segments as laughter than true laughter segments. This is a major flaw in this model and suggests that this subset of the ICSI corpus is not representative of its entirety. 
+The goal of these experiments was to analyse the impact of diversity within the non-laughter segments. As shown by \texttt{model-a}, using a small number of silence segments significantly decreases model performance. It causes the model to classify more silence segments as laughter than true laughter segments. This is a major flaw in this model and suggests that this subset of the ICSI corpus is not representative of its entirety. 
 
 Keeping the number of silence segments constant and slightly increasing the number of speech segments yielded a small performance impact, as shown by \texttt{model-b} and \texttt{model-c}.
 
-Thus, for this experiment, changing the number of silence segments in the non-laughter class has the biggest discriminative power. This is surprising, because intuitively one expects that silence should not have a lot of variety and thus, increasing the number of training samples should not have a big impact. Possible reasons for this are investigated in the following section.
+Thus, for this experiment, changing the number of silence segments in the non-laughter class has the biggest discriminative power. This is surprising, because intuitively one expects that silence should not have a lot of variety and thus, increasing the number of training samples should not have a big impact. Possible reasons for this are investigated in the next section.
 
 Lastly, the low precision values for a threshold of 0.8 compared to the baseline, do not mean that the new models in this experiment perform worse. As mentioned before, thresholds are variable and we should always consider the whole precision-recall curve. Nevertheless, it is interesting to note that changing the type of non-laughter segments seems to impact the way thresholds partition the model performance. This fact should be investigated further in future work.
 
@@ -825,18 +825,18 @@ One approach could be to examine all channels recorded with the headset type use
 Another approach would be to filter for meetings with little volume variation across the whole duration (like \verb|Bns003:chan0|).
 Such meetings could be excluded from the evaluation. 
 Alternatively, a minimum volume filter could be applied to disregard all audio activity below a certain threshold.
-Finding a good threshold would be essential for such a filter. With a low threshold the filter might not make a difference, a large threshold, on the other hand, might disregard lots of quieter laughter occurrences. 
+Finding a good threshold would be essential for such a filter. With a low threshold, the filter might not make a difference, a large threshold, on the other hand, might disregard lots of quieter laughter occurrences. 
 Other approaches are possible and should be investigated in future work.
 
 
 
 \chapter{Practicality of Laughter Recognition in Video Meetings} \label{cha:practicality}
-In this section I will talk about the practicality of a laughter recognition feature integrated in a video-call system. 
+This section covers the practicality of a \texttt{filtered} option within a video call system. As mentioned in \autoref{sec:intro} such an option would exist alongside \texttt{mute} and \texttt{unmute} and automatically unmutes a user when laughter is detected. 
 This section is split into three parts: 
 \begin{enumerate}
-    \item Real-time consideration for such a system
+    \item Real-time considerations for such a system
     \item Practicality and privacy issues 
-    \item Alternative solutions to using a machine learning approach 
+    \item Alternative solutions to the approach presented in this thesis
 \end{enumerate}
 
 \section{Laughter Detection in Real-time} \label{sec:real-time}
@@ -845,11 +845,11 @@ For detecting laughter in video meetings, the model needs to work in real-time a
 High retrieval accuracy becomes useless if the detected laughter is only fed back to the audio stream after a few seconds.
 
 
-There are five factors that influence the real-time nature of the model:
+There are six factors that influence the model's latency:
 \begin{enumerate}
     \item architecture: client vs. server side implementation
-    \item programming language
-    \item computational power 
+    \item programming language used
+    \item computational power available
     \item model's complexity
     \item model's window-size
     \item minimum length of retrieved laughter segment
@@ -857,23 +857,21 @@ There are five factors that influence the real-time nature of the model:
 
 
 A detection algorithm could be implemented on either the client side, e.g. using JavaScript, or on the server side, e.g. using Python. 
-This design decision influences the programming language used and the computational power available to the detection algorithm. If the detection runs on the client side, the computational power is limited by the user's end-device. On the contrary, the computational power on the server side is almost unlimited. Nevertheless, a low computational footprint is desirable because server costs grow with increasing computational power required.
+This design decision influences the programming language used and the computational power available to the detection algorithm. If the detection runs on the client side, the computational power is limited by the user's end-device. On the contrary, the computational power on the server side is almost unlimited. However, a low computational footprint is desirable because server costs grow with increasing computational power.
 Since this project does not cover the integration within a video call system, the discussion about programming languages and architectural decisions between client- and server-side is left for future work.
 
-Assuming a fixed amount of computational power, reducing the model's complexity improves the computational efficiency and thus, latency.
-The model presented by \citet{gillick2021robust} which is used in this thesis, a ResNet architecture with 18 layers, is not computationally efficient. There is research investigating the reduction of the computational footprint with minimal impact on performance \cite{sorensen2020depthwise}. Future work should review such literature and see how it can be applied to this project. 
+Assuming a fixed amount of computational power, reducing the model's complexity improves the computational efficiency and latency.
+\citeauthor{gillick2021robust}'s \citeyearpar{gillick2021robust} model used in this thesis, a ResNet architecture with 18 layers, is not computationally efficient. Existing research investigates the reduction of the computational footprint with minimal impact on performance \citep{meyer2017efficient, sorensen2020depthwise}. Future work should review such literature and see how it can be applied to this project. 
 
 The feature representation is another important design decision that affects the latency.
-The experiments in \autoref{cha:experiments} all use mel spectrogram features of shape 100x40, which means 100 samples and 40 filters. 
-Since our model uses 100 samples per feature, we have a window size of 100, which equals one second.
-Assuming splitting this window in the middle, similar to \autoref{fig:knox_window}, this meant around 0.5s before and 0.5s after the considered frame. This is an unacceptable latency.
-There are two possible solutions: reducing the window size, which causes loss of context information, or using an uneven split, e.g. three-fourths before the frame and one-fourth after. 
-Both of these options should be investigated in future work.
+All newly trained models in \autoref{cha:experiments} use mel spectrograms of shape 100x40, which means 100 samples and 40 filters. 
+Each feature represents a one-second segment, and thus, the window size is one second.
+Splitting this window evenly around the target frame, similar to \autoref{fig:knox_window}, we get around 0.5s before and 0.5s after the considered frame. For real-time processing, this causes a minimum latency of 0.5s, which is unacceptable for our system.
+There are two possible solutions, that should be investigated in future work: reducing the window size, which causes loss of context information, or using an uneven split, e.g. three-fourths before the frame and one-fourth after. 
 
-The last factor mentioned is the minimum length, which is an inference parameter used by the model from \citet{gillick2021robust}. It prevents the retrieval of a few milliseconds which are classified as laughter. For a real-time model, this will be done at the cost of latency. If a minimum length is specified, the model needs to wait at least that amount of time before a laughter occurrence is approved. Thus, the minimum latency is the duration of the minimum length itself.
-Future work should investigate if a minimum-length parameter is needed at all or if a smarter use of the context window can avoid this additional parameter.
-
-Thus, assuming a minimum length $m$ and a window-size $w$ a lower bound of the model's latency is given by: $m + \frac{1}{2}w$.
+Lastly, the minimum length is an inference parameter used by the model from \citet{gillick2021robust}. Even though this parameter prevents the retrieval of laughter occurrences that might be considered too short, this is done at the cost of latency. The model needs to wait at least the specified amount of time before a laughter occurrence is approved. Thus, the minimum latency is the duration of the minimum length itself.
+Future work should investigate whether a minimum-length parameter is needed at all or if smarter use of the context window can avoid this additional parameter.
+In summary, assuming a minimum length $m$ and an evenly split window of size $w$, a lower bound of the model's latency is given by: $m + \frac{1}{2}w$.
 
 \begin{table}[h!]
     \hspace{-2cm}
@@ -889,63 +887,63 @@ Thus, assuming a minimum length $m$ and a window-size $w$ a lower bound of the m
     3s & 20 & 1.31   & 20 & 0.63  & 20 & 0.14  \\
     30s & 20 & 1.41  & 20 & 0.84  & 20 & 0.10 \\
     120s & 10 & 1.49 &  10 & 0.81  & 20 & 0.10 \\
-    300s &&&&                     & 10 & 0.10 \\
     \hline
     \end{tabular}
-    \caption{Average real-time factor for inference on different machines (2x CPU, 1xGPU)}
+    \caption{Average real-time factor for inference on different machines (2x CPU, 1xGPU).}
     \label{tab:rtf}
 \end{table}
 
-\autoref{tab:rtf} provides a baseline for future work that estimates the latency of the model from \citet{gillick2021robust} using a window size of one second. This latency is expected to be similar for the models trained in \autoref{cha:experiments} because all models use the same ResNet architecture and the same window size as used by \citet{gillick2021robust}. 
+\autoref{tab:rtf} provides a baseline for future work that estimates the latency of the model from \citet{gillick2021robust} using a window size of one second. The models trained in \autoref{cha:experiments} will have a similar latency because they use the same ResNet architecture and the same window size. 
 The model evaluated uses a window size of one second. 
 The latency is estimated by the real-time factor(RTF), which is calculated as: 
 $$ RTF = \frac{time\ to\ process\ a\ segment}{duration\ of\ the\ segment} $$
 
-It should be noted that this is an optimistic estimate because the RTF is calculated for longer segments.
-Since the minimum length is a post-filter applied to the model output, the overhead presented for a real-time model (\autoref{sec:real-time}) does not apply for longer segments. 
+Note that this is an optimistic estimate, as the RTF is calculated for longer segments.
+Since the minimum length is a postfilter applied to the model output, the overhead caused by minimum length parameter for a real-time model described in \autoref{sec:real-time} does not apply for longer segments. 
 
 
 
 \section{Practicality Issues and Privacy} \label{sec:general-pract}
-Even though users will be able to opt out of using this feature, it is important to think about privacy. If most users do not feel comfortable using such a system, it will significantly affect its practicality.  
-The audio of every meeting participant will be constantly analysed. Even if the system promised to discard all audio immediately, users might feel uncomfortable using such a system. False positives in particular are a problem. If the system detects something as laughter and feeds it into the audio stream it is irreversible. If the false positive is a sensitive conversation with a friend, the cost of this issue is huge. 
+Even though users can manually enable the \texttt{filtered} option during a video call, it is important to think about privacy. If most users do not feel comfortable using this option, it will significantly affect its practicality.  
+The audio of every meeting participant will be constantly analysed. Even if the system promised to discard all audio immediately, users might feel uncomfortable using such a system. False positives in particular are a problem. If the system detects something as laughter and feeds it into the audio stream, it is irreversible. If the false positive is a sensitive conversation with a friend, the cost of this issue is huge. 
 The extent of this issue can be limited by tuning the model threshold in such a way that the false positive rate is minimised. Nevertheless, the use case outlined above will always remain possible. 
 
-Another general problem is the missing detection of laughter sentiment. There is laughter in response to a joke which will please the speaker. In contrast, laughter that makes fun of the speaker might seriously affect the speaker's confidence. I talked to a member of staff from the university who told me that she would be afraid of using such a system for this reason. 
-Using a machine learning model to pick up the sentiment conveyed by a laughter occurrence is a completely different task. Even if this succeeded to a certain degree, false positives would still be an issue.
+The architecture of the system also influences the practicality. Whereas, a client-side implementation will analyse the data locally, a server-side implementation implies processing sensitive audio data on the server. On the one hand, people might mistrust the implementation and doubt that data is deleted from the server after analysis. Furthermore, sending the data to the server requires the transmission of sensitive audio data over public networks, which opens up an attack surface for bad actors. 
+
+Another general problem is the missing detection of laughter sentiment. Laughter in response to a joke will likely please the speaker. In contrast, laughter that makes fun of the speaker might seriously affect the speaker's confidence. I talked to a member of university staff who told me that she would be afraid of using such a system for this reason. 
+Using a machine learning model to pick up the sentiment conveyed by a laughter occurrence is a completely different task. Even if this did succeed to a certain degree, false positives would still be an issue.
 
 
-\section{Alternatives to a Machine Learning Model}
+\section{Alternative Solutions}
 Considering the privacy concerns mentioned in \autoref{sec:general-pract}, we can think about alternative sensory data. 
-Constantly analysing video input will likely yield similar discomfort for participants. Furthermore, video inputs are often turned off during larger video conferences.
-\citet{cosentino2016quantitative}  also mention the privacy implications of video and audio inputs.
-Thus, they suggest the use of individual wearable sensors to address these concerns. For our project, this approach was not feasible due to the lack of available sensory data.
-It is also impractical to deploy such a system on a large scale. Participants join video conferences from everywhere around the world, where wearable sensors are not available to them. Lastly, it is debatable if a wearable sensor brings more comfort to participants than constantly being listened. 
+Constantly analysing video input will likely cause similar discomfort for participants. Additionally, video input is often turned off during larger video conferences.
+\citet{cosentino2016quantitative} also mention the privacy implications of video and audio inputs and suggest the use of individual wearable sensors to address them. For our project, this approach was not feasible due to the lack of available sensory data.
+It is also impractical to deploy such a system on a large scale. Participants join video conferences from everywhere around the world, where wearable sensors are not available to them. Lastly, it is debatable whether a wearable sensor brings more comfort to participants than constantly being listened to. 
 
-During a presentation, another student suggested an interesting idea. He suggested constantly analysing all audio inputs of the meeting without looking for laughter specifically. Considering that usually one person is speaking, audio activity from lots of inputs synchronously suggests some common activity, e.g., laughter or applause. Trying to identify patterns like this is an interesting alternative worth thinking about. 
+During a presentation, a student suggested an interesting idea. He suggested constantly analysing all audio inputs of the meeting without looking for laughter specifically. Considering that usually one person is speaking, audio activity from lots of inputs synchronously suggests some common activity, e.g., laughter or applause. Trying to identify patterns like this is an interesting alternative that is worth considering. 
 
 \chapter{Conclusion and Future Work}
-This original goal of the project was to create a filter for laughter and applause and integrate it as a new \texttt{filtered} option in a video call system. This goal was not achieved, but the project provides the foundation for the laughter recognition component of such a system.
-Even though the current performance is not sufficient, the insights about the ICSI corpus, the outlined process of training such a model, and the published code \citep{Wolter_A_Machine_Learning_2022} will benefit future work.
+The original objective of the project was to create a filter for laughter and applause and integrate it as a new \texttt{filtered} option, to complement the \texttt{mute} and \texttt{unmute} options in video call systems. This goal was not achieved, but the project provides the foundation for the laughter recognition component of such a system.
+Although the current performance is not sufficient, the insights on training such a model on the ICSI corpus \citep{morgan2001meeting}, my final hypothesis, and the published code \citep{Wolter_A_Machine_Learning_2022} will benefit future work.
 
 Prior research \citep{kennedy2004laughter,knox2006automatic, truong2005automatic} only used parts of the ICSI corpus for training and evaluation and discarded non-transcribed regions during preprocessing.
 This thesis makes use of the whole ICSI corpus and includes non-transcribed regions in the evaluation. 
-Since laughter recognition is a small research area, with little published code available, the insights and the published code \citep{Wolter_A_Machine_Learning_2022} from this thesis can be valuable for laughter recognition research in general and especially lower the barrier for novices in the field like myself.
-It should be noted, however, that some parts of the code, especially \verb|train.py|, still contain large parts of the code by \citet{gillick2021robust} that I criticised as cumbersome and not adhering to common PyTorch standards. 
+Since laughter recognition is a small research area, with little published code available, the insights and the published code \citep{Wolter_A_Machine_Learning_2022} from this thesis can be valuable for laughter recognition research in general and especially lower the barrier for novices in the field like myself at the beginning of the project.
+However, it should be noted that some parts of the code, especially \verb|train.py|, still contain large parts of the code of \citet{gillick2021robust} that I criticised as cumbersome and not adhering to common PyTorch standards. 
 
 My initial evaluation in \autoref{cha:model-evaluation} and the experiments conducted in \autoref{cha:experiments} resulted in my final hypothesis:
 
 \textit{``A significant number of non-transcribed regions in the ICSI corpus are not actually silence; they are quieter recordings of speech by other participants. Thus, the assumption that non-transcribed regions and laughter can be easily distinguished is wrong."}
 
 
-Following prior research and disregarding the non-transcribed regions completely is not a solution for our use case. Using continues audio tracks instead of disconnected laughter and non-laughter samples, better resembles the use case of laughter detection as part of a video call system. 
-Therefore, future work should investigate how to address this issue.
+Following prior research and disregarding the non-transcribed regions completely is a possible solution, but not ideal for our use case. Using continuous audio tracks instead of disconnected laughter and non-laughter samples better resembles the use case of laughter detection as part of a video call system. 
+Therefore, future work should investigate how to address this issue without discarding non-transcribed regions entirely.
 \autoref{sec:silence-regions} proposes two approaches: only using tracks that actually contain silence or applying more advanced preprocessing. 
 
-Future research can also use the published code \citep{Wolter_A_Machine_Learning_2022} to continue the experiments from \autoref{cha:experiments}. Conducting a grid search on the variable parameters in those experiments will determine the corpus subset that is most representative of the whole ICSI corpus. Adapting the feature representation will be another dimension to experiment with. The thesis mentions three ideas for this: different spectrogram dimensions, feature augmentation, and subsampling. 
+Future research can also use the published code \citep{Wolter_A_Machine_Learning_2022} to continue the experiments presented in \autoref{cha:experiments}. Conducting a grid search on the variable parameters in those experiments could determine the corpus subset that is most representative of the whole ICSI corpus. Adapting the feature representation could be another parameter to experiment with. The thesis mentions three ideas for this: different spectrogram dimensions, feature augmentation, and subsampling. 
 
-Making the model work in real-time is another important part for the continuation of this project. \autoref{sec:real-time} provided some theoretical considerations as well as a baseline for future work.
-Lastly, ethical considerations like user privacy and emotional harm were only covered superficially in \autoref{cha:practicality}. For a system that continually processes audio from end-users a more thorough ethical review is vital.
+Making the model work in real-time is another important part for the continuation of this project. \autoref{sec:real-time} provides some theoretical considerations as well as a baseline for future work.
+Lastly, ethical considerations like user privacy and emotional harm are only covered superficially in \autoref{cha:practicality}. For a system that continually processes audio from end users, a more thorough ethical review is vital.
 
 % \chapter{Lessons Learned}
 
